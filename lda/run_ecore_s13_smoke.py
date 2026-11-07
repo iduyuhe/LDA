@@ -881,6 +881,154 @@ def main() -> int:
           "锁定值全部逐位一致 · 反向探针 5 条全响"
           % (len(_ec_layer_got) * len(_EC_NS), 4 * len(_ec_net_area), len(_ec_net_area)))
 
+    # ══════════════════════════════════════════════════════════════════════
+    # EC-Q01…Q12：EC-B3.1 能力落地（能力上 API / K2 独立 / 不判违规）
+    #   🔴 数据路径独立：门禁从源 Netlist 重跑 P&R（`_sh2`）+ 自己的扫描线复算；
+    #      产品用主链 shapes + 增量差集/可分离积分。两侧逐位对拍才算真绿。
+    # ══════════════════════════════════════════════════════════════════════
+    from lda_webui.digital_case import case_card as _q_case_card  # noqa: E402
+
+    _q_trunk_src = open(os.path.join(_HERE, "lda_l2", "ecore", "db3_trunk.py"),
+                        encoding="utf-8").read()
+    _q_prod_src = open(os.path.join(_HERE, "lda_l2", "ecore", "dsignoff.py"),
+                       encoding="utf-8").read()
+    _q_card = _q_case_card()
+    _q_st = {n: p for n, p in B3.run_trunk_from_verilog(V.SAMPLE_VERILOG)["stages"]}
+    _q = _q_st.get("ec_b3") or {}
+    _q_disc = (_q_card.get("disclosure") or {}).get("ec_b3") or ""
+
+    check("EC-Q01 主链产出 `ec_b3` 段 ∧ 卡片顶层含该段 ∧ `segments_covered` 含 `ec_b3`（%d 段）"
+          % len(_q_card.get("segments_covered") or []),
+          bool(_q) and isinstance(_q_card.get("ec_b3"), dict)
+          and bool(_q_card["ec_b3"]) and "ec_b3" in (_q_card.get("segments_covered") or []))
+
+    check("EC-Q02 🔴 能力上 API：卡片 `disclosure.ec_b3` 可读，且含「含诊断段」与"
+          "「DRC 规则集仍不含」的区分声明",
+          bool(_q_disc) and "含几何/量纲诊断段" in _q_disc
+          and "DRC 规则集仍不含" in _q_disc and "不判违规" in _q_disc)
+
+    _q_yes = "含几何/量纲诊断段" in _q_disc
+    _q_no = "不含几何/量纲诊断段" in _q_disc
+    _q_has_call = "ec_b3_signoff(" in _q_trunk_src
+    check("EC-Q03 🔴 三态 AST 机核：互斥措辞恰好一个 ∧ 与主链是否调用 `ec_b3_signoff` 一致；"
+          "沉默必红（含=%s 不含=%s 事实=%s）" % (_q_yes, _q_no, _q_has_call),
+          (_q_yes != _q_no) and (_q_yes == _q_has_call))
+    def _q_tri(yes, no, fact):
+        return (yes != no) and (yes == fact)
+
+    check("EC-Q03r 反向探针：三态检测器在「沉默」「都在」时必须报假，正常时为真",
+          _q_tri(True, False, True) is True
+          and _q_tri(False, False, True) is False
+          and _q_tri(True, True, True) is False
+          and _q_tri(False, True, True) is False)
+
+    _q_asm = _q.get("assumptions") or {}
+    _q_need = ("die_w_um", "die_h_um", "width_um", "scales", "scale_upper_bound",
+               "g_values", "g_basis", "union_method", "density_method")
+    _q_asm_miss = [k for k in _q_need if _q_asm.get(k) is None]
+    check("EC-Q04 K0 完备性：9 项输入假设齐备（缺=%r）" % _q_asm_miss,
+          not _q_asm_miss and _q_asm.get("scales") == list(_EC_NS))
+
+    _q_bad = []
+    for _qL in _EC_LAYERS:
+        _qv = (_q.get("layers") or {}).get(str(_qL)) or {}
+        if _qv.get("area_um2") != _EC_AREA[_qL]:
+            _q_bad.append("L%s.area" % _qL)
+        if tuple(_qv.get("drho") or ()) != _EC_DRHO[_qL]:
+            _q_bad.append("L%s.drho" % _qL)
+    if {k: round(v, 6) for k, v in (_q.get("net_area_um2") or {}).items()} != _EC_NET:
+        _q_bad.append("net_area")
+    for _qg in _EC_G:
+        _qr = (_q.get("ratio_by_g") or {}).get(_qg) or {}
+        if (_qr.get("max"), _qr.get("min"), _qr.get("sum")) != (
+                _EC_MAX[_qg], _EC_MIN[_qg], _EC_SUM[_qg]):
+            _q_bad.append(_qg)
+    check("EC-Q05 🔴 K2 数据路径独立：产品段 vs 门禁从源重跑 P&R 的扫描线复算逐位一致"
+          "（偏差=%r）" % _q_bad, not _q_bad)
+
+    _q_raw_area = sum(abs((s.x1 - s.x0) * (s.y1 - s.y0))
+                     for s in _sh2 if s.kind == "metal")
+    check("EC-Q05r 反向探针：产品侧并集退化为直接累加 ⇒ 与门禁复算必失配"
+          "（直接累加 %.6f vs 并集 %.6f µm²）" % (_q_raw_area, sum(_EC_AREA.values())),
+          abs(_q_raw_area - sum(_EC_AREA.values())) > 0.5)
+
+    def _q_has_shared(src):
+        # 🔴 必须用 AST：字符串 `in` 会把**注释里提到的符号**误判成引用（本轮踩过假红）。
+        names = set()
+        for node in ast.walk(ast.parse(src)):
+            if isinstance(node, ast.Name):
+                names.add(node.id)
+            elif isinstance(node, ast.Attribute):
+                names.add(node.attr)
+        return any(x in names for x in ("_ec_union", "_ec_dens", "_ec_drho", "_ec_dmax"))
+
+    check("EC-Q06 🔴 K2 源码独立：产品侧不引用门禁 `_ec_*`，且自带 `b3_subtract_rect`",
+          (not _q_has_shared(_q_prod_src))
+          and "b3_subtract_rect" in _q_prod_src and "b3_window_density" in _q_prod_src)
+    check("EC-Q06r 反向探针：注入 `_ec_union` 的源码必报共享；纯 `import os` 不报",
+          _q_has_shared("x = _ec_union([])") is True
+          and _q_has_shared("import os") is False)
+
+    check("EC-Q07 两条算法路径不同且显式登记：产品=增量差集+可分离积分，门禁=扫描线+逐窗裁剪",
+          _q_asm.get("union_method") == "incremental_rect_subtraction"
+          and _q_asm.get("density_method") == "separable_1d_cdf_difference"
+          and "_ec_union" in open(os.path.abspath(__file__), encoding="utf-8").read())
+
+    _q_inv = _q.get("invariants") or {}
+    check("EC-Q08 段内 6 条不变式全成立（I1–I4 / I8 / 尺度上界）：%r" % _q_inv,
+          all(_q_inv.get(k) is True for k in (
+              "i1_conservation", "i2_monotone", "i3_limit", "i4_upper_bound",
+              "i8_homogeneity", "i_scale_upper_bound")))
+    check("EC-Q09 I8 一致性成立 ∧ I9 数值锁定由门禁 P13 承担（产品段不复制冻结值）",
+          _q_inv.get("i8_homogeneity") is True and "P13" in str(_q.get("lock_basis") or ""))
+
+    check("EC-Q10 🔴 不判违规：段内无 `n_fail`/`ok`/`pass` ∧ `in_blocking=False` ∧ "
+          "`scope=DIAGNOSTIC_ONLY`",
+          not any(k in _q for k in ("n_fail", "ok", "pass"))
+          and _q.get("in_blocking") is False
+          and _q.get("scope") == "DIAGNOSTIC_ONLY")
+    def _q_no_verdict(seg):
+        return not any(k in seg for k in ("n_fail", "ok", "pass"))
+
+    check("EC-Q10r 反向探针：合成段偷偷加 `n_fail`/`ok`/`pass` ⇒ 检测器必报",
+          _q_no_verdict(_q) is True
+          and _q_no_verdict(dict(_q, n_fail=1)) is False
+          and _q_no_verdict(dict(_q, ok=True)) is False
+          and _q_no_verdict(dict(_q, **{"pass": 1})) is False)
+
+    check("EC-Q11 🔴 对外主链数字逐位不变：60.840 / 43.490 / 575 B / claimable=False / "
+          "m1_exit.ok=True / failed=3",
+          _q_card["placement"]["die_area_um2"] == 60.84
+          and _q_card["timing"]["comb_delay_wired_ps"] == 43.49
+          and _q_card["def_export"]["bytes"] == 575
+          and _q_card["claimable"] is False
+          and _q_card["m1_exit"]["ok"] is True
+          and _q_card["routing"]["nets_failed"] == 3)
+
+    _q_keep = (
+        ("ddrc_lvs.py", "未检注入/阱/天线/密度"),
+        ("capability_manifest.py", "无串扰/天线/密度/OPC/ESD"),
+        ("dcnet.py", "不做串扰、天线、密度"),
+        ("dhdlib.py", "无密度/OPC/天线/ESD 规则"),
+        ("signed_off_stack.py", "无 CMP/OPC/天线规则/密度规则"),
+        ("soc_flow.py", "无 CMP / OPC / 天线 / 密度规则"),
+    )
+    _q_missing = [f for f, kw in _q_keep
+                  if kw not in open(os.path.join(_HERE, "lda_l2", "ecore", f),
+                                    encoding="utf-8").read()]
+    check("EC-Q12 🔴 6 处旧「规则集边界」声明仍在且仍为真（新增的是诊断段，不是 DRC 规则）："
+          "缺=%r" % _q_missing, not _q_missing)
+    def _q_keep_check(src_map, f, kw):
+        return kw in src_map.get(f, "")
+
+    check("EC-Q12r 反向探针：删掉旧声明的源码 ⇒ 检测器必报；含声明时为真",
+          _q_keep_check({"ddrc_lvs.py": _q_keep[0][1]}, "ddrc_lvs.py", _q_keep[0][1]) is True
+          and _q_keep_check({"ddrc_lvs.py": ""}, "ddrc_lvs.py", _q_keep[0][1]) is False
+          and _q_keep_check({}, "ddrc_lvs.py", _q_keep[0][1]) is False)
+
+    print("  [Q] 能力上 API ✓ · K2 两条独立路径逐位一致 ✓ · 6 条不变式全成立 ✓ · "
+          "不判违规/不进 blocking ✓ · 主链数字逐位未变")
+
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)
 

@@ -361,6 +361,23 @@ def run_trunk(nl, *, baseline: bool = True):
         vdd=float(DCell.DEFAULT_TECH.vdd), width_um=float(dpnr.W))
     report["stages"].append(("em", dict(em_rep, chain=TRUNK_CHAIN)))
 
+    # ── 段 4c：几何 / 量纲诊断（EC-B3.1 · 诊断段，不进 blocking）──────────
+    #   🔴 四个分母口径全部由**网表 / 几何复算**（不手填独立常量）：
+    #      g_area = nl.area_um2()；g_per_gate / g_per_transistor 按门/管均分；
+    #      g_cell = 单元外框 w*h。全片统一、写进段内 assumptions。
+    #   🔴 只报谱与不变式，**不判违规、不进 blocking** ⇒
+    #      claimable / m1_exit / 对外主链数字一律不变。
+    _g_b3 = {
+        "g_area": float(nl.area_um2()),
+        "g_per_gate": float(nl.area_um2()) / float(nl.n_gates()),
+        "g_per_transistor": float(nl.area_um2()) / float(nl.n_transistors()),
+        "g_cell": float(pl_p["insts"][0]["w"]) * float(pl_p["insts"][0]["h"]),
+    }
+    b3_rep = DSG.ec_b3_signoff(
+        shapes, die_w_um=die_w, die_h_um=die_h,
+        width_um=float(dpnr.W), g_values=_g_b3)
+    report["stages"].append(("ec_b3", dict(b3_rep, chain=TRUNK_CHAIN)))
+
     # ── 段 5：DEF 写出（主链落点 + 段0 的 Netlist）─────────────────────
     #    🔴 只写 placed DEF（落点 + 连接），**不写 ROUTED**：shapes 的网归属虽然已按网打标签
     #       （`dpnr` 每根 wire 都带 net），但 DEF 的 ROUTED 需要完整几何/层/宽度语义，

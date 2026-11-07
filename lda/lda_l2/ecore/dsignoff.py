@@ -360,6 +360,187 @@ def em_net_signoff(length_um: dict, c_wire_ff: dict, c_total_ff: dict,
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# ⑤b EC-B3.1：几何 / 量纲诊断（只报谱与不变式，不判违规、不进 blocking）
+#   🔴 与门禁 `run_ecore_s13_smoke` 的独立复算走**不同算法路径**（K2）：
+#      门禁 = 扫描线坐标压缩（`_ec_union`）+ 逐窗二维裁剪（`_ec_dens`）；
+#      本侧 = 增量矩形差集 + 可分离一维累积函数差分。
+#      两侧结果必须逐位一致，且源码互不引用 —— 「两实现」≠「两条独立路径」。
+#   🔴 段内**不设** `n_fail` / `ok` / `pass` —— 本段是诊断，不是判决。
+# ═══════════════════════════════════════════════════════════════════════════
+B3_SCALES = (1, 2, 4, 8, 16, 32)
+B3_SCOPE = "DIAGNOSTIC_ONLY"
+B3_UNION_METHOD = "incremental_rect_subtraction"
+B3_DENSITY_METHOD = "separable_1d_cdf_difference"
+
+
+def b3_subtract_rect(r, o):
+    """从矩形 r 中减去 o，返回最多 4 块互不重叠的碎片（增量差集）。"""
+    x0, y0, x1, y1 = r
+    ox0, oy0, ox1, oy1 = o
+    ix0, iy0 = max(x0, ox0), max(y0, oy0)
+    ix1, iy1 = min(x1, ox1), min(y1, oy1)
+    if ix0 >= ix1 or iy0 >= iy1:
+        return [r]
+    out = []
+    if y0 < iy0:
+        out.append((x0, y0, x1, iy0))
+    if iy1 < y1:
+        out.append((x0, iy1, x1, y1))
+    if x0 < ix0:
+        out.append((x0, iy0, ix0, iy1))
+    if ix1 < x1:
+        out.append((ix1, iy0, x1, iy1))
+    return out
+
+
+def b3_union_rects(rects):
+    """增量差集求并集碎片：**不同于**门禁的扫描线全局坐标压缩。"""
+    accepted, out = [], []
+    for r in rects:
+        frags = [r]
+        for o in accepted:
+            nxt = []
+            for f in frags:
+                nxt.extend(b3_subtract_rect(f, o))
+            frags = nxt
+            if not frags:
+                break
+        out.extend(frags)
+        accepted.append(r)
+    return out
+
+
+def b3_union_area(rects):
+    return sum((f[2] - f[0]) * (f[3] - f[1]) for f in b3_union_rects(rects))
+
+
+def b3_window_density(rects, n, die_w, die_h):
+    """可分离一维累积函数差分：窗覆盖面积 = ΔFx · ΔFy。
+
+    **不同于**门禁的逐窗二维裁剪（`max(0, min−max)` 两轴相交累加）。
+    """
+    cw, ch = float(die_w) / n, float(die_h) / n
+    acc = [[0.0] * n for _ in range(n)]
+    for x0, y0, x1, y1 in rects:
+        def fx(t):
+            return max(0.0, min(x1, t) - x0)
+
+        def fy(t):
+            return max(0.0, min(y1, t) - y0)
+
+        for i in range(n):
+            dx = fx((i + 1) * cw) - fx(i * cw)
+            if dx <= 0.0:
+                continue
+            for j in range(n):
+                dy = fy((j + 1) * ch) - fy(j * ch)
+                if dy > 0.0:
+                    acc[i][j] += dx * dy
+    return [acc[i][j] / (cw * ch) for i in range(n) for j in range(n)]
+
+
+def ec_b3_signoff(shapes, die_w_um, die_h_um, width_um, g_values,
+                  scales=B3_SCALES) -> dict:
+    """逐层密度谱 + 四口径比值谱（**诊断段**：不判违规、不进 blocking）。
+
+    输入全部显式（K0 完备性）：几何 / die 尺寸 / 唯一线宽 / 尺度集合 / 四个分母口径。
+    所有 `g` 均为**代理量与假设**（门总面积、单门、单管、单元外框），非工艺认证。
+    """
+    metals = [s for s in shapes if getattr(s, "kind", None) == "metal"]
+    layers = sorted({int(s.layer) for s in metals})
+    die_area = float(die_w_um) * float(die_h_um)
+    by_layer = {L: [(s.x0, s.y0, s.x1, s.y1) for s in metals if int(s.layer) == L]
+                for L in layers}
+    uni = {L: b3_union_rects(by_layer[L]) for L in layers}
+    area = {L: sum((f[2] - f[0]) * (f[3] - f[1]) for f in uni[L]) for L in layers}
+    rho = {L: area[L] / die_area for L in layers}
+
+    inv = {"i1_conservation": True, "i2_monotone": True,
+           "i3_limit": True, "i4_upper_bound": True}
+    layer_out = {}
+    for L in layers:
+        drho, rmax = [], []
+        for n in scales:
+            v = b3_window_density(uni[L], n, die_w_um, die_h_um)
+            drho.append(round(max(v) - min(v), 6))
+            rmax.append(round(max(v), 6))
+            if abs(sum(v) / (n * n) - rho[L]) > 1e-5:
+                inv["i1_conservation"] = False
+        if any(x > 1.0 + 1e-9 for x in rmax):
+            inv["i4_upper_bound"] = False
+        if any(drho[k] + 1e-9 < drho[k - 1] for k in range(1, len(scales))):
+            inv["i2_monotone"] = False
+        if abs(drho[0]) > 1e-9:
+            inv["i3_limit"] = False
+        # 🔴 严格 JSON：任何非有限量落成 None，不写裸 Infinity / NaN
+        layer_out[str(L)] = {
+            "area_um2": _finite_or_none(round(area[L], 6)),
+            "rho": _finite_or_none(round(rho[L], 6)),
+            "drho": [_finite_or_none(x) for x in drho],
+            "rho_max": [_finite_or_none(x) for x in rmax],
+        }
+
+    by_net = {}
+    for s in metals:
+        by_net.setdefault(getattr(s, "net", None), {}).setdefault(
+            int(s.layer), []).append((s.x0, s.y0, s.x1, s.y1))
+    net_area = {net: sum(b3_union_area(rs) for rs in ld.values())
+                for net, ld in by_net.items()}
+
+    ratios, max_raw = {}, {}
+    for g, gv in g_values.items():
+        vals = {net: a / float(gv) for net, a in net_area.items()}
+        max_raw[g] = max(vals.values())
+        ratios[g] = {
+            "max": _finite_or_none(round(max_raw[g], 6)),
+            "min": _finite_or_none(round(min(vals.values()), 6)),
+            "sum": _finite_or_none(round(sum(vals.values()), 6)),
+            "per_net": {k: _finite_or_none(round(v, 6))
+                        for k, v in sorted(vals.items())},
+        }
+    g0 = next(iter(g_values))
+    inv["i8_homogeneity"] = all(
+        abs(max_raw[g] / max_raw[g0] - float(g_values[g0]) / float(g_values[g])) < 1e-9
+        for g in g_values)
+    inv["i_scale_upper_bound"] = bool(
+        float(die_w_um) / scales[-1] >= float(width_um)
+        > float(die_w_um) / (2 * scales[-1]))
+
+    return {
+        "chain": "dpnr",
+        "scope": B3_SCOPE,
+        "in_blocking": False,
+        "assumptions": {
+            "die_w_um": round(float(die_w_um), 6),
+            "die_h_um": round(float(die_h_um), 6),
+            "width_um": float(width_um),
+            "scales": list(scales),
+            "scale_upper_bound": "die_w/n >= width_um ⇒ 再细分即像素化（上界反解，非拍常数）",
+            "g_values": {k: round(float(v), 6) for k, v in g_values.items()},
+            "g_basis": ("netlist 门总面积 / 单门 / 单管 / 单元外框 w*h —— "
+                        "均为代理量与假设，非 foundry 栅氧面积"),
+            "union_method": B3_UNION_METHOD,
+            "density_method": B3_DENSITY_METHOD,
+        },
+        "layers": layer_out,
+        "net_area_um2": {k: _finite_or_none(round(v, 6))
+                         for k, v in sorted(net_area.items())},
+        "ratio_by_g": ratios,
+        "invariants": inv,
+        # I9（数值锁定）由门禁 P13 对拍 v2 §4；本段**不复制冻结值**，避免自证
+        "lock_basis": "EC-B3.0 v2 §4 · gated by run_ecore_s13_smoke P13",
+        "coverage_note": ("逐层同层矩形并集后的密度谱 + 四口径比值谱；"
+                          "只报带量纲的谱与不变式，不设窗口阈值、不挑单一分母、不判违规"),
+        "not_included": [
+            "不是 CMP / 天线签核，DRC 规则集仍不含密度 / 天线规则",
+            "不含电源/地网（PDN 未建模）、时钟树、via 许用电流、栅氧厚度、峰值 di/dt",
+            "die 仅 7.8 µm，远小于真实工艺平坦化长度 ⇒ 窗口是离散化尺度，非真实工艺窗口",
+            "规则集为自建教科书尺度、非 foundry PDK ⇒ 不作可制造性 / 性能宣称",
+        ],
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # ⑥ 诚实清单（对外必须一起给）
 # ═══════════════════════════════════════════════════════════════════════════
 B3_DISCLOSURE = {

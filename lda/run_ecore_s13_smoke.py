@@ -1166,13 +1166,229 @@ def main() -> int:
         _r_json_ok = "NaN" not in _r_js and "Infinity" not in _r_js
     except (TypeError, ValueError):
         _r_json_ok = False
-    check("EC-R08 对外完整：ratio_semantics 在卡片可读 ∧ segments_covered 仍 8 段 "
+    # 🔴 v0.9.391：新增 `thermal` 诊断段 ⇒ 段集合 8→9。本判据职责是「对外完整」，
+    #    不得把段数锁死为常数（否则新增合法段会误红）；具体段数由 EC-T01 机核。
+    check("EC-R08 对外完整：ratio_semantics 在卡片可读 ∧ segments_covered 含 ec_b3 "
           "∧ 严格 JSON（裸 NaN/Infinity 0）",
-          bool(_r_card_sem) and len(_q_card.get("segments_covered") or []) == 8
+          bool(_r_card_sem) and "ec_b3" in (_q_card.get("segments_covered") or [])
+          and len(_q_card.get("segments_covered") or []) >= 8
           and _r_json_ok)
 
     print("  [R] 验收收口批 ✓ · P09/P10 产品函数毒化 ✓ · R5 机核 ✓ · 语义三态 ✓ · "
           "冻结值逐位锁定 ✓")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # EC-B4.1 稳态热链诊断（EC-T01…T14 + 5 条真毒化反向探针）
+    #   🔴 M3 预注册已冻结于 `EC-B4.0_自检与收口_v1.md §5.4`，此处只落地不改写。
+    #   🔴 门禁侧独立复算 = **显式双重求和**；产品侧 = 单次递推 ⇒ 两条不同算法路径。
+    # ══════════════════════════════════════════════════════════════════════
+    from lda_l2.ecore import dsta as _T_ST
+
+    _t = _q_st.get("thermal") or {}
+    _t_card = (_q_card.get("thermal") or {})
+    _t_disc = (_q_card.get("disclosure") or {}).get("thermal") or ""
+    _t_asm = _t.get("assumptions") or {}
+    _t_pw = [float(v["p_w"]) for v in _t["per_cell"].values()] if _t else []
+    _t_r = float(_t_asm.get("r_th_k_w", 0.0))
+
+    def _t_double(powers, r_th):
+        # 与产品递推不同的路径：显式双重求和 ΔT_i = Σ_{k<=i} r·Σ_{j>=k} P_j
+        n = len(powers)
+        r = float(r_th) / n
+        out = []
+        for i in range(1, n + 1):
+            acc = 0.0
+            for k in range(1, i + 1):
+                acc += r * sum(powers[k - 1:])
+            out.append(acc)
+        return out
+
+    def _t_close(a, b):
+        return math.isclose(float(a), float(b), rel_tol=1e-12, abs_tol=1e-20)
+
+    check("EC-T01 主链产出 `thermal` 段 ∧ 卡片顶层可读 ∧ segments_covered 9 段含 thermal",
+          bool(_t) and bool(_t_card) and "thermal" in (_q_card.get("segments_covered") or [])
+          and len(_q_card.get("segments_covered") or []) == 9)
+
+    _t_yes = "**含热诊断段**" in _t_disc
+    _t_no = "**不含热诊断段**" in _t_disc
+    _t_fact = "b4_thermal_signoff(" in _q_trunk_src
+
+    def _t_tri(yes, no, fact):
+        return (yes != no) and (yes == fact)
+
+    check("EC-T02 🔴 三态措辞：互斥恰好一个 ∧ 与主链是否调用 `b4_thermal_signoff` 一致；"
+          "沉默必红（含=%s 不含=%s 事实=%s）" % (_t_yes, _t_no, _t_fact),
+          _t_tri(_t_yes, _t_no, _t_fact))
+    check("EC-T02r 反向探针：三态检测器在沉默 / 都在 / 事实不符时必须报假",
+          _t_tri(True, False, True) is True
+          and _t_tri(False, False, True) is False
+          and _t_tri(True, True, True) is False
+          and _t_tri(False, True, True) is False)
+
+    # ── M1 合成反例（闭式「本应恰好」量用 ==）────────────────────────────
+    _t1 = DS.b4_thermal_signoff([{"name": "x", "p_w": 2.0, "area_um2": 1.0}])
+    check("EC-T03 M1 一维 slab 闭式：n=1 集总 `ΔT = R·P = 2.0 K`（精确已知量用 ==）",
+          _t1["delta_t_k"][0] == 2.0
+          and _t_close(_t1["uniform_closed_k"], 2.0))
+
+    def _t_slab_ok(seg, want):
+        return bool(seg.get("delta_t_k")) and _t_close(seg["delta_t_k"][0], want)
+
+    check("EC-T03r 反向探针：闭式失配（P=3 却拿 2.0 比）⇒ 检测器必报",
+          _t_slab_ok(_t1, 2.0) is True and _t_slab_ok(_t1, 3.0) is False)
+
+    _t_u = DS.b4_thermal_signoff(
+        [{"name": "u%d" % i, "p_w": 1.0, "area_um2": 1.0} for i in range(6)])
+    _t_u_closed = 1.0 * 1.0 * (6 + 1) / 2.0
+    check("EC-T04 M1 均匀链闭式 `R·P_cell·(n+1)/2 = %.1f K` ∧ 产品链 ∧ 门禁双重求和三方一致"
+          % _t_u_closed,
+          _t_close(_t_u["delta_t_k"][-1], _t_u_closed)
+          and _t_close(_t_u["uniform_closed_k"], _t_u_closed)
+          and all(_t_close(a, b) for a, b in
+                  zip(_t_u["delta_t_k"], _t_double([1.0] * 6, 1.0))))
+
+    _t0 = DS.b4_thermal_signoff(
+        [{"name": z, "p_w": 0.0, "area_um2": 1.0} for z in ("a", "b", "c")])
+    check("EC-T05 🔴 M1/M2：全零功率对照组 ⇒ ΔT 恰 0 且 T 恰环境温度（容差 0）",
+          _t0["delta_t_k"] == [0.0, 0.0, 0.0]
+          and all(abs(x) < 1e-18 for x in _t0["q_k_w"])
+          and all(_t_close(v["t_c"], _t0["assumptions"]["t_amb_c"])
+                  for v in _t0["per_cell"].values()))
+
+    def _t_zero_ok(seg):
+        return seg.get("delta_t_k") == [0.0] * len(seg.get("delta_t_k") or [])
+
+    check("EC-T05r 反向探针：零功率却给非零 ΔT ⇒ 检测器必报",
+          _t_zero_ok(_t0) is True
+          and _t_zero_ok({"delta_t_k": [0.0, 0.001, 0.0]}) is False)
+
+    _t_mono = DS.b4_thermal_signoff(
+        [{"name": "m0", "p_w": 2.0, "area_um2": 1.0},
+         {"name": "m1", "p_w": 1.0, "area_um2": 1.0},
+         {"name": "m2", "p_w": 1.0, "area_um2": 1.0}])
+    _t_mono_base = DS.b4_thermal_signoff(
+        [{"name": "m0", "p_w": 1.0, "area_um2": 1.0},
+         {"name": "m1", "p_w": 1.0, "area_um2": 1.0},
+         {"name": "m2", "p_w": 1.0, "area_um2": 1.0}])
+    check("EC-T06 M1 单调：任一门 P↑ ⇒ 全线 ΔT 不减且至少一处增",
+          all(b + 1e-18 >= a for a, b in
+              zip(_t_mono_base["delta_t_k"], _t_mono["delta_t_k"]))
+          and any(b > a for a, b in
+                  zip(_t_mono_base["delta_t_k"], _t_mono["delta_t_k"])))
+
+    check("EC-T07 M1 能量守恒：`Q_1 == ΣP`（rel 1e-12）",
+          _t_close(_t["q_k_w"][0], _t["p_total_w"])
+          and _t_close(sum(_t_pw), _t["p_total_w"]))
+
+    _t_homo = DS.b4_thermal_signoff(
+        [{"name": k, "p_w": v, "area_um2": 1.0}
+         for k, v in zip(_t["per_cell"].keys(), _t_pw)], r_th_k_w=_t_r * 1.3)
+    check("EC-T08 齐次不变式：`R_th ×1.3 ⇒ ΔT ×1.3`（热阻是假设，谱须线性齐次）",
+          all(_t_close(b / a, 1.3) if abs(a) > 1e-30 else abs(b) < 1e-30
+              for a, b in zip(_t["delta_t_k"], _t_homo["delta_t_k"])))
+
+    _t_recomp = _t_double(_t_pw, _t_r)
+
+    def _t_has_shared(src):
+        names = set()
+        for node in ast.walk(ast.parse(src)):
+            if isinstance(node, ast.Name):
+                names.add(node.id)
+            elif isinstance(node, ast.Attribute):
+                names.add(node.attr)
+        return any(x in names for x in ("_t_double", "_t_close", "_ec_union"))
+
+    check("EC-T09 🔴 K2 独立性：门禁显式双重求和 vs 产品单次递推逐位一致 ∧ AST 源码互不引用",
+          all(_t_close(a, b) for a, b in zip(_t_recomp, _t["delta_t_k"]))
+          and _t_has_shared(_q_prod_src) is False)
+    check("EC-T09r 反向探针：注入 `_t_double` 的源码必报共享；纯 `import os` 不报",
+          _t_has_shared("def f():\n    return _t_double([1.0], 1.0)\n") is True
+          and _t_has_shared("import os\n") is False)
+
+    _t_zero_gates = [k for k, v in _t["per_cell"].items()
+                     if float(v["p_w"]) == 0.0]
+    check("EC-T10 M2 阴性对照：c17 原始版图 5 条不变式全成立不误报 ∧ 3 个零负载门 p_w 恰 0",
+          all(v is True for v in (_t.get("invariants") or {}).values())
+          and len(_t["invariants"]) == 5
+          and len(_t_zero_gates) == 3)
+
+    _t_em_call = _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
+    check("EC-T11 🔴 V5 回归 + 不回灌 `t_c`：`100.959×` / `t_c=125.0` / 主链数字逐位不变 "
+          "∧ 主链 `em_net_signoff(` 调用未传 `t_c=`",
+          _q_card["em"]["min_margin_x"] == 100.959
+          and _q_card["em"]["assumptions"]["t_c"] == 125.0
+          and "t_c=" not in _t_em_call
+          and _q_card["placement"]["die_area_um2"] == 60.84
+          and _q_card["timing"]["comb_delay_wired_ps"] == 43.49
+          and _q_card["def_export"]["bytes"] == 575
+          and _q_card["claimable"] is False
+          and _q_card["m1_exit"]["ok"] is True)
+
+    def _t_v5_ok(card):
+        return (card["em"]["min_margin_x"] == 100.959
+                and card["em"]["assumptions"]["t_c"] == 125.0)
+
+    check("EC-T11r 反向探针：EM 裕量或 `t_c` 漂移 ⇒ V5 检测器必报",
+          _t_v5_ok(_q_card) is True
+          and _t_v5_ok({"em": {"min_margin_x": 99.0,
+                                "assumptions": {"t_c": 125.0}}}) is False
+          and _t_v5_ok({"em": {"min_margin_x": 100.959,
+                                "assumptions": {"t_c": 85.0}}}) is False)
+
+    try:
+        _t_js = _json.dumps(_q_card, ensure_ascii=False, allow_nan=False)
+        _t_json_ok = "NaN" not in _t_js and "Infinity" not in _t_js
+    except (TypeError, ValueError):
+        _t_json_ok = False
+    check("EC-T12 段形态：无 `n_fail`/`ok`/`pass` ∧ `in_blocking=False` ∧ "
+          "`DIAGNOSTIC_ONLY` ∧ 严格 JSON",
+          not any(k in _t for k in ("n_fail", "ok", "pass"))
+          and _t.get("in_blocking") is False
+          and _t.get("scope") == "DIAGNOSTIC_ONLY" and _t_json_ok)
+
+    check("EC-T13 K0 假设显式：alpha/f_hz/vdd/t_amb/r_th/n_nodes 全在 assumptions ∧ "
+          "`not_included` 明写不回灌 `t_c`",
+          all(k in _t_asm for k in ("alpha", "f_hz", "vdd", "t_amb_c",
+                                    "r_th_k_w", "n_nodes", "power_basis"))
+          and any("不回灌" in x for x in (_t.get("not_included") or [])))
+
+    _t_whole = _T_ST.switching_power_nw(
+        nl, f_hz=float(_t_asm["f_hz"]), alpha=float(_t_asm["alpha"])) * 1e-9
+    check("EC-T14 功率守恒：逐门之和 == `dsta.switching_power_nw(nl)` 全片标量（rel 1e-12）",
+          _t_close(_t["p_total_w"], _t_whole))
+
+    def _t_homo_expr(src):
+        # 🔴 「手填 bool」= 自证（项目红线）；「True or all(...)」短路同样是假机核。
+        #    机核 b4_thermal_signoff 的 inv["i_homogeneity"] 必须是实算 all(...) 调用。
+        for fn in ast.walk(ast.parse(src)):
+            if isinstance(fn, ast.FunctionDef) and fn.name == "b4_thermal_signoff":
+                for node in ast.walk(fn):
+                    if isinstance(node, ast.Dict):
+                        for k, v in zip(node.keys, node.values):
+                            if (isinstance(k, ast.Constant)
+                                    and k.value == "i_homogeneity"):
+                                return isinstance(v, ast.Call) and (
+                                    isinstance(v.func, ast.Name)
+                                    and v.func.id == "all")
+        return False
+
+    check("EC-T15 🔴 不变式不许自证：AST 机核 `i_homogeneity` 必须是实算 `all(...)` "
+          "（防手填 True / `True or all(...)` 短路）",
+          _t_homo_expr(_q_prod_src) is True)
+
+    def _t_homo_src(v):
+        return ("def b4_thermal_signoff():\n"
+                "    inv = {'i_homogeneity': %s}\n" % v)
+
+    check("EC-T15r 反向探针：手填 True / 短路 `True or all(...)` ⇒ 检测器必报；"
+          "实算 all(...) 不报",
+          _t_homo_expr(_t_homo_src("all([])")) is True
+          and _t_homo_expr(_t_homo_src("True")) is False
+          and _t_homo_expr(_t_homo_src("True or all([])")) is False)
+
+    print("  [T] EC-B4.1 ✓ · 一维 slab/均匀链闭式 ✓ · P=0 极限 ✓ · 能量守恒/齐次 ✓ · "
+          "K2 双重求和独立 ✓ · V5 数字零变化 ✓")
 
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)

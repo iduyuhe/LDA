@@ -549,6 +549,123 @@ def ec_b3_signoff(shapes, die_w_um, die_h_um, width_um, g_values,
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# ⑤c EC-B4.1：稳态热链诊断（傅里叶 1D 网络 · 只报谱与不变式，**不回灌 t_c**）
+# ═══════════════════════════════════════════════════════════════════════════
+B4_T_AMB_C = 25.0          # 🔴 假设：环境温度（°C），非封装/散热边界真值
+B4_R_TH_K_W = 1.0          # 🔴 假设：链总热阻（K/W）**归一化占位**，非工艺真值
+B4_SCOPE = "DIAGNOSTIC_ONLY"
+
+
+def b4_cell_power_w(nl, loads_ff, f_hz, alpha, vdd):
+    """逐门动态功率 `P = α·C(out)·V²·f`（W）。
+
+    C 取自 `dsta.loads_of`（网负载）；`α` / `f` 均为**显式假设**（c17 纯组合 ⇒
+    `f` 由组合延时反推半周期）。逐门之和与 `dsta.switching_power_nw` 逐位守恒。
+    """
+    return {g.name: float(alpha) * float(loads_ff.get(g.out, 0.0)) * 1e-15
+            * float(vdd) ** 2 * float(f_hz) for g in nl.gates}
+
+
+def b4_thermal_chain(powers, r_th_k_w=B4_R_TH_K_W, t_amb_c=B4_T_AMB_C):
+    """1D 稳态热链：n 节点串联，每段 `r = r_th/n`，环境在左端。
+
+    通过第 k 段的热流 `Q_k = Σ_{j>=k} P_j`；温升 `ΔT_i = Σ_{k<=i} r·Q_k`。
+    🔴 与 RC / IR ladder 同构：均匀功率时 `ΔT_end = r_th·P_total·(n+1)/(2n)`；
+    `n=1` 退化为集总闭式 `T = T0 + P·R`。
+    🔴 产品侧算法 = **单次递推**（末端回累加 Q，再左到右积分 ΔT）；
+       门禁侧须用另一条路径（显式双重求和）独立复算并对拍（K2）。
+    """
+    n = len(powers)
+    if n == 0:
+        return {"r_seg_k_w": 0.0, "q_k_w": [], "delta_t_k": [], "t_c": []}
+    r_seg = float(r_th_k_w) / n
+    q = [0.0] * (n + 1)
+    acc = 0.0
+    for k in range(n, 0, -1):
+        acc += float(powers[k - 1])
+        q[k] = acc
+    dt, cum = [], 0.0
+    for i in range(1, n + 1):
+        cum += r_seg * q[i]
+        dt.append(cum)
+    return {"r_seg_k_w": r_seg, "q_k_w": q[1:], "delta_t_k": dt,
+            "t_c": [float(t_amb_c) + x for x in dt]}
+
+
+def b4_thermal_signoff(cells, r_th_k_w=B4_R_TH_K_W, t_amb_c=B4_T_AMB_C,
+                       assumptions=None) -> dict:
+    """稳态热诊断段（DIAGNOSTIC_ONLY）：逐单元功率 / 温升谱 / 不变式 / 显式假设。
+
+    `cells`: `[{"name", "p_w", "area_um2"}, ...]`，顺序即热链节点顺序（确定性）。
+    🔴 只报带量纲的谱与不变式，**不判违规、不设温度阈值、不进 blocking**；
+    🔴 **不回灌 `em_net_signoff` 的 `t_c`**（EM 仍用 `T_REF_C=125°C` 假设）。
+    """
+    powers = [float(c["p_w"]) for c in cells]
+    ch = b4_thermal_chain(powers, r_th_k_w, t_amb_c)
+    n = len(powers)
+    p_total = sum(powers)
+    dt = ch["delta_t_k"]
+    # 均匀功率闭式（与 IR ladder 同构）；n=1 时即集总 T=T0+P·R
+    p_cell_uniform = p_total / n if n else 0.0
+    uniform_closed = (float(r_th_k_w) * p_cell_uniform
+                      * (n + 1) / 2.0) if n else 0.0
+    # 🔴 合成均匀对照链（独立于真实 dt）⇒ 非均匀输入时判据仍可证伪，不是恒真装饰
+    ch_uniform = b4_thermal_chain([p_cell_uniform] * n, r_th_k_w, t_amb_c) if n else None
+    ch_homo = b4_thermal_chain(powers, float(r_th_k_w) * 1.3, t_amb_c) if n else None
+    inv = {
+        "i_energy_conservation": (abs(ch["q_k_w"][0] - p_total) < 1e-18
+                                  if n else True),
+        "i_p0_limit": all(abs(x) < 1e-18 for x in dt) if p_total == 0.0 else True,
+        "i_monotone": all(dt[i] + 1e-18 >= dt[i - 1]
+                          for i in range(1, n)),
+        "i_uniform_closed": (abs(ch_uniform["delta_t_k"][-1] - uniform_closed) < 1e-15
+                             if ch_uniform else True),
+        "i_homogeneity": all(
+            math.isclose(ch_homo["delta_t_k"][i] / dt[i], 1.3, rel_tol=1e-12)
+            if abs(dt[i]) > 1e-30 else abs(ch_homo["delta_t_k"][i]) < 1e-30
+            for i in range(n)),
+    }
+    per_cell = {}
+    for c, d in zip(cells, dt):
+        a = float(c["area_um2"])
+        per_cell[c["name"]] = {
+            "p_w": float(c["p_w"]),
+            "area_um2": a,
+            "power_density_w_per_um2": (float(c["p_w"]) / a) if a else None,
+            "delta_t_k": float(d),
+            "t_c": float(t_amb_c) + d,
+        }
+    return {
+        "chain": "dpnr",
+        "scope": B4_SCOPE,
+        "in_blocking": False,
+        "assumptions": dict(assumptions or {}, **{
+            "t_amb_c": float(t_amb_c),
+            "r_th_k_w": float(r_th_k_w),
+            "n_nodes": n,
+            "model": "1D steady-state resistor chain (Fourier / Elmore-isomorphic)",
+            "algorithm": "single-pass backward-Q accumulation + forward ΔT integration",
+            "power_basis": ("dsta.loads_of(nl) per gate output — SAME basis as dsta.switching_power_nw (no wire load); alpha/f are assumptions"),
+        }),
+        "per_cell": per_cell,
+        "q_k_w": [float(x) for x in ch["q_k_w"]],
+        "delta_t_k": [float(x) for x in dt],
+        "p_total_w": float(p_total),
+        "delta_t_max_k": (float(max(dt)) if dt else 0.0),
+        "uniform_closed_k": float(uniform_closed),
+        "invariants": inv,
+        "coverage_note": ("逐门功率（含 3 个零负载门）与一维稳态热链温升谱；"
+                          "热阻为归一化占位假设 ⇒ 只报谱与不变式，不报绝对温度结论、不判违规"),
+        "not_included": [
+            "**不回灌 t_c**：EM 仍用 T_REF_C=125°C 假设，本段与 EM 未接线",
+            "不含瞬态 C_th、封装/散热边界真值、3D 热耦合、热点极限判据",
+            "r_th / t_amb / alpha / f 均为假设或归一化占位，非 foundry PDK / 非工艺认证",
+            "die 仅 7.8 µm、规则集自建教科书尺度 ⇒ 不作可制造性 / 可靠性 / 性能宣称",
+        ],
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # ⑥ 诚实清单（对外必须一起给）
 # ═══════════════════════════════════════════════════════════════════════════
 B3_DISCLOSURE = {

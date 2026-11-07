@@ -378,6 +378,30 @@ def run_trunk(nl, *, baseline: bool = True):
         width_um=float(dpnr.W), g_values=_g_b3)
     report["stages"].append(("ec_b3", dict(b3_rep, chain=TRUNK_CHAIN)))
 
+    # ── 段 4d：稳态热链诊断（EC-B4.1 · 诊断段，**不回灌 t_c**）────────────
+    #   🔴 与段 4b EM **同源**：f 由 tm.comb_delay_ps 反推半周期；alpha 用 DSG.ALPHA_DYN；
+    #      vdd 用 tech 默认。功率口径与 `dsta.switching_power_nw` 同源（门输出负载，不含线载）
+    #      ⇒ 逐门之和逐位守恒（EC-B4.0 构造规格）。
+    #   🔴 节点顺序 = pl_p["insts"]（确定性）；单元面积 = w*h。
+    #   🔴 **不传 t_c 给 em_net_signoff**：EM 仍用 T_REF_C=125°C 假设；
+    #      本段只是诊断谱，不进 blocking、不改任何既有对外数字。
+    _f_b4 = DSG.f_from_comb_delay(tm.comb_delay_ps, half_period=True)
+    _v_b4 = float(DCell.DEFAULT_TECH.vdd)
+    _pw_b4 = DSG.b4_cell_power_w(nl, ST.loads_of(nl), _f_b4, DSG.ALPHA_DYN, _v_b4)
+    _cells_b4 = [
+        {"name": i["name"], "p_w": _pw_b4.get(i["name"], 0.0),
+         "area_um2": float(i["w"]) * float(i["h"])}
+        for i in pl_p["insts"]
+    ]
+    th_rep = DSG.b4_thermal_signoff(
+        _cells_b4, assumptions={
+            "alpha": DSG.ALPHA_DYN, "f_hz": _f_b4, "vdd": _v_b4,
+            "t_comb_ps": float(tm.comb_delay_ps),
+            "f_basis": "half-period inverse of comb delay (c17 pure combinational)",
+            "wire_load_in_power": False,
+        })
+    report["stages"].append(("thermal", dict(th_rep, chain=TRUNK_CHAIN)))
+
     # ── 段 5：DEF 写出（主链落点 + 段0 的 Netlist）─────────────────────
     #    🔴 只写 placed DEF（落点 + 连接），**不写 ROUTED**：shapes 的网归属虽然已按网打标签
     #       （`dpnr` 每根 wire 都带 net），但 DEF 的 ROUTED 需要完整几何/层/宽度语义，

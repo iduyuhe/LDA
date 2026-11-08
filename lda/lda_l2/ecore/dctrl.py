@@ -231,7 +231,10 @@ def acc_width_witness() -> dict:
 # ---------------------------------------------------------------------------
 # 闭环：数字壳 Fmax vs SAR 由 CDAC 建立时间决定的时钟
 # ---------------------------------------------------------------------------
-def closure(tech=DC.DEFAULT_TECH) -> dict:
+def closure(tech=None) -> dict:
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     b = build()
     tm = b["timing"]
     cdac = TM.cdac_clock_from_settle(BITS)
@@ -261,7 +264,10 @@ def closure(tech=DC.DEFAULT_TECH) -> dict:
     }
 
 
-def power_at(f_hz: float, alpha: float = 0.1, tech=DC.DEFAULT_TECH) -> dict:
+def power_at(f_hz: float, alpha: float = 0.1, tech=None) -> dict:
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     b = build()
     nl = b["netlist"]
     p_sw = ST.switching_power_nw(nl, f_hz, alpha, tech)

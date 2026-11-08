@@ -57,6 +57,7 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import dataclasses
 import inspect
 import math
 import os
@@ -69,10 +70,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lda_harness.smoke_kit import make_check  # noqa: E402
 
 from lda_l2.ecore import db3_trunk as B3        # noqa: E402
+from lda_l2.ecore import dcell as DC           # noqa: E402
 from lda_l2.ecore import ddef as DF            # noqa: E402
+from lda_l2.ecore import ddetail as DET        # noqa: E402
 from lda_l2.ecore import ddrc_lvs as DL        # noqa: E402
-from lda_l2.ecore import dsignoff as DS        # noqa: E402
 from lda_l2.ecore import dpnr as P             # noqa: E402
+from lda_l2.ecore import dproc as DP           # noqa: E402
+from lda_l2.ecore import dsignoff as DS        # noqa: E402
 from lda_l2.ecore import dverilog as V         # noqa: E402
 
 _FALS: list = []
@@ -1704,6 +1708,79 @@ def main() -> int:
 
     print("  [U] EC-B4.2 ✓ · 单位翻盘 ✓ · κ 无量纲 ✓ · Ã 单位无关 ✓ · "
           "不可判≠通过 ✓ · K2 解析复算 ✓ · V5 数字零变化 ✓")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # Q0 · 可观测性门禁（T1a · 零数字变化）
+    # ══════════════════════════════════════════════════════════════════════
+    # 🔴 清单**从真源枚举**（几何 = `dproc.TOUCHED`，器件 = `Tech` 数值字段），
+    #   严禁硬编码：硬编码清单会漏「二阶早绑定」（`VIA`/`ENC` 实测即被漏掉 ——
+    #   它们的消费者 `PAD_HALF` 是 import 时常量，改了真源也不动，但静态清单里看不出来）。
+    #
+    # 🔴 观测向量必须**多维**：只看延时会把 `W_MIN`（只影响 DRC）、
+    #   `area_per_tr`（只影响面积）误判为死。
+    _Q0_OBS = ("area", "rout", "wired", "drc", "em")
+    # 死参数登记表（棘轮：只减不增）。每条都有 owner，不是"忘了"。
+    #   遮蔽/副本（4）：W_ROUTE←pnr.W · PAD_HALF←M2_HALF · TRACK_PITCH←PITCH · W_MIN 死规则
+    #   二阶早绑定（2）：VIA · ENC（消费者在 import 期固化）      → Q2
+    #   当前网表无消费者（3）：t_setup / t_hold / t_clk_q（c17 无 DFF）→ T5 换网表
+    #   无消费路径（2）：area_per_tr · ileak                        → T3 / T5
+    _Q0_DEAD = frozenset({
+        "ddetail.W_ROUTE", "ddetail.VIA", "ddetail.TRACK_PITCH",
+        "ddrc_lvs.ENC", "ddrc_lvs.W_MIN", "dpnr.PAD_HALF",
+        "Tech.area_per_tr_um2", "Tech.ileak_na_per_tr",
+        "Tech.t_setup_ps", "Tech.t_hold_ps", "Tech.t_clk_q_ps",
+    })
+
+    def _q0_observe():
+        _s = {n: q for n, q in B3.run_trunk_from_verilog(V.SAMPLE_VERILOG)["stages"]}
+        return (_s["place"]["die_area_um2"], _s["route"]["nets_with_segments"],
+                _s["timing"]["comb_delay_wired_ps"],
+                sum(_s["drc_lvs"]["drc_by_rule"].values()),
+                _s["em"]["min_margin_x"])
+
+    _q0_mods = {"ddetail": DET, "dpnr": P, "ddrc_lvs": DL}
+    _q0_geo = [("dproc", m, a) for (m, a) in DP.TOUCHED]
+    _q0_tech = [f.name for f in dataclasses.fields(DC.DEFAULT_TECH)
+                if isinstance(getattr(DC.DEFAULT_TECH, f.name), (int, float))
+                and not isinstance(getattr(DC.DEFAULT_TECH, f.name), bool)]
+    _q0_all = len(_q0_geo) + len(_q0_tech)
+    _q0_base = _q0_observe()
+    _q0_snap = DP.snapshot()
+    _q0_t0 = DC.DEFAULT_TECH
+    _q0_live, _q0_dead = [], []
+    try:
+        for _m, _mn, _at in _q0_geo:
+            _md = _q0_mods[_mn]
+            _old = getattr(_md, _at)
+            setattr(_md, _at, _old * 1.05)
+            _cur = _q0_observe()
+            setattr(_md, _at, _old)
+            (_q0_live if _cur != _q0_base else _q0_dead).append("%s.%s" % (_mn, _at))
+        for _fn in _q0_tech:
+            _old = getattr(_q0_t0, _fn)
+            DC.DEFAULT_TECH = dataclasses.replace(_q0_t0, **{_fn: _old * 1.05})
+            _cur = _q0_observe()
+            DC.DEFAULT_TECH = _q0_t0
+            (_q0_live if _cur != _q0_base else _q0_dead).append("Tech.%s" % _fn)
+    finally:
+        DC.DEFAULT_TECH = _q0_t0
+        for (_m, _a), _v in _q0_snap.items():
+            setattr(_q0_mods[_m], _a, _v)
+
+    check("Q0-a 参数清单由真源枚举（几何 %d + 器件 %d = %d，非硬编码）"
+          % (len(_q0_geo), len(_q0_tech), _q0_all),
+          len(_q0_geo) == len(DP.TOUCHED) and _q0_all >= 20)
+    check("Q0-b 每参数均有响应记录（live %d + dead %d = %d）"
+          % (len(_q0_live), len(_q0_dead), len(_q0_live) + len(_q0_dead)),
+          len(_q0_live) + len(_q0_dead) == _q0_all)
+    check("Q0-c 死参数集合 == 登记表（棘轮·只减不增，现 %d 个）" % len(_Q0_DEAD),
+          frozenset(_q0_dead) == _Q0_DEAD)
+    check("Q0-d 观测向量 %d 维（≥4：面积/布通/延时/DRC/EM）" % len(_Q0_OBS),
+          len(_Q0_OBS) >= 4)
+    check("Q0-e 扰动后逐位还原（dproc.diff ∅ ∧ 观测向量相等）",
+          DP.diff(_q0_snap) == [] and _q0_observe() == _q0_base)
+    print("  [Q0] 可观测性：live %d / dead %d（登记表 %d）· 清单由 TOUCHED+Tech 枚举"
+          % (len(_q0_live), len(_q0_dead), len(_Q0_DEAD)))
 
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)

@@ -97,8 +97,11 @@ def wire_loads_from_shapes(shapes, c_per_um: float = C_WIRE_FF_PER_UM) -> dict:
     return loads_from_lengths(net_length_um(shapes), c_per_um)
 
 
-def wire_aware_sta(nl: Netlist, tech=DC.DEFAULT_TECH,
+def wire_aware_sta(nl: Netlist, tech=None,
                    c_per_um: float = C_WIRE_FF_PER_UM) -> WireSTA:
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     p = PL.place(nl, tech=tech)
     route = RT.route(nl, p)
     wl = wire_loads(nl, p, route, c_per_um)

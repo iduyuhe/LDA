@@ -77,10 +77,16 @@ class Netlist:
     def n_dff(self) -> int:
         return sum(1 for g in self.gates if g.cell == "DFF")
 
-    def area_um2(self, tech=DC.DEFAULT_TECH) -> float:
+    def area_um2(self, tech=None) -> float:
+        # R5-fix：默认值在调用时取，不在 def 时绑定
+        if tech is None:
+            tech = DC.DEFAULT_TECH
         return sum(DC.cell_area_um2(g.cell, tech) for g in self.gates)
 
-    def leak_nw(self, tech=DC.DEFAULT_TECH) -> float:
+    def leak_nw(self, tech=None) -> float:
+        # R5-fix：默认值在调用时取，不在 def 时绑定
+        if tech is None:
+            tech = DC.DEFAULT_TECH
         return sum(DC.cell_leak_nw(g.cell, tech) for g in self.gates)
 
     def cell_hist(self) -> dict:

@@ -56,11 +56,14 @@ class Placement:
     rng: int = SEED
 
 
-def _cell_size(cell: str, tech=DC.DEFAULT_TECH) -> tuple:
+def _cell_size(cell: str, tech=None) -> tuple:
     """单元物理尺寸：行高固定、宽 = 面积/行高 ⇒ **面积逐位守恒**。
 
     🔴 用真实 `cell_area_um2`（= n_tr·area_per_tr），不另起一套面积。
     """
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     a = DC.cell_area_um2(cell, tech)
     w = a / H_ROW_UM
     return w, H_ROW_UM
@@ -81,8 +84,11 @@ def _port_side(i: int, n: int) -> str:
     return "left"
 
 
-def place(nl: Netlist, tech=DC.DEFAULT_TECH, seed: int = SEED) -> Placement:
+def place(nl: Netlist, tech=None, seed: int = SEED) -> Placement:
     """行式布局：按连通度降序填充行，再有限爬山降 HPWL。"""
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     rng = random.Random(seed)
     cells = nl.gates
     n_cell = len(cells)

@@ -157,8 +157,11 @@ def _net_pins(nl: Netlist, p: PL.Placement) -> dict:
     return pins
 
 
-def detail_route(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> DetailRoute:
+def detail_route(nl: Netlist, p: PL.Placement, tech=None) -> DetailRoute:
     """把 MST 每根网画成真实金属多边形（H=M3 / V=M4 / 弯角 VIA2）。"""
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     pins = _net_pins(nl, p)
     shapes: list = []
     centerline: dict = {}
@@ -219,11 +222,14 @@ def detail_route(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> DetailRo
     )
 
 
-def real_cell_geom(p: PL.Placement, tech=DC.DEFAULT_TECH) -> list:
+def real_cell_geom(p: PL.Placement, tech=None) -> list:
     """每颗数字单元：有源区标记(E_DIFF) + M1 引脚焊垫(中心) + 通孔栈(M1→M2→M3)。
 
     ⚠️ 模型尺度下是符号级几何（见模块诚实边界）。引脚焊垫位于单元中心 = 路由连接点。
     """
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     out: list = []
     for nm, (x0, y0, w, h) in p.cell_xywh.items():
         cx, cy = x0 + w / 2.0, y0 + h / 2.0
@@ -281,12 +287,15 @@ def interval_color(intervals: list) -> tuple:
     return assign, len(ends)
 
 
-def track_route(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> DetailRoute:
+def track_route(nl: Netlist, p: PL.Placement, tech=None) -> DetailRoute:
     """E37 · 带 track 分配的 L 路由（H=M3 / V=M4 / 弯角 + 引脚 VIA2，全 landing pad）。
 
     与 `detail_route` 的区别：主段按区间着色分配到独立轨道（消主段同层重叠）；
     引脚经 stub 接入轨道（保持 LVS 连通）；所有过孔带 M3+M4 landing pad（修 E36 via 648）。
     """
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     pins = _net_pins(nl, p)
     shapes: list = []
     centerline: dict = {}
@@ -396,13 +405,16 @@ def _via_landing(shapes: list, x: float, y: float, net: str, land: float) -> Non
                         x + VIA / 2.0, y + VIA / 2.0, net=net, kind="via"))
 
 
-def congestion_analysis(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> dict:
+def congestion_analysis(nl: Netlist, p: PL.Placement, tech=None) -> dict:
     """E37 · 拥堵量化：每行 H 段 x 区间**最大团**(clique) vs 行通道容量。
 
     clique = 该行同 y 的 H 段在 x 上同时重叠的最大条数 = 该行需要的 M3 轨道数；
     容量 = 行通道高 / TRACK_PITCH。若 clique ≫ 容量 ⇒ 2 层 L 路由在本密度**装不下**，
     真清零需把通道加高到 clique·pitch ⇒ 行高/面积按 `area_to_zero_ratio` 放大。
     """
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     pins = _net_pins(nl, p)
     row_pitch = PL.H_ROW_UM * (1.0 + PL.CHANNEL_X)
     channel = row_pitch - PL.H_ROW_UM
@@ -444,7 +456,7 @@ def congestion_analysis(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> d
     }
 
 
-def drc_capacity_bound(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> dict:
+def drc_capacity_bound(nl: Netlist, p: PL.Placement, tech=None) -> dict:
     """**布线容量下界**：把「DRC 清不了零」从一句结论，变成可核数字。
 
     为什么需要它
@@ -466,6 +478,9 @@ def drc_capacity_bound(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> di
       · `ROUTING_RESOURCE_INFEASIBLE` —— 至少一个维度装不下（当前 c17 即此）；
       · `RESOURCE_SUFFICIENT` —— 三个维度都够（本仓尚无用例）。
     """
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     cg = congestion_analysis(nl, p, tech)
     pitch = TRACK_PITCH
     cell_ws = [w for (_x, _y, w, _h) in p.cell_xywh.values()]
@@ -507,7 +522,7 @@ def drc_capacity_bound(nl: Netlist, p: PL.Placement, tech=DC.DEFAULT_TECH) -> di
     }
 
 
-def drc_zero_experiment(nl: Netlist, tech=DC.DEFAULT_TECH, channel_tracks: int = 0,
+def drc_zero_experiment(nl: Netlist, tech=None, channel_tracks: int = 0,
                         widen: float = 1.0) -> dict:
     """**反证实验**：按「可布线所需」放大单元宽 + 行通道，实测 DRC 能否归零。
 
@@ -531,6 +546,9 @@ def drc_zero_experiment(nl: Netlist, tech=DC.DEFAULT_TECH, channel_tracks: int =
     🔴 **这是 what-if 实验，不是可签核版图**：单元内部仍是黑盒、无绕障/无拥塞求解、
     行式单行；结论只用来判「容量是不是唯一障碍」，不外推到真实 P&R。
     """
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     p0 = PL.place(nl, tech)
     bound = drc_capacity_bound(nl, p0, tech)
     pitch, land = TRACK_PITCH, _LAND_CORNER

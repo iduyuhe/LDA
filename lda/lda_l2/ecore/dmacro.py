@@ -91,7 +91,7 @@ def _pin(layer: int, x: float, y: float, s: float = 1.5) -> bytes:
     return _box(layer, x - s / 2.0, y - s / 2.0, x + s / 2.0, y + s / 2.0)
 
 
-def build_ip(nl: Netlist, tech=DC.DEFAULT_TECH) -> Macro:
+def build_ip(nl: Netlist, tech=None) -> Macro:
     """合成 CIM 加速器 IP 硬宏（阵列 + 数字壳 + **E36 detail route 金属** + **E36 真实单元几何**
     + 外框 + 引脚 → 单一 GDS）。
 
@@ -100,6 +100,9 @@ def build_ip(nl: Netlist, tech=DC.DEFAULT_TECH) -> Macro:
       - `DD.real_cell_geom` 每颗数字单元升级为 有源区标记(E_DIFF/20) + M1 引脚焊垫 + 通孔栈；
       - `DL.run_drc` / `DL.run_lvs` 对数字区**路由几何**做 IP 级可制造性/连通性 signoff。
     """
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     # ① 阵列几何（复用 E33 签核栈：行线 M2 + via stack）
     arr = LY.crossbar_array(87, 87, None, row_layer="M2", via_stack=True)
     arr_descs = arr["descs"]

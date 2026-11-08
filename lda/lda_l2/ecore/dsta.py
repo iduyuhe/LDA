@@ -62,7 +62,7 @@ class Timing:
     lib_clamped: int = 0                # 插值越界被**钳位**的次数（不外插）
 
 
-def loads_of(nl, port_load_ff: float = 0.0, tech=DC.DEFAULT_TECH,
+def loads_of(nl, port_load_ff: float = 0.0, tech=None,
              wire_load_ff: dict = None) -> dict:
     """每根网的**总负载电容**（fF）。
 
@@ -70,6 +70,9 @@ def loads_of(nl, port_load_ff: float = 0.0, tech=DC.DEFAULT_TECH,
     🔴 E35 起：可选注入 `wire_load_ff[net] = 该网的走线电容（fF）`，
     由 `dextract` 根据真实布线线长算出。**零线时行为不变**（E34 三路径金标不受影响）。
     """
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     fan = {}
     for g in nl.gates:
         if g.cell == "DFF":
@@ -153,7 +156,7 @@ def _delay_from_lib(lib_tables, cell: str, load_ff: float, slew_ps: float):
     return None, False
 
 
-def sta(nl, tech=DC.DEFAULT_TECH, port_load_ff: float = 0.0,
+def sta(nl, tech=None, port_load_ff: float = 0.0,
         wire_load_ff: dict = None, lib=None, slew_ps: float = None,
         topo_sort: bool = False) -> Timing:
     """静态时序（一阶）。`lib` 给 LibertyLibrary 时延时改查 NLDM 表，否则走闭式。
@@ -168,6 +171,13 @@ def sta(nl, tech=DC.DEFAULT_TECH, port_load_ff: float = 0.0,
     `dsynth.topo_order` 排序再传播 —— 供源文件顺序不保证拓扑序的网表（如 c17）使用；
     有组合环会直接抛错（fail-closed），不静默用旧值。
     """
+    # 🔴 R5-fix（v0.9.394）：默认值必须**在调用时**取，不在 `def` 时绑定。
+    #   原签名 `tech=DC.DEFAULT_TECH` 在 import 时求值一次 ⇒ 之后换 Tech 实例
+    #   主链（`ST.sta(nl, topo_sort=True)` 不传 tech）永远读旧值，参数看似"死"。
+    #   改为 None 后取值，`DEFAULT_TECH` 未变时**逐位不变**（T1a 零变化实证：
+    #   base 43.490 不变；r_on×4 → 155.959、t_intr×4 → 61.490 两条手算吻合）。
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     load = loads_of(nl, port_load_ff, tech, wire_load_ff)
     arr = {}
     pred = {}
@@ -274,8 +284,11 @@ def _inet(port, bit):
 # 功耗（一阶 · **claimable=False**）
 # ---------------------------------------------------------------------------
 def switching_power_nw(nl, f_hz: float, alpha: float = 0.1,
-                       tech=DC.DEFAULT_TECH, port_load_ff: float = 0.0) -> float:
+                       tech=None, port_load_ff: float = 0.0) -> float:
     """动态功耗 P = α·Σ C_L·V²·f（单位 nW）。**α 是假设，不是测量。**"""
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     load = loads_of(nl, port_load_ff, tech)
     c_tot_ff = 0.0
     for g in nl.gates:
@@ -286,8 +299,11 @@ def switching_power_nw(nl, f_hz: float, alpha: float = 0.1,
     return p_w * 1e9
 
 
-def clock_power_nw(nl, f_hz: float, tech=DC.DEFAULT_TECH) -> float:
+def clock_power_nw(nl, f_hz: float, tech=None) -> float:
     """时钟网功耗（每周期翻两次 ⇒ α=2）。一阶。"""
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     c_ff = nl.n_dff() * tech.cin_ff
     return 2.0 * (c_ff * 1e-15) * tech.vdd ** 2 * f_hz * 1e9
 
@@ -295,8 +311,11 @@ def clock_power_nw(nl, f_hz: float, tech=DC.DEFAULT_TECH) -> float:
 # ---------------------------------------------------------------------------
 # 解析金标（三条独立路径）
 # ---------------------------------------------------------------------------
-def chain_golden_from_loads(cell: str, loads, tech=DC.DEFAULT_TECH) -> float:
+def chain_golden_from_loads(cell: str, loads, tech=None) -> float:
     """**路径 ②**：逐级累加（负载可逐级不同）。"""
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     loads = list(loads)
     return sum(DC.cell_delay_ps(cell, l, tech) for l in loads)
 
@@ -316,8 +335,11 @@ def build_chain_nl(cell: str, n_stage: int, load_ff: float, name="chain"):
     return nl
 
 
-def sta_self_check(n_stage: int = 17, tech=DC.DEFAULT_TECH) -> dict:
+def sta_self_check(n_stage: int = 17, tech=None) -> dict:
     """三条路径必须逐位相等；并验证「0 级链延时恰为 0」。"""
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
     problems = []
     # ① 恒定负载：图传播 vs 逐级累加 vs 代数相乘
     nl = build_chain_nl("INV", n_stage, 1.0)

@@ -182,30 +182,42 @@ def eval_cell(name: str, ins) -> int:
     return c.table[idx]
 
 
-def cell_delay_ps(name: str, load_ff: float, tech: Tech = DEFAULT_TECH) -> float:
+def cell_delay_ps(name: str, load_ff: float, tech: Tech | None = None) -> float:
     """一阶 RC 延时：`t_intr + k·ln2·R·C_load`。"""
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DEFAULT_TECH
     c = CELLS[name]
     # Ω × fF = 1e-15 s = 1e-3 ps ⇒ 直接乘换算因子，**不得再乘 1e3**
     # （E34 第一版在这里多乘了 1e3，INV@4fF 报 13864 ps ⇒ 整个 STA 偏大 1000×）
     return tech.t_intr_ps + c.k_drive * LN2 * tech.r_on_ohm * load_ff * OHM_FF_TO_PS
 
 
-def cell_area_um2(name: str, tech: Tech = DEFAULT_TECH) -> float:
+def cell_area_um2(name: str, tech: Tech | None = None) -> float:
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DEFAULT_TECH
     return CELLS[name].n_tr * tech.area_per_tr_um2
 
 
-def cell_leak_nw(name: str, tech: Tech = DEFAULT_TECH) -> float:
+def cell_leak_nw(name: str, tech: Tech | None = None) -> float:
     """漏电功率（nW）：`n_tr · I_leak · Vdd`，`I_leak` 以 nA 计 ⇒ nA·V = nW。"""
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DEFAULT_TECH
     return CELLS[name].n_tr * tech.ileak_na_per_tr * tech.vdd
 
 
 def chain_golden_ps(cell_name: str, n_stage: int, load_ff: float,
-                    tech: Tech = DEFAULT_TECH) -> float:
+                    tech: Tech | None = None) -> float:
     """**解析金标**：N 级同构串联、负载恒定的总延时 = N × t_pd（串行代数相加）。
 
     🔴 这是 `dsta` 的绝对判据来源：STA 走图传播，本式走代数相乘，**两条独立路径**。
     任何「延时不可加」「深度算错」「路径漏一段」的缺陷都会让两者不等。
     """
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DEFAULT_TECH
     if n_stage < 0:
         raise ValueError("n_stage 必须 >= 0")
     return n_stage * cell_delay_ps(cell_name, load_ff, tech)
@@ -214,12 +226,15 @@ def chain_golden_ps(cell_name: str, n_stage: int, load_ff: float,
 # ---------------------------------------------------------------------------
 # 自检（门禁侧复算 · 不依赖任何外部语料）
 # ---------------------------------------------------------------------------
-def library_self_check(tech: Tech = DEFAULT_TECH) -> dict:
+def library_self_check(tech: Tech | None = None) -> dict:
     """库的结构自检：真值表长度、拓扑锚一致、驱动系数与串联数同序。
 
     返回 dict，`ok` 为真才算通过。**这里刻意不做「延时数值是否合理」的判断** ——
     那是工艺标定问题，没有公开语料就不能机核（写进诚实边界，不假装能判）。
     """
+    # R5-fix：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DEFAULT_TECH
     problems = []
 
     # ① 真值表长度 = 2^n_in（时序单元表留空）

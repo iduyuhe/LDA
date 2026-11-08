@@ -402,6 +402,49 @@ def run_trunk(nl, *, baseline: bool = True):
         })
     report["stages"].append(("thermal", dict(th_rep, chain=TRUNK_CHAIN)))
 
+    # ── 段 4e：U7 策略选择器诊断（EC-B4.2 · 纯逻辑，**不回灌任何物理量**）────
+    #   🔴 Ã 元素由**产品侧中心有限差分**构造（K2 路径 A）；门禁侧用解析闭式
+    #      导数独立复算（K2 路径 B）。x_ref/f_ref/单位/来源逐元素登记为 E5 假设。
+    #   🔴 7 对耦合全部登记：2 对单向可算、4 对 UNDECIDABLE、1 对 NOT_MODELED
+    #      （应力→EM，规划 §3 明确不做但须记为边界）。稀疏 Ã ⇒ 不输出数值 ρ。
+    _p_ref = float(th_rep["p_total_w"])
+    _dt_ref = float(th_rep["delta_t_max_k"])
+    _t0_b4 = float(th_rep["assumptions"]["t_amb_c"])
+
+    def _b42_f_p(pv):
+        return _t0_b4 + (pv / _p_ref) * _dt_ref
+
+    def _b42_f_t(tk):
+        return DSG.j_max_at(tk - 273.15)
+
+    _a_tp = DSG.b42_log_sens(_b42_f_p, _p_ref)
+    _a_mt = DSG.b42_log_sens(_b42_f_t, 398.15)
+    _b42_pairs = [
+        {"name": "热→EM", "a_fwd": _a_mt, "a_rev": None, "x_ref": 398.15,
+         "f_ref": DSG.j_max_at(125.0), "unit": "K",
+         "source": "Black 方程 ∂lnJ/∂lnT（Ea/n/T_ref 均假设）", "status": "DECIDABLE"},
+        {"name": "功耗密度→热", "a_fwd": _a_tp, "a_rev": None, "x_ref": _p_ref,
+         "f_ref": _t0_b4 + _dt_ref, "unit": "W",
+         "source": "一维热链线性响应（r_th 归一化占位）", "status": "DECIDABLE"},
+        {"name": "热→时序", "a_fwd": None, "a_rev": None, "x_ref": None,
+         "f_ref": None, "unit": None, "source": "无温度相关时序模型", "status": "UNDECIDABLE"},
+        {"name": "IR→时序", "a_fwd": None, "a_rev": None, "x_ref": None,
+         "f_ref": None, "unit": None, "source": "IR 与 STA 未串联", "status": "UNDECIDABLE"},
+        {"name": "耦合电容→时序", "a_fwd": None, "a_rev": None, "x_ref": None,
+         "f_ref": None, "unit": None, "source": "串扰是否进 STA 未核实", "status": "UNDECIDABLE"},
+        {"name": "工艺变异→全部", "a_fwd": None, "a_rev": None, "x_ref": None,
+         "f_ref": None, "unit": None, "source": "仅 RC 的 PVT", "status": "UNDECIDABLE"},
+        {"name": "应力→EM", "a_fwd": None, "a_rev": None, "x_ref": None,
+         "f_ref": None, "unit": None, "source": "规划 §3 明确不做", "status": "NOT_MODELED"},
+    ]
+    u7_rep = DSG.b42_u7_signoff(_b42_pairs, assumptions={
+        "t_ref_k": 398.15, "t_amb_c": _t0_b4,
+        "r_th_k_w": th_rep["assumptions"]["r_th_k_w"],
+        "alpha": th_rep["assumptions"]["alpha"], "f_hz": th_rep["assumptions"]["f_hz"],
+        "sens_method": "central finite difference (product) vs analytic closed form (gate)",
+    })
+    report["stages"].append(("u7", dict(u7_rep, chain=TRUNK_CHAIN)))
+
     # ── 段 5：DEF 写出（主链落点 + 段0 的 Netlist）─────────────────────
     #    🔴 只写 placed DEF（落点 + 连接），**不写 ROUTED**：shapes 的网归属虽然已按网打标签
     #       （`dpnr` 每根 wire 都带 net），但 DEF 的 ROUTED 需要完整几何/层/宽度语义，

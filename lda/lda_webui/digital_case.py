@@ -45,7 +45,7 @@ ENDPOINT = "/api/digital_demo"
 VERDICT = "FLOW_RUN_NOT_SIGNOFF"
 
 #: 声明本卡覆盖/未覆盖的段（机核用，禁止与实际行为不一致）
-SEGMENTS_COVERED = ("parse", "place", "route", "drc_lvs", "timing", "em", "ec_b3", "thermal", "def_write")
+SEGMENTS_COVERED = ("parse", "place", "route", "drc_lvs", "timing", "em", "ec_b3", "thermal", "u7", "def_write")
 SEGMENTS_MISSING = ("synthesis",)
 
 #: 诚实边界（逐条都在卡片里输出，且被 selfcheck 要求非空 + 含关键词）
@@ -226,6 +226,7 @@ def _compute() -> Dict[str, Any]:
     emd = st.get("em", {})
     b3d = st.get("ec_b3", {})
     thd = st.get("thermal", {})
+    u7d = st.get("u7", {})
 
     return {
         "compute_ms": round(ms, 3),
@@ -343,6 +344,7 @@ def _compute() -> Dict[str, Any]:
         "em": dict(emd),
         "ec_b3": dict(b3d),
         "thermal": dict(thd),
+        "u7": dict(u7d),
         "segments_covered": list(SEGMENTS_COVERED),
         "segments_missing": list(SEGMENTS_MISSING),
         "synthesized": False,
@@ -404,8 +406,10 @@ def case_card() -> Dict[str, Any]:
         "em": f["em"],
         "ec_b3": f["ec_b3"],
         "thermal": f["thermal"],
+        "u7": f["u7"],
         "honest_note": list(HONEST_NOTES),
         "disclosure": {
+            "u7": ("本卡片**含 U7 策略诊断段**（chain=dpnr，逐对耦合策略与单位缩放自检见 `u7`），但它是**逻辑/数学自检、不是物理能力**：只报逐对 κ 策略与带量纲的谱，`Ã` 全部元素为 **E5 输入假设**（`x_ref/f_ref/单位/来源` 逐元素登记）、非工艺认证；`scope=DIAGNOSTIC_ONLY`、`in_blocking=False`、**不判设计稳定性、不输出物理判决**，也不把数值发散包装成工具失败。稀疏 `Ã` ⇒ `rho_status=NOT_MEANINGFUL`，不输出数值 ρ 冒充判定；7 对耦合全部登记，`UNDECIDABLE`（无导数不可判）与 `NOT_MODELED`（应力→EM 明确不做）分别显式列出，**不可判 ≠ 通过**。不含 IR→时序实际串联（产品未接线）、瞬态 C_th / 3D 热耦合 / 应力模型；规则集自建教科书尺度、非 foundry PDK ⇒ 不作可制造性 / 可靠性 / 性能宣称。"),
             "thermal": ("本卡片**含热诊断段**（chain=dpnr，逐门功率与一维稳态热链温升谱见 `thermal`），但**不回灌 `t_c`**：EM 仍用 `T_REF_C=125°C` 假设，本段与 EM 未接线。`r_th` / `t_amb` / `alpha` / `f` 均为**假设或归一化占位**（非工艺认证）⇒ 只报带量纲的谱与不变式，**不报绝对温度结论、不判违规、不进签核 blocking**，`in_blocking=False`、`scope=DIAGNOSTIC_ONLY`。不含瞬态 `C_th`、封装/散热边界真值、3D 热耦合、热点极限判据；规则集自建教科书尺度、非 foundry PDK ⇒ 不作可制造性 / 可靠性 / 性能宣称。"),
             "ec_b3": ("本卡片**含几何/量纲诊断段**，且**含天线比几何代理**（`ratio_by_g` = 每网金属同层并集面积 / 栅面积代理量 g，逐口径语义见 `ec_b3` 的 `ratio_semantics`；**不含电荷积分、Fowler-Nordheim 隧穿与栅氧退化**），但 **DRC 规则集仍不含密度/天线规则**：本段不进 DRC、不进签核 blocking，`in_blocking=False`、`scope=DIAGNOSTIC_ONLY`，只报带量纲的谱与不变式，**不判违规、不构成可制造性或电气签核**。窗口 `n∈{1,2,4,8,16,32}` 是离散化尺度（die 仅 7.8 µm，远小于真实工艺窗口），四个分母口径均为代理量与假设、非工艺认证；不含 PDN、时钟树、via 许用电流、栅氧厚度、峰值 di/dt。"),
             "pdk": "非 foundry PDK（教科书尺度 INV/NAND2）",

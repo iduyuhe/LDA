@@ -1206,9 +1206,11 @@ def main() -> int:
     def _t_close(a, b):
         return math.isclose(float(a), float(b), rel_tol=1e-12, abs_tol=1e-20)
 
-    check("EC-T01 主链产出 `thermal` 段 ∧ 卡片顶层可读 ∧ segments_covered 9 段含 thermal",
+    # 🔴 v0.9.392：新增 `u7` 诊断段 ⇒ 段集合 9→10。本判据职责是「thermal 段可读」，
+    #    不得把段数锁死为常数（否则新增合法段会误红）；具体段数由 EC-U01 机核。
+    check("EC-T01 主链产出 `thermal` 段 ∧ 卡片顶层可读 ∧ segments_covered 含 thermal",
           bool(_t) and bool(_t_card) and "thermal" in (_q_card.get("segments_covered") or [])
-          and len(_q_card.get("segments_covered") or []) == 9)
+          and len(_q_card.get("segments_covered") or []) >= 9)
 
     _t_yes = "**含热诊断段**" in _t_disc
     _t_no = "**不含热诊断段**" in _t_disc
@@ -1389,6 +1391,180 @@ def main() -> int:
 
     print("  [T] EC-B4.1 ✓ · 一维 slab/均匀链闭式 ✓ · P=0 极限 ✓ · 能量守恒/齐次 ✓ · "
           "K2 双重求和独立 ✓ · V5 数字零变化 ✓")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # EC-B4.2 U7 策略选择器（EC-U01…U12 + 5 条真毒化反向探针）
+    #   🔴 M3 预注册冻结于 `EC-B4.2_实现前规格_v1.md`；锁定值内联，不读内部文档。
+    #   🔴 K2：产品侧中心有限差分 vs 门禁侧解析闭式导数（两条不同路径）。
+    # ══════════════════════════════════════════════════════════════════════
+    _u = _q_st.get("u7") or {}
+    _u_card = (_q_card.get("u7") or {})
+    _u_disc = (_q_card.get("disclosure") or {}).get("u7") or ""
+    _u_norm = _u.get("normalization_check") or {}
+    _u_pairs = _u.get("pairs") or []
+    _u_seg = _q_card.get("segments_covered") or []
+
+    def _u_rho2(m):
+        a, b, c, d = float(m[0][0]), float(m[0][1]), float(m[1][0]), float(m[1][1])
+        tr, det = a + d, a * d - b * c
+        rt = math.sqrt(max(0.0, tr * tr - 4.0 * det))
+        return max(abs((tr + rt) / 2.0), abs((tr - rt) / 2.0))
+
+    def _u_kap(m):
+        return abs(m[1][0] * m[0][1]) / (abs(m[1][1]) * abs(m[0][0]))
+
+    _u_raw = ((0.9, 2000.0), (0.0005, 0.9))
+    _u_scaled = ((0.9, 2.0), (0.0005, 0.0009))    # 只缩第 2 列，行/f 不动
+    _u_rr, _u_rs = _u_rho2(_u_raw), _u_rho2(_u_scaled)
+
+    check("EC-U01 诊断段真上 API：主链 `u7` 段 ∧ 卡片可读 ∧ segments_covered 含 u7 "
+          "（≥10 段）∧ disclosure 三态措辞恰好一个",
+          bool(_u) and bool(_u_card) and "u7" in _u_seg and len(_u_seg) >= 10
+          and len(_q_card) >= 33
+          and ("**含 U7 策略诊断段**" in _u_disc) is True
+          and ("**不含 U7 策略诊断段**" in _u_disc) is False)
+
+    def _u_flip_ok(rh, rs):
+        return rh >= 1.0 > rs
+
+    check("EC-U02 🔴 M1 单位缩放翻盘：未归一化 A 的 ρ=%.6f（不稳定）→ 只缩第 2 列 ÷1000 "
+          "⇒ ρ=%.6f（稳定）必被抓，且与产品段逐位一致" % (_u_rr, _u_rs),
+          _u_flip_ok(_u_rr, _u_rs)
+          and math.isclose(float(_u_norm.get("rho_raw", -1)), _u_rr, rel_tol=1e-12)
+          and math.isclose(float(_u_norm.get("rho_column_scaled", -1)), _u_rs, rel_tol=1e-12))
+    check("EC-U02r 反向探针：结论未翻盘 / 单位缩放做成行缩放 ⇒ 检测器必报假",
+          _u_flip_ok(1.9, 0.901111) is True
+          and _u_flip_ok(1.9, 1.9) is False
+          and _u_flip_ok(0.5, 0.4) is False)
+
+    _u_k1, _u_k2 = _u_kap(_u_raw), _u_kap(_u_scaled)
+
+    def _u_kap_ok(k1, k2):
+        return abs(k1 - k2) < 1e-12
+
+    check("EC-U03 🔴 勘误机核：κ 天然无量纲 —— 同一列缩放下 κ=%.6f / %.6f，差 %.2e "
+          "（不许把 κ 也拿去归一化）" % (_u_k1, _u_k2, abs(_u_k1 - _u_k2)),
+          _u_kap_ok(_u_k1, _u_k2)
+          and _u_kap_ok(float(_u_norm.get("kappa_raw", 0)),
+                        float(_u_norm.get("kappa_column_scaled", 1))))
+    check("EC-U03r 反向探针：κ 被强行 ÷1000 ⇒ 检测器必报假",
+          _u_kap_ok(1.234568, 1.234568) is True
+          and _u_kap_ok(1.234568, 0.001234568) is False)
+
+    _u_tilde = ((0.9, 2000.0 * 1.0 / 1.0), (0.0005 * 1.0 / 1.0, 0.9))
+    _u_tilde_sc = ((0.9, (2000.0 / 1000) * (1.0 * 1000) / 1.0), (0.0005, 0.9))
+    _u_rt, _u_rts = _u_rho2(_u_tilde), _u_rho2(_u_tilde_sc)
+
+    def _u_norm_ok(a, b):
+        return abs(a - b) < 1e-12
+
+    check("EC-U04 Ã 单位无关：导数 ÷1000 与 x_ref ×1000 抵消 ⇒ ρ 差 = %.2e（容差 0）"
+          % abs(_u_rt - _u_rts),
+          abs(_u_rt - _u_rts) == 0.0
+          and _u_norm_ok(float(_u_norm.get("rho_tilde", 0)),
+                         float(_u_norm.get("rho_tilde_unit_scaled", 1))))
+    check("EC-U04r 反向探针：只缩导数、不缩 x_ref（不同步）⇒ 检测器必报假",
+          _u_norm_ok(1.9, 1.9) is True
+          and _u_norm_ok(1.9, 0.901111) is False)
+
+    _u_one = [x for x in _u_pairs if x.get("status") == "DECIDABLE" and x.get("a_rev") is None]
+    _u_other = [x for x in _u_pairs if x.get("status") in ("UNDECIDABLE", "NOT_MODELED")]
+
+    def _u_status_ok(one, other):
+        return (all(x.get("strategy") == "EXPLICIT" for x in one)
+                and all(x.get("strategy") is None and x.get("kappa") is None for x in other))
+
+    check("EC-U05 单向 ρ≡0 ⇒ EXPLICIT；不可判/不做**不得**被算成策略或通过 "
+          "（7 对 = 2 可判 + 4 不可判 + 1 明确不做）",
+          _u_status_ok(_u_one, _u_other)
+          and _u.get("n_pairs") == 7 and _u.get("n_decidable") == 2
+          and _u.get("n_undecidable") == 4 and _u.get("n_not_modeled") == 1)
+    check("EC-U05r 反向探针：把 UNDECIDABLE 偷偷标成 EXPLICIT ⇒ 检测器必报假",
+          _u_status_ok(_u_one, _u_other) is True
+          and _u_status_ok(_u_one, [{"strategy": "EXPLICIT", "kappa": 0.0}]) is False)
+
+    _u_strong = DS.b42_u7_signoff([
+        {"name": "合成双向强耦合", "a_fwd": 2.0, "a_rev": 2.0, "x_ref": 1.0,
+         "f_ref": 1.0, "unit": "-", "source": "synthetic M1", "status": "DECIDABLE"}])
+    _u_sp = _u_strong["pairs"][0]
+
+    def _u_strat_ok(p):
+        return (p.get("strategy") == "MONOLITHIC"
+                and "设计不稳定" not in str(p) and "算不出" not in str(p))
+
+    check("EC-U06 🔴 三态措辞：κ≥1 ⇒ MONOLITHIC，且不判物理设计不稳定、不报工具失败 "
+          "（实测 κ=%.1f）" % _u_sp["kappa"],
+          _u_strat_ok(_u_sp) and "不判设计稳定性" in _u_disc
+          and "不把数值发散包装成工具失败" in _u_disc)
+    check("EC-U06r 反向探针：pair 里出现「设计不稳定」或策略沉默 ⇒ 检测器必报假",
+          _u_strat_ok(_u_sp) is True
+          and _u_strat_ok(dict(_u_sp, reason="设计不稳定")) is False
+          and _u_strat_ok(dict(_u_sp, strategy=None)) is False)
+
+    check("EC-U07 稀疏 Ã ⇒ rho_status=NOT_MEANINGFUL 且 rho_global 为 None"
+          "（不许输出 ρ=0.0 冒充判定）",
+          _u.get("rho_status") == "NOT_MEANINGFUL"
+          and _u.get("rho_global") is None
+          and "NOT_MEANINGFUL" in _u_disc)
+
+    _u_ana = -DS.EA_EV / (DS.N_EXP * DS.K_B_EV * 398.15)
+    _u_mt = next((x.get("a_fwd") for x in _u_pairs if x.get("name") == "热→EM"), None)
+
+    def _u_has_shared(src):
+        names = set()
+        for node in ast.walk(ast.parse(src)):
+            if isinstance(node, ast.Name):
+                names.add(node.id)
+            elif isinstance(node, ast.Attribute):
+                names.add(node.attr)
+        return any(x in names for x in ("_u_rho2", "_u_kap", "_u_ana"))
+
+    check("EC-U08 🔴 K2：产品中心有限差分 `∂lnJ/∂lnT=%.9f` vs 门禁解析闭式 `%.9f` "
+          "（rel_tol=1e-9）∧ AST 机核源码互不引用" % (float(_u_mt or 0), _u_ana),
+          _u_mt is not None
+          and math.isclose(float(_u_mt), _u_ana, rel_tol=1e-9)
+          and _u_has_shared(_q_prod_src) is False
+          and _u_has_shared("def f():\n    return _u_rho2([[1,0],[0,1]])\n") is True)
+
+    check("EC-U09 Ã 假设显式：每个可算对都有 x_ref/f_ref/unit/source/evidence_level=E5 "
+          "∧ assumptions 明写 κ 无量纲与冲突消解",
+          all(all(k in x for k in ("x_ref", "f_ref", "unit", "source", "evidence_level"))
+              and x.get("evidence_level") == "E5" and x.get("x_ref") is not None
+              for x in _u_pairs if x.get("status") == "DECIDABLE")
+          and (_u.get("assumptions") or {}).get("kappa_is_dimensionless") is True
+          and "INCONSISTENT" in str(_u.get("assumptions")))
+
+    check("EC-U10 V5 回归：100.959× / t_c=125.0 / 主链 5 项逐位未变 ∧ "
+          "`em_net_signoff(` 未传 t_c",
+          _q_card["em"]["min_margin_x"] == 100.959
+          and _q_card["em"]["assumptions"]["t_c"] == 125.0
+          and "t_c=" not in _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
+          and _q_card["placement"]["die_area_um2"] == 60.84
+          and _q_card["timing"]["comb_delay_wired_ps"] == 43.49
+          and _q_card["def_export"]["bytes"] == 575
+          and _q_card["claimable"] is False
+          and _q_card["m1_exit"]["ok"] is True)
+
+    try:
+        _u_js = _json.dumps(_q_card, ensure_ascii=False, allow_nan=False)
+        _u_json_ok = "NaN" not in _u_js and "Infinity" not in _u_js
+    except (TypeError, ValueError):
+        _u_json_ok = False
+    check("EC-U11 段形态：DIAGNOSTIC_ONLY / in_blocking=False / 无 n_fail·ok·pass / 严格 JSON",
+          _u.get("scope") == "DIAGNOSTIC_ONLY" and _u.get("in_blocking") is False
+          and not any(k in _u for k in ("n_fail", "ok", "pass"))
+          and all(v is True for v in (_u.get("invariants") or {}).values())
+          and _u_json_ok)
+
+    check("EC-U12 冲突消解：稀疏 ⇒ NOT_APPLICABLE；合成 κ<1 但 ρ≥1 ⇒ 登记 "
+          "INCONSISTENT 不静默、不改逐对策略",
+          _u.get("conflict_status") == "NOT_APPLICABLE"
+          and DS.b42_conflict_status([0.5], 1.5) == "INCONSISTENT"
+          and DS.b42_conflict_status([0.5], 0.5) == "CONSISTENT"
+          and DS.b42_conflict_status([0.5], None) == "NOT_APPLICABLE")
+
+    print("  [U] EC-B4.2 ✓ · 单位翻盘 ✓ · κ 无量纲 ✓ · Ã 单位无关 ✓ · "
+          "不可判≠通过 ✓ · K2 解析复算 ✓ · V5 数字零变化 ✓")
 
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)

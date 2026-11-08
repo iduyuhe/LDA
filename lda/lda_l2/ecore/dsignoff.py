@@ -666,6 +666,157 @@ def b4_thermal_signoff(cells, r_th_k_w=B4_R_TH_K_W, t_amb_c=B4_T_AMB_C,
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# ⑤d EC-B4.2：U7 策略选择器（纯逻辑诊断段，**不回灌任何物理量**）
+# ═══════════════════════════════════════════════════════════════════════════
+B42_SCOPE = "DIAGNOSTIC_ONLY"
+
+
+def b42_log_sens(f, x_ref, rel_step=1e-6):
+    """产品路径：中心有限差分 `∂ln f/∂ln x`（对数灵敏度，无量纲）。
+
+    🔴 `x_ref` / `f` 的参考点与单位必须由调用方**显式登记为 E5 假设**；
+       门禁侧用解析闭式导数独立复算（K2 两条不同算法路径）。
+    """
+    xp, xm = float(x_ref) * (1.0 + rel_step), float(x_ref) * (1.0 - rel_step)
+    fp, fm = float(f(xp)), float(f(xm))
+    return (math.log(fp) - math.log(fm)) / (math.log(xp) - math.log(xm))
+
+
+def b42_rho2(m):
+    """2×2 矩阵谱半径（闭式 λ=(tr±√(tr²−4det))/2）。"""
+    a, b, c, d = float(m[0][0]), float(m[0][1]), float(m[1][0]), float(m[1][1])
+    tr, det = a + d, a * d - b * c
+    rt = math.sqrt(max(0.0, tr * tr - 4.0 * det))
+    return max(abs((tr + rt) / 2.0), abs((tr - rt) / 2.0))
+
+
+def b42_kappa(a_fwd, a_rev, a11=1.0, a22=1.0):
+    """κ = |∂f_B/∂x_A · ∂f_A/∂x_B| / (|∂f_B/∂x_B|·|∂f_A/∂x_A|)。
+
+    🔴 **κ 天然无量纲**：x_A / x_B 换单位时分子分母同步缩放、完全抵消
+       （EC-B4.2 立项实测差 2.22e-16），**不需要也不应该再「归一化 κ」**。
+    """
+    return abs(float(a_rev) * float(a_fwd)) / (abs(float(a22)) * abs(float(a11)))
+
+
+def b42_strategy(one_way, kappa):
+    if one_way:
+        return "EXPLICIT"
+    return "ITERATE" if float(kappa) < 1.0 else "MONOLITHIC"
+
+
+def b42_conflict_status(kappas, rho_global):
+    """κ（逐对）与 ρ（全局）冲突消解：只登记，**不改逐对策略、不静默**。"""
+    if rho_global is None:
+        return "NOT_APPLICABLE"
+    return ("INCONSISTENT" if (any(k is not None and k < 1.0 for k in kappas)
+                              and float(rho_global) >= 1.0) else "CONSISTENT")
+
+
+def b42_u7_signoff(pairs, assumptions=None) -> dict:
+    """U7 诊断段：逐对 κ 选策略 + 单位缩放自检 + 不可判/不做显式登记。
+
+    `pairs`: 每项须含 `name/a_fwd/a_rev/x_ref/f_ref/unit/source/status`，
+    `status` ∈ {DECIDABLE, UNDECIDABLE, NOT_MODELED}。
+    🔴 稀疏 Ã（无完整双向闭环）⇒ `rho_status=NOT_MEANINGFUL`，**不输出数值 ρ 冒充判定**。
+    🔴 `ρ≥1` 只表示「在该假设矩阵下需整体求解」，不作物理判决、也不报「算不出」。
+    """
+    out_pairs = []
+    for p in pairs:
+        st = p.get("status")
+        fwd, rev = p.get("a_fwd"), p.get("a_rev")
+        if st == "DECIDABLE" and fwd is not None and rev is not None:
+            k = b42_kappa(fwd, rev)
+            one_way = False
+        elif st == "DECIDABLE":
+            k, one_way = 0.0, True       # 单向：反向导数不存在 ⇒ κ=0
+        else:
+            k, one_way = None, None
+        out_pairs.append({
+            "name": p["name"], "status": st,
+            "a_fwd": fwd, "a_rev": rev,
+            "x_ref": p.get("x_ref"), "f_ref": p.get("f_ref"),
+            "unit": p.get("unit"), "source": p.get("source"),
+            "evidence_level": "E5",
+            "kappa": k,
+            "strategy": (None if st != "DECIDABLE" else b42_strategy(one_way, k)),
+            "reason": ("单向耦合，显式求解" if st == "DECIDABLE" and one_way else
+                       "双向闭环，按 κ 选策略" if st == "DECIDABLE" else
+                       "无 ∂f/∂x 可算 ⇒ 不可判（≠ 通过）" if st == "UNDECIDABLE" else
+                       "明确不做：无应力模型，登记为边界"),
+        })
+
+    # ── M1 合成反例：单位缩放自检（**不是 c17 数据**，只用于机核判据会不会响）──
+    raw = ((0.9, 2000.0), (0.0005, 0.9))
+    scaled = ((0.9, 2.0), (0.0005, 0.0009))     # 🔴 只缩第 2 列（x₂ µm→nm）
+    r_raw, r_scaled = b42_rho2(raw), b42_rho2(scaled)
+    k_raw = b42_kappa(raw[1][0], raw[0][1], raw[1][1], raw[0][0])
+    k_scaled = b42_kappa(scaled[1][0], scaled[0][1], scaled[1][1], scaled[0][0])
+    a12, x2ref, f1ref = 2000.0, 1.0, 1.0
+    a21, x1ref, f2ref = 0.0005, 1.0, 1.0
+    tilde = ((0.9, a12 * x2ref / f1ref), (a21 * x1ref / f2ref, 0.9))
+    tilde_scaled = ((0.9, (a12 / 1000) * (x2ref * 1000) / f1ref),
+                    (a21 * x1ref / f2ref, 0.9))
+    r_tilde, r_tilde_scaled = b42_rho2(tilde), b42_rho2(tilde_scaled)
+    norm = {
+        "kind": "SYNTHETIC_M1_NOT_C17",
+        "raw_matrix": raw, "column_scaled_matrix": scaled,
+        "rho_raw": r_raw, "rho_column_scaled": r_scaled,
+        "kappa_raw": k_raw, "kappa_column_scaled": k_scaled,
+        "rho_tilde": r_tilde, "rho_tilde_unit_scaled": r_tilde_scaled,
+        "unit_scale": 1000.0,
+        "note": ("未归一化的 A 求 ρ 会随单位翻盘；κ 天然无量纲；"
+                 "Ã=(∂f/∂x)·x_ref/f_ref 单位无关"),
+    }
+
+    n_dec = sum(1 for p in out_pairs if p["status"] == "DECIDABLE")
+    n_und = sum(1 for p in out_pairs if p["status"] == "UNDECIDABLE")
+    n_nm = sum(1 for p in out_pairs if p["status"] == "NOT_MODELED")
+    two_way = [p for p in out_pairs if p["status"] == "DECIDABLE" and p["a_rev"] is not None]
+    rho_status = "MEANINGFUL" if two_way else "NOT_MEANINGFUL"
+    inv = {
+        "i_unit_flip": (r_raw >= 1.0 > r_scaled),
+        "i_kappa_unit_free": (abs(k_raw - k_scaled) < 1e-12),
+        "i_normalized_invariant": (abs(r_tilde - r_tilde_scaled) < 1e-12),
+        "i_one_way_explicit": all(
+            p["strategy"] == "EXPLICIT" for p in out_pairs
+            if p["status"] == "DECIDABLE" and p["a_rev"] is None),
+        "i_no_false_verdict": all(
+            p["strategy"] is None and p["kappa"] is None for p in out_pairs
+            if p["status"] in ("UNDECIDABLE", "NOT_MODELED")),
+    }
+    return {
+        "chain": "dpnr", "scope": B42_SCOPE, "in_blocking": False,
+        "assumptions": dict(assumptions or {}, **{
+            "evidence_level": "E5 (input assumptions, not physical conclusions)",
+            "normalization": "Ã_ij = (∂f_i/∂x_j)·x_ref_j/f_ref_i — MUST be dimensionless",
+            "kappa_is_dimensionless": True,
+            "rho_policy": "逐对 κ 选策略；全局 ρ 仅登记；稀疏 Ã ⇒ NOT_MEANINGFUL",
+            "conflict_policy": "κ 与 ρ 冲突 ⇒ 登记 INCONSISTENT，不静默、不改逐对策略",
+        }),
+        "pairs": out_pairs,
+        "n_pairs": len(out_pairs), "n_decidable": n_dec,
+        "n_undecidable": n_und, "n_not_modeled": n_nm,
+        "rho_status": rho_status,
+        # 🔴 当前无完整双向闭环 ⇒ 不输出数值 ρ（稀疏 Ã 的 ρ 无意义，不许冒充判定）
+        "rho_global": None,
+        "conflict_status": b42_conflict_status(
+            [x["kappa"] for x in out_pairs], None),
+        "normalization_check": norm,
+        "invariants": inv,
+        "coverage_note": ("U7 是逻辑/数学自检、非物理能力；只报逐对策略与单位缩放自检，"
+                          "不判设计稳定性、不进 blocking、不改任何对外主链数字"),
+        "not_included": [
+            "**ρ≥1 只表示在该假设矩阵下需 MONOLITHIC 整体求解**：不代表物理设计不稳定，",
+            "也不得报「算不出 / 工具失败」把数值发散包装成工具问题",
+            "不含 IR→时序实际串联（产品未接线）、瞬态 C_th / 3D 热耦合 / 应力模型",
+            "Ã 全部元素为 E5 输入假设（x_ref/f_ref/单位/来源逐元素登记），非 foundry PDK",
+            "不作可制造性 / 可靠性 / 性能宣称；稀疏 Ã 的 ρ 无意义，不输出数值冒充判定",
+        ],
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # ⑥ 诚实清单（对外必须一起给）
 # ═══════════════════════════════════════════════════════════════════════════
 B3_DISCLOSURE = {

@@ -737,6 +737,11 @@ def b42_u7_signoff(pairs, assumptions=None) -> dict:
             "a_fwd": fwd, "a_rev": rev,
             "x_ref": p.get("x_ref"), "f_ref": p.get("f_ref"),
             "unit": p.get("unit"), "source": p.get("source"),
+            # EC-B4.6：证据维度与可判性维度分开（§16.2 不许合标量）。
+            # 只有声明了 evidence_status 的对才带这两个字段；旧字段语义与取值全不动。
+            **({"evidence_status": p["evidence_status"],
+                "evidence_source": p["evidence_source"]}
+               if "evidence_status" in p else {}),
             "evidence_level": "E5",
             "kappa": k,
             "strategy": (None if st != "DECIDABLE" else b42_strategy(one_way, k)),

@@ -1563,6 +1563,145 @@ def main() -> int:
           and DS.b42_conflict_status([0.5], 0.5) == "CONSISTENT"
           and DS.b42_conflict_status([0.5], None) == "NOT_APPLICABLE")
 
+    # ══════════════════════════════════════════════════════════════════════
+    # EC-V01…V07：EC-B4.6 证据维度机核（门禁**独立读源码**，不调用产品函数）
+    #   🔴 K2：产品侧只写「声明」(evidence_status / evidence_source)；门禁侧内联路径与
+    #      关键字、自己 AST/文本解析 dsta.py / dpvt.py / dsignoff.py 取「事实」。
+    #      两侧不同源 ⇒ 只改声明或只改源码都会红。锁定值全内联（生产 CI 无内部文档）。
+    #   🔴 可判性维度(status) 与证据维度(evidence_status) 分开 ⇒ 不许合标量(§16.2)。
+    # ══════════════════════════════════════════════════════════════════════
+    _v_dsta_src = open(os.path.join(_HERE, "lda_l2", "ecore", "dsta.py"),
+                       encoding="utf-8").read()
+    _v_dpvt_src = open(os.path.join(_HERE, "lda_l2", "ecore", "dpvt.py"),
+                       encoding="utf-8").read()
+
+    # (对名, 门禁内联的文件名, 门禁内联的事实键)
+    _V_FACT_TAB = (
+        ("热→时序", "dpvt.py", "no_temp_corner"),
+        ("IR→时序", "dsignoff.py", "ir_not_wired"),
+        ("耦合电容→时序", "dsta.py", "no_crosstalk"),
+        ("工艺变异→全部", "dpvt.py", "corner_scaling_only"),
+    )
+
+    def _v_facts_from_source(dsta_src, dpvt_src, prod_src):
+        """门禁侧事实：只吃源码文本，不 import / 不调用任何产品函数（V05 机核）。"""
+        tree = ast.parse(dsta_src)
+        hold_false = any(
+            isinstance(kw.value, ast.Constant) and kw.value.value is False
+            for node in ast.walk(tree) if isinstance(node, ast.Call)
+            for kw in node.keywords if kw.arg == "hold_checked")
+        # 🔴 必须取 `not_included` **字典值**本身，不能只查全文含「无串扰」：
+        #    :261 的注释也含该词，会兜住删措辞的毒化 ⇒ 探针失靶（≠ 直通）。
+        not_included_text = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Dict):
+                for k, v in zip(node.keys, node.values):
+                    if (isinstance(k, ast.Constant) and k.value == "not_included"
+                            and isinstance(v, ast.Constant)
+                            and isinstance(v.value, str)):
+                        not_included_text.append(v.value)
+        return {
+            "dsta.py": {
+                "no_crosstalk": (hold_false
+                                 and "无串扰" in "\n".join(not_included_text)),
+            },
+            "dpvt.py": {
+                "no_temp_corner": ("无温度相关的 R(T)" in dpvt_src
+                                   and "无 R(T)" in dpvt_src),
+                "corner_scaling_only": ("片上变异分析" in dpvt_src
+                                        and "角缩放" in dpvt_src),
+            },
+            "dsignoff.py": {
+                "ir_not_wired": "不含 IR→时序实际串联" in prod_src,
+            },
+        }
+
+    _v_facts = _v_facts_from_source(_v_dsta_src, _v_dpvt_src, _q_prod_src)
+    _v_und = [x for x in _u_pairs if x.get("status") == "UNDECIDABLE"]
+
+    check("EC-V01 证据维度与可判性维度分开：4 对 UNDECIDABLE 全部显式 VERIFIED + "
+          "evidence_source，status 仍 UNDECIDABLE ∧ 7 对计数 2/4/1 不变 ∧ "
+          "strategy·kappa 仍 None ∧ 仅这 4 对带新字段",
+          len(_v_und) == 4
+          and all(x.get("evidence_status") == "VERIFIED" and x.get("evidence_source")
+                  and x.get("strategy") is None and x.get("kappa") is None
+                  for x in _v_und)
+          and _u.get("n_pairs") == 7 and _u.get("n_decidable") == 2
+          and _u.get("n_undecidable") == 4 and _u.get("n_not_modeled") == 1
+          and sum(1 for x in _u_pairs if "evidence_status" in x) == 4)
+
+    _v_ct = next((x for x in _v_und if x.get("name") == "耦合电容→时序"), None)
+    check("EC-V02 🔴 K2 证据机核：门禁 AST 独立取 `hold_checked=False` + 文本独立取 "
+          "`not_included` 含「无串扰」∧ 该对声明 VERIFIED 且指向 dsta.py ∧ "
+          "source 不再写「未核实」",
+          _v_ct is not None
+          and _v_facts["dsta.py"]["no_crosstalk"] is True
+          and _v_ct.get("evidence_status") == "VERIFIED"
+          and "dsta.py" in str(_v_ct.get("evidence_source"))
+          and "未核实" not in str(_v_ct.get("source"))
+          and "已核实" in str(_v_ct.get("source")))
+
+    def _v_pair_ok(pair, facts):
+        src = str(pair.get("evidence_source") or "")
+        hit = next(((f, k) for n, f, k in _V_FACT_TAB
+                   if n == pair.get("name")), None)
+        return (hit is not None and pair.get("evidence_status") == "VERIFIED"
+                and pair.get("status") == "UNDECIDABLE"
+                and hit[0] in src
+                and (facts.get(hit[0]) or {}).get(hit[1]) is True)
+
+    check("EC-V03 四对逐对证据核实（热→时序 / IR→时序 / 耦合电容→时序 / "
+          "工艺变异→全部）∧ evidence_source 指向的文件与门禁内联事实一致 ∧ "
+          "4 条源码事实全为真",
+          all(_v_pair_ok(x, _v_facts) for x in _v_und)
+          and all(v is True for f in _v_facts.values() for v in f.values()))
+
+    _v_good = _v_ct or {}
+    check("EC-V04 反向探针（真毒化）：删 dsta 事实 / 声明改回 UNVERIFIED / "
+          "evidence_source 指错文件 / 改 status ⇒ 检测器必报假",
+          _v_pair_ok(_v_good, _v_facts) is True
+          and _v_pair_ok(_v_good, {"dsta.py": {"no_crosstalk": False}}) is False
+          and _v_pair_ok(dict(_v_good, evidence_status="UNVERIFIED"),
+                         _v_facts) is False
+          and _v_pair_ok(dict(_v_good, evidence_source="nope.py:1"),
+                         _v_facts) is False
+          and _v_pair_ok(dict(_v_good, status="NOT_MODELED"), _v_facts) is False)
+
+    _V_FORBIDDEN = ("DS", "B3", "dsta", "dpvt", "dsignoff",
+                    "b42_u7_signoff", "capability", "run_trunk_from_verilog")
+
+    def _v_shared_names(fn):
+        return set(fn.__code__.co_names)
+
+    def _v_poisoned():
+        return DS.b42_u7_signoff([])
+
+    check("EC-V05 🔴 K2 独立性机核：门禁事实提取函数的**字节码**不引用任何产品符号 "
+          "∧ 反向探针（真调产品函数）必被抓",
+          not (set(_V_FORBIDDEN) & _v_shared_names(_v_facts_from_source))
+          and bool(set(_V_FORBIDDEN) & _v_shared_names(_v_poisoned)))
+
+    check("EC-V06 段形态不变：卡片 ≥33 键 / segments_covered ≥10 段 / "
+          "DIAGNOSTIC_ONLY / in_blocking=False / 段内无 n_fail·ok·pass / 严格 JSON",
+          len(_q_card) >= 33 and len(_u_seg) >= 10
+          and _u.get("scope") == "DIAGNOSTIC_ONLY" and _u.get("in_blocking") is False
+          and not any(k in _u for k in ("n_fail", "ok", "pass"))
+          and _u_json_ok)
+
+    check("EC-V07 V5 回归：主链 5 项 + 100.959× / t_c=125.0 逐位不变 ∧ "
+          "`em_net_signoff(` 未传 t_c（EC-B4.5 冻结仍生效）",
+          _q_card["em"]["min_margin_x"] == 100.959
+          and _q_card["em"]["assumptions"]["t_c"] == 125.0
+          and "t_c=" not in _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
+          and _q_card["placement"]["die_area_um2"] == 60.84
+          and _q_card["timing"]["comb_delay_wired_ps"] == 43.49
+          and _q_card["def_export"]["bytes"] == 575
+          and _q_card["claimable"] is False
+          and _q_card["m1_exit"]["ok"] is True)
+
+    print("  [V] EC-B4.6 ✓ · 证据维度独立 ✓ · 源码事实机核 ✓ · "
+          "K2 字节码独立性 ✓ · 段形态/主链数字零变化 ✓")
+
     print("  [U] EC-B4.2 ✓ · 单位翻盘 ✓ · κ 无量纲 ✓ · Ã 单位无关 ✓ · "
           "不可判≠通过 ✓ · K2 解析复算 ✓ · V5 数字零变化 ✓")
 

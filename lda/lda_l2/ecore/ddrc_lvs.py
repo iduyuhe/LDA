@@ -22,7 +22,10 @@
 ══════════════════════════════════════════════════════════════
 - 每根网的全部布线形状（M3/M4/弯角孔）必须落在**同一个连通分量**（经重叠/flood-fill）
 - 每根网的每个终端点（单元中心 / 端口落点）必须被**该网某形状覆盖**（确实连上）
-- 任意两层**不同网**同层重叠 = 短路，必报
+- 异网**同层**金属重叠 = 短路，必报
+- 异网通孔压在**其桥接层**的金属上 = 跨层短路，必报（`|Δlayer| = 1`，等价于
+  `metal.layer ∈ VIA_BRIDGE[via.layer]`）；压在**非桥接层**上**不是**连接 ——
+  v0.9.395/Q1 起不再误报（此前不看层，实测两处 Δ=3 的假短路）
 
 ══════════════════════════════════════════════════════════════
 ⚠️ 诚实边界（全部 `claimable=False`）
@@ -58,6 +61,27 @@ VIA_BRIDGE = {
 }
 # 桥接层中本征程实际会有的金属（M2 在数字区未画 ⇒ 跳过其包围检查，见披露）
 BRIDGE_PRESENT = {DD.L_M1, DD.L_M2, DD.L_M3, DD.L_M4}
+
+
+# 🔴 Q1（v0.9.395 · T1b）：**只有桥接层之间的重叠才是电气连接**。
+# 旧口径 `short_via` 只看「异网通孔 ∧ 异网金属 ∧ 矩形重叠」，**不看层** ⇒ 通孔压在它
+# 根本不桥接的金属层上也判短路。实测（Q2 参数组）两处误报：`v28↔m25`（层号 28/25、
+# `|Δ|=3`）与 `v26↔m29`（`|Δ|=3`），而**层相邻命中 0 条** ⇒ 该误报会把
+# `lvs_clean_on_routed` 打掉、`m1_exit.ok` 由 True 变 False（对外看起来像"几何改坏"）。
+# 规则**复用 `VIA_BRIDGE`**（哪种孔桥哪两层是物理事实，不是层号算术）；
+# 在当前层号表上它与规划写的 `|Δlayer| == 1` **逐项等价**（S13 机核这条等价性，
+# 层号表一漂移即红）。之所以不直接写 `|Δ|==1`：层号是被人为排成 metal/via 交错的，
+# "相邻"是这张表的性质，不是物理定义。
+def via_bridges(via_layer: int, metal_layer: int) -> bool:
+    """该通孔是否**电气桥接**该金属层（合法跨层连接的唯一判据）。
+
+    🔴 未知孔层（不在 `VIA_BRIDGE`）**保守按连通处理**：我们没有它的桥接事实，
+    静默放行可能漏掉真短路 —— 宁可多报（fail-closed），也不让检查器变瞎子。
+    """
+    bridge = VIA_BRIDGE.get(via_layer)
+    if bridge is None:
+        return True
+    return metal_layer in bridge
 
 
 def run_drc(shapes: list, verbose: bool = False) -> dict:
@@ -203,9 +227,13 @@ def run_lvs(shapes: list, net_pins: dict, verbose: bool = False) -> dict:
             if DD.rects_overlap(a, b, inflate=1e-6):
                 problems.append(("short", a.net, b.net, a.layer))
     # ③b 异网通孔压在异网金属上 = 跨网连接短路
+    #    🔴 Q1（T1b）：先判**层相邻**（`via_bridges`）—— 非桥接层的重叠**不连通**，
+    #       是误报来源。顺序放在 `rects_overlap` 之前：安全过滤同时省掉几何判定。
     for v in vias:
         for m in metals:
             if m.net == v.net or v.net is None or m.net is None:
+                continue
+            if not via_bridges(v.layer, m.layer):
                 continue
             if DD.rects_overlap(v, m, inflate=1e-6):
                 problems.append(("short_via", v.net, m.net, m.layer))
@@ -399,6 +427,9 @@ def fast_lvs(shapes, net_pins: dict, verbose: bool = False) -> dict:
                 continue
             if m.net == v.net or v.net is None or m.net is None:
                 continue
+            # 🔴 Q1（T1b）：与 `run_lvs` **同一判据**（两版漂移即 checker_equiv 红）
+            if not via_bridges(v.layer, m.layer):
+                continue
             if DD.rects_overlap(v, m, inflate=1e-6):
                 problems.append(("short_via", v.net, m.net, m.layer))
     if verbose:
@@ -508,6 +539,45 @@ def lvs_self_check(verbose: bool = False) -> dict:
             problems.append(("control_short_not_red",))
     else:
         problems.append(("control_no_metal",))
+
+    # 🔴 对照组 3（Q1 反向探针 · **必红**）：造一条 `|Δ|=1` 的**真**短路 —— 通孔压在
+    #   它**确实桥接**的那层金属上（V2 ↔ M3/M4，异网）。若 Q1 写宽了（把真短路一并放过），
+    #   这条立刻红。取 999 µm 的空位置，保证只与自造形状相互作用。
+    #   🔴 判据用**绝对增量**（`== 基线+1`）而不是 `any(short_via)`：真实几何本身就有
+    #   成片 `short_via`（大设计实测 13 万条），`any()` 会恒真 ⇒ 对照组成空转。
+    _base_n = sum(1 for pr in res["problems"] if pr[0] == "short_via")
+    _vx = 999.0
+    _v = DD._rect(DD.L_VIA2, _vx, _vx, _vx + DD.VIA, _vx + DD.VIA,
+                  net="__q1v__", kind="via")
+    _br = VIA_BRIDGE[DD.L_VIA2]
+    _m_adj = DD._rect(_br[0], _vx, _vx, _vx + DD.VIA, _vx + DD.VIA,
+                      net="__q1m__", kind="metal")
+    r5 = run_lvs(list(dr.shapes) + [_v, _m_adj], dr.net_pins)
+    _n5 = sum(1 for pr in r5["problems"] if pr[0] == "short_via")
+    if _n5 != _base_n + 1:
+        problems.append(("control_adjacent_short_not_red", _n5, _base_n))
+
+    # 🔴 对照组 4（Q1 反向探针 · **必不红**）：同一个孔压在**非桥接层**金属上
+    #   （M1 ∉ VIA2 的桥接层）⇒ 无电气连接 ⇒ **不得**报 `short_via`（增量必须恰 0）。
+    #   这是被修掉的误报形态本身；它红说明过滤器把「非相邻」判反了。
+    _far = next(l for l in (DD.L_M1, DD.L_M2, DD.L_M3, DD.L_M4) if l not in _br)
+    _m_far = DD._rect(_far, _vx, _vx, _vx + DD.VIA, _vx + DD.VIA,
+                      net="__q1x__", kind="metal")
+    r6 = run_lvs(list(dr.shapes) + [_v, _m_far], dr.net_pins)
+    _n6 = sum(1 for pr in r6["problems"] if pr[0] == "short_via")
+    if _n6 != _base_n:
+        problems.append(("control_nonadjacent_false_positive", _n6, _base_n))
+
+    # 🔴 对照组 5（fail-closed）：**未知孔层**没有桥接事实 ⇒ 保守按连通处理，
+    #   **仍须报**（宁可多报也不让检查器静默变瞎）。
+    _v_u = DD._rect(999, _vx, _vx, _vx + DD.VIA, _vx + DD.VIA,
+                    net="__q1u__", kind="via")
+    _m_u = DD._rect(DD.L_M3, _vx, _vx, _vx + DD.VIA, _vx + DD.VIA,
+                    net="__q1n__", kind="metal")
+    r7 = run_lvs(list(dr.shapes) + [_v_u, _m_u], dr.net_pins)
+    _n7 = sum(1 for pr in r7["problems"] if pr[0] == "short_via")
+    if _n7 != _base_n + 1:
+        problems.append(("control_unknown_via_layer_silent", _n7, _base_n))
 
     return {"ok": not problems, "problems": problems,
             "baseline_ok": res["ok"], "baseline_problems": len(res["problems"])}

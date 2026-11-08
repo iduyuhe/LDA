@@ -75,8 +75,10 @@ from lda_l2.ecore import ddef as DF            # noqa: E402
 from lda_l2.ecore import ddetail as DET        # noqa: E402
 from lda_l2.ecore import ddrc_lvs as DL        # noqa: E402
 from lda_l2.ecore import dpnr as P             # noqa: E402
+from lda_l2.ecore import dplac as DPL          # noqa: E402
 from lda_l2.ecore import dproc as DP           # noqa: E402
 from lda_l2.ecore import dsignoff as DS        # noqa: E402
+from lda_l2.ecore import dsta as ST            # noqa: E402
 from lda_l2.ecore import dverilog as V         # noqa: E402
 
 _FALS: list = []
@@ -233,7 +235,16 @@ def _k0_missing(param_names) -> tuple:
 # B1.3 K2 独立性（同文件内的本地调用图）
 # ══════════════════════════════════════════════════════════════════════════
 #: 允许共享的函数（白名单）。**空** ⇒ 要求两实现完全不共享本地函数。
-K2_SHARED_WHITELIST: tuple = ()
+#: 🔴 v0.9.395（T1b/Q1）登记**唯一例外** `via_bridges`，理由与代价都写在明面上：
+#:   · 被共享的是**判据规则本身**（"这个孔是不是真的桥接那层金属"），不是算法；
+#:     `run_lvs` 仍是 O(n²) 全对、`fast_lvs` 仍是空间哈希 —— 两者互为对照的部分没变；
+#:   · 反方向的代价是真的：规则写错时**两版会一致地错**，等价判据抓不到。
+#:     该风险由三条**独立**判据接管：Q1-a（规则 ≡ `|Δlayer|=1`，绑层号表）、
+#:     Q1-d/e/f（真短路必报 / 误报必不报 / 未知孔层仍报，两版各测一遍）；
+#:   · 之所以不把规则抄两份：本仓已踩过「`ddetail` 与 `ddrc_lvs` 短路口径分叉」，
+#:     复制一份规则换来的独立性，代价是漂移 —— 而漂移比共享更难发现。
+#: 🔴 这是**棘轮**：集合与登记表 `==`（只减不增），多共享一个函数即红。
+K2_SHARED_WHITELIST: tuple = ("via_bridges",)
 
 
 def _local_closures(source: str) -> dict:
@@ -1782,6 +1793,194 @@ def main() -> int:
     print("  [Q0] 可观测性：live %d / dead %d（登记表 %d）· 清单由 TOUCHED+Tech 枚举"
           % (len(_q0_live), len(_q0_dead), len(_Q0_DEAD)))
 
+    # ══════════════════════════════════════════════════════════════════════
+    # T1b · Q1 检查器去伪（`short_via` 层相邻）+ S1a/S1c 约束层
+    # ══════════════════════════════════════════════════════════════════════
+    # 🔴 这是本征程**第一次动检查器逻辑**，所以判据的重点不是"数字对不对"，而是
+    #   「改窄了会不会把真短路一起放过」和「改窄了以后数字有没有偷偷变」。
+    #   两个方向都必须有探针：放过真短路（欠检）与仍报误报（过检）。
+    _tb = B3.run_trunk_from_verilog(V.SAMPLE_VERILOG)
+    _tb_s = {n: d for n, d in _tb["stages"]}
+    _tb_base = _tb["baseline"]["drc_lvs"]
+
+    # Q1-a 规则同义：`via_bridges` 复用 `VIA_BRIDGE`，在当前层号表上必须与规划写的
+    #      `|Δlayer| == 1` **逐项等价** —— 层号表漂移（有人改号）即红，不允许两条口径分叉。
+    _tb_met = (DET.L_M1, DET.L_M2, DET.L_M3, DET.L_M4)
+    _tb_bad = {v: sorted(DL.VIA_BRIDGE[v])
+               for v in DL.VIA_BRIDGE
+               if sorted(DL.VIA_BRIDGE[v]) != sorted(l for l in _tb_met if abs(l - v) == 1)}
+    check("Q1-a 桥接判据 ≡ `|Δlayer|=1`（%d 个孔层逐项等价，层号表漂移即红）"
+          % len(DL.VIA_BRIDGE), not _tb_bad,
+          "不等价的孔层=%r" % (_tb_bad,))
+
+    # Q1-b **零变化**：两颗几何的 `short_via` 一条不动 —— 主链 0（本来没有），
+    #      旧链 105（183 = 78 + 105、43 对网）。只看主链会漏掉旧链那条证据链。
+    _tb_main_sv = _tb_s["drc_lvs"]["lvs_by_rule"].get("short_via", 0)
+    _tb_legacy_sv = _tb_base["lvs_by_rule"].get("short_via", 0)
+    check("Q1-b 零变化：主链 `short_via` %d→0 ∧ 旧链 %d→105 ∧ 旧链 183=78+105 / 43 对网不变"
+          % (_tb_main_sv, _tb_legacy_sv),
+          _tb_main_sv == 0 and _tb_legacy_sv == 105
+          and _tb_base["lvs_problems"] == 183
+          and _tb_base["lvs_by_rule"] == {"short": 78, "short_via": 105}
+          and _tb_base["lvs_unique_pairs"] == 43)
+
+    # Q1-c 独立复算：旧链那 105 条的真实层对**全部** `|Δ|=1`
+    #      ⇒ 过滤器是「纯减法且减 0」，没有一条真实短路被误伤。
+    #      🔴 用 `abs(Δ)==1` 独立写一遍，不复用 `via_bridges`（否则等于自证）。
+    _tb_p0 = DPL.place(nl)
+    _tb_r0 = DET.detail_route(nl, _tb_p0)
+    _tb_rt = [s for s in _tb_r0.shapes if s.net is not None and s.kind in ("metal", "via")]
+    _tb_m = [s for s in _tb_rt if s.kind == "metal"]
+    _tb_v = [s for s in _tb_rt if s.kind == "via"]
+    _tb_deltas = [abs(v.layer - m.layer) for v in _tb_v for m in _tb_m
+                  if not (m.net == v.net or v.net is None or m.net is None)
+                  and DET.rects_overlap(v, m, inflate=1e-6)]
+    check("Q1-c 独立复算：旧链 105 条重叠的层对 `|Δ|` 全为 1（实测 %d 条，Δ 集合 %r）"
+          % (len(_tb_deltas), sorted(set(_tb_deltas))),
+          len(_tb_deltas) == 105 and set(_tb_deltas) == {1})
+
+    # ── Q1 反向探针：三个最小几何，两版（`run_lvs` / `fast_lvs`）都必须同口径 ──
+    #   ① 桥接层重叠 = 真短路 ⇒ **必报**（改了检查器最怕的就是把它一起放过）
+    #   ② 非桥接层重叠 = 无连接 ⇒ **必不报**（这正是被修掉的误报形态）
+    #   ③ 未知孔层 = 无桥接事实 ⇒ **保守仍报**（fail-closed，不静默变瞎）
+    _br2 = DL.VIA_BRIDGE[DET.L_VIA2]
+    _far2 = next(l for l in _tb_met if l not in _br2)
+
+    def _tb_probe(metal_layer, via_layer):
+        v = DET._rect(via_layer, 5.0, 5.0, 5.0 + DET.VIA, 5.0 + DET.VIA,
+                      net="__a__", kind="via")
+        m = DET._rect(metal_layer, 5.0, 5.0, 5.0 + DET.VIA, 5.0 + DET.VIA,
+                      net="__b__", kind="metal")
+        out = []
+        for fn in (DL.run_lvs, DL.fast_lvs):
+            r = fn([v, m], {})
+            out.append(sum(1 for p in r["problems"] if p[0] == "short_via"))
+        return tuple(out)
+
+    _p_adj = _tb_probe(_br2[0], DET.L_VIA2)
+    _p_far = _tb_probe(_far2, DET.L_VIA2)
+    _p_unk = _tb_probe(DET.L_M3, 999)
+    check("Q1-d 反向探针①：`|Δ|=1` 真短路（V2 压异网 M3）必报 —— run/fast 各 %r 条" % (_p_adj,),
+          _p_adj == (1, 1))
+    check("Q1-e 反向探针②：`|Δ|=3` 重叠（V2 压异网 M1）**不得**报 —— run/fast 各 %r 条" % (_p_far,),
+          _p_far == (0, 0))
+    check("Q1-f fail-closed：未知孔层无桥接事实 ⇒ 仍报（run/fast 各 %r 条，不静默放行）"
+          % (_p_unk,), _p_unk == (1, 1))
+
+    # Q1-g K2 **棘轮**：`run_lvs` 与 `fast_lvs` 现在共享 `via_bridges`（规则本身）。
+    #      这不是"看不见"，而是**登记在册**：共享集必须**恰好**等于登记表，
+    #      再多共享一个本地函数即红。同时证明登记不是陈旧的（两版闭包都真的含它）。
+    _q1_clos = _local_closures(_src)
+    _q1_shared = _q1_clos["run_lvs"] & _q1_clos["fast_lvs"]
+    check("Q1-g K2 棘轮：两版共享集 == 登记 %r（实测 %r；多共享即红）"
+          % (sorted(K2_SHARED_WHITELIST), sorted(_q1_shared)),
+          _q1_shared == set(K2_SHARED_WHITELIST)
+          and "via_bridges" in _q1_clos["run_lvs"]
+          and "via_bridges" in _q1_clos["fast_lvs"])
+
+    # ── S1a 时钟周期 / S1c 扇出与转换：由 `Tech` + 拓扑派生，**禁字面量** ──
+    _tb_std = V.parse(_standard_verilog())
+    _c_std = ST.constraint_layer(_tb_std)
+    _c_loc = ST.constraint_layer(
+        nl, comb_delay_ideal_ps=_tb_s["timing"]["comb_delay_ideal_ps"],
+        comb_delay_wired_ps=_tb_s["timing"]["comb_delay_wired_ps"])
+    # S1a-a：同一公式在**标准 c17**（6×NAND2）上必须复现规划预注册的 62.145 ps；
+    #        本仓 c17 只有 53.827，差额 8.318 全部来自 `g23` 是 INV（已在 S13b 登记的
+    #        TYPE_MISMATCH）—— 两个数都给，不许只报有利的那个。
+    check("S1a-a 预注册复现：标准 c17（3×NAND2）T_ref=%.6f ps（预注册 62.145）∧ "
+          "本仓 c17=%.6f ps（g23 为 INV，已登记差异）"
+          % (_c_std["clock_period_ps"], _c_loc["clock_period_ps"]),
+          abs(_c_std["clock_period_ps"] - 62.144921625355565) < 1e-9
+          and abs(_c_loc["clock_period_ps"] - 53.82715545863622) < 1e-9
+          and _c_loc["n_stages"] == 3 and _c_loc["dff_on_path"] == 0)
+
+    # S1a-b 可追溯（禁字面量）：门禁侧**显式展开** `t_intr + k·ln2·R·C` 再累加，
+    #      与产品侧 `DC.cell_delay_ps` 路径逐位一致 ⇒ 四个量真的只由 Tech+拓扑+FO 决定。
+    _tb_tech = DC.DEFAULT_TECH
+    _tb_fo = _c_loc["fo_target"]
+    _tb_ld = _tb_fo * _tb_tech.cin_ff
+    _tb_re = sum(_tb_tech.t_intr_ps
+                 + DC.CELLS[g.cell].k_drive * DC.LN2 * _tb_tech.r_on_ohm * _tb_ld
+                 * DC.OHM_FF_TO_PS
+                 for g in ST.longest_path_gates(nl) if g.cell != "DFF")
+    check("S1a-b 可追溯：门禁显式展开复算 %.9f == 产品 %.9f（禁字面量；仅 Tech+拓扑+FO）"
+          % (_tb_re, _c_loc["clock_period_ps"]), _tb_re == _c_loc["clock_period_ps"])
+
+    # S1a-c 值锁定：三个数逐位（T_ref / slack ideal / slack wired）。
+    check("S1a-c 数值锁定：T_ref=%.9f ∧ slack(ideal)=%.9f ∧ slack(wired)=%.9f"
+          % (_c_loc["clock_period_ps"], _c_loc["slack_ideal_ps"], _c_loc["slack_wired_ps"]),
+          abs(_c_loc["clock_period_ps"] - 53.82715545863622) < 1e-9
+          and abs(_c_loc["slack_ideal_ps"] - 22.87415545863622) < 1e-9
+          and abs(_c_loc["slack_wired_ps"] - 10.337155458636218) < 1e-9)
+
+    # S1a-d 反向探针：`FO_target` 必须**真被消费** —— 改成 1 / 4 时 T_ref 必变且
+    #      与手算吻合（FO1 21.9424 / FO4 69.7695）。写死常数则这三个数相同 ⇒ 红。
+    _c1 = ST.constraint_layer(nl, fo_target=1)
+    _c4 = ST.constraint_layer(nl, fo_target=4)
+    check("S1a-d 反向探针：FO=1 → %.6f ∧ FO=3 → %.6f ∧ FO=4 → %.6f（三值互异 ⇒ 参数真被消费）"
+          % (_c1["clock_period_ps"], _c_loc["clock_period_ps"], _c4["clock_period_ps"]),
+          len({round(_c1["clock_period_ps"], 9), round(_c_loc["clock_period_ps"], 9),
+               round(_c4["clock_period_ps"], 9)}) == 3
+          and abs(_c1["clock_period_ps"] - 21.942385152878742) < 1e-9
+          and abs(_c4["clock_period_ps"] - 69.76954061151497) < 1e-9)
+
+    # S1a-e 判别力**元**判据：T1 只登记、不裁决（规划 §3-DoD.2）。
+    #      legacy 上 FO3 两侧 slack 均 > 0 ⇒ 无判别力（**这是登记，不是失败**）；
+    #      谓词本身自带对照组（(+,-)→真 / (+,+)→假 / (-,-)→假）⇒ 它既不是恒真也不是恒假桩。
+    _tb_disc = [_c_loc["discriminates"], _c1["discriminates"], _c4["discriminates"]]
+    check("S1a-e 判别力元判据只登记不裁决：FO3/1/4 legacy 上判别力=%r（全 False = 约束偏松）∧ "
+          "谓词对照组 %r" % (_tb_disc,
+                            (ST.discriminates(1, -1), ST.discriminates(1, 1),
+                             ST.discriminates(-1, -1))),
+          _tb_disc == [False, False, False]
+          and ST.discriminates(1, -1) is True
+          and ST.discriminates(1, 1) is False
+          and ST.discriminates(-1, -1) is False)
+
+    # S1c-a 扇出：与 S1a **同源**（同一个 `FO_TARGET`，不是第二份定义）∧
+    #      当前网表实际最大扇出 2 < 3 ⇒ 约束不触发（登记为"零变化"的原因，不是"通过"）。
+    _tb_fan = {}
+    for g in nl.gates:
+        for n in g.ins:
+            if n != "CLK":
+                _tb_fan[n] = _tb_fan.get(n, 0) + 1
+    _tb_fmax = max(_tb_fan.values()) if _tb_fan else 0
+    check("S1c-a `max_fanout == FO_TARGET`（同源 %.1f）∧ 实际最大扇出 %d < %.1f ⇒ 不触发（登记）"
+          % (_c_loc["max_fanout"], _tb_fmax, _c_loc["fo_target"]),
+          _c_loc["max_fanout"] == _c_loc["fo_target"] == ST.FO_TARGET
+          and _tb_fmax < _c_loc["fo_target"])
+
+    # S1c-b 转换：取 `_DEFAULT_SLEW_PS`，且**必须自报是假设**（不是测量、不是库值）。
+    check("S1c-b `max_transition_ps == _DEFAULT_SLEW_PS`（%.1f）∧ 自报为假设"
+          % _c_loc["max_transition_ps"],
+          _c_loc["max_transition_ps"] == ST._DEFAULT_SLEW_PS
+          and _c_loc["max_transition_is_assumption"] is True)
+
+    # S1-a 本批**对外数字逐位不变**（重申：Q1 改检查器、S1 只加约束，都不许动主链）
+    _tb_t = _tb_s["timing"]
+    check("S1-a 零变化复述：60.840 ∧ 7/11 ∧ ideal %.3f / wired %.3f ∧ DRC %d ∧ LVS %d ∧ DEF %d B "
+          "∧ claimable=%s ∧ m1_exit.ok=%s"
+          % (_tb_t["comb_delay_ideal_ps"], _tb_t["comb_delay_wired_ps"],
+             _tb_s["drc_lvs"]["drc_violations"], _tb_s["drc_lvs"]["lvs_problems"],
+             _tb_s["def_write"]["bytes"], _tb["claimability"]["claimable"],
+             _tb_s["m1_exit"]["ok"]),
+          _tb_s["place"]["die_area_um2"] == 60.84
+          and _tb_s["route"]["nets_with_segments"] == 7
+          and _tb_s["route"]["nets_touched"] == 11
+          and _tb_t["comb_delay_ideal_ps"] == 30.953
+          and _tb_t["comb_delay_wired_ps"] == 43.49
+          and _tb_s["drc_lvs"]["drc_violations"] == 0
+          and _tb_s["drc_lvs"]["lvs_problems"] == 3
+          and _tb_s["def_write"]["bytes"] == 575
+          and _tb["claimability"]["claimable"] is False
+          and _tb_s["m1_exit"]["ok"] is True)
+    print("  [Q1] `short_via` 加层相邻（%d 孔层 × `VIA_BRIDGE`）· 主链 0 / 旧链 105 条不动 · "
+          "探针 真短路必报 / 误报必不报 / 未知孔层仍报" % len(DL.VIA_BRIDGE))
+    print("  [S1] T_ref=%.3f ps（标准 c17 口径 62.145；本仓 g23=INV）· max_fanout=%.1f · "
+          "max_transition=%.1f（假设）· 判别力=%s（T1 登记，T2 裁决）"
+          % (_c_loc["clock_period_ps"], _c_loc["max_fanout"],
+             _c_loc["max_transition_ps"], _c_loc["discriminates"]))
+
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)
 
@@ -1790,7 +1989,8 @@ def main() -> int:
           % (len(got), " · ".join("%s:%s" % (k, "+".join(v)) for k, v in sorted(got.items()))))
     print("  [S14] EM 物理自变量缺 %s —— Black 方程要求，当前 `em_check` 无温度参数"
           % list(missing))
-    print("  [S15] DRC/LVS 双实现本地闭包交集 ∅ ⇒ 「两个实现」确有独立性（E1 不再虚设）")
+    print("  [S15] DRC/LVS 双实现本地闭包交集 ∅（登记例外 1 项 `via_bridges`：共享的是判据规则，"
+          "其正确性由 Q1-a/d/e/f 独立接管）⇒ 「两个实现」独立性成立（E1 不再虚设）")
     print("  [S16] 面积两条不同边界路径均拼回 %.3f µm" % _po["die_w_um"])
     print("  [S18] EM 温度标度：T=T_ref 逐位退化 ∧ 85°C 允许 %.4g（×%.1f）∧ 判定随温度翻转"
           % (_j85, _j85 / _j125))
@@ -1801,7 +2001,7 @@ def main() -> int:
         print("S13 有红色：%s" % ", ".join(_FALS))
         return 1
     print("S13 全绿 · B1 四项 + B2a：拓扑机核（2 处已登记）+ K0 覆盖 6/6（EM 已补温度）+ "
-          "K2 交集 ∅ + 面积双路径一致 + EM 温度标度（T=T_ref 逐位退化、判定随温度翻转）；"
+          "K2 交集 ∅（例外 1 项已登记）+ 面积双路径一致 + EM 温度标度（T=T_ref 逐位退化、判定随温度翻转）；"
           "产品数字逐位未变")
     return 0
 

@@ -280,6 +280,154 @@ def _inet(port, bit):
         else ("in_%s_%d" % (port, bit))
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# T1b · S1a / S1c 最小约束层（**零数字变化**：只把"量尺"造出来，不改量出的数）
+# ═══════════════════════════════════════════════════════════════════════════
+# 🔴 为什么这一层值得单独存在：在此之前，仓库里**没有任何地方定义"周期应该多长"**，
+#   于是"延时 43.490 ps"这个数字**没有满足/不满足可言** —— 一个没有约束的数字无法
+#   证伪，也无法在 T2 改几何后回答"是变好了还是变差了"。本层只做四件事：
+#   把 `clock_period` / `max_fanout` / `max_transition` 由 `Tech` + 拓扑派生，
+#   并给出两套口径的 `slack`（ideal / wired）—— **只给数，不给判决**。
+
+#: 唯一扇出目标（U-1：S1a 的 `T_ref` 与 S1c 的 `max_fanout` 由**同一个数**派生，
+#: 禁第二份定义）。预注册 = 3，依据是实测四组（legacy 口径）：
+#: FO1 `−6.238 / −44.036`（全红）· FO3 `+31.192 / +18.655`（全绿）·
+#: FO4 `+49.907 / +12.109`（全绿）；FO3 在 Q2 后翻转成 `+31.192 / −6.606`。
+#: ⇒ 只有 FO3 在"改几何后才显现违例"，其余两组要么永远红、要么永远绿（无判别力）。
+FO_TARGET = 3.0
+
+
+def longest_path_gates(nl) -> list:
+    """**拓扑最长路径**（按门数计）。由门级连接算，**不读时序**。
+
+    🔴 为什么不能用到达时间找最长路径：那样 `T_ref` 与 `delay` **同源**，
+    `slack = T_ref − delay` 就退化成自证（"用延时定义的周期当然容得下这个延时"），
+    而这正是本仓反复踩过的"恒真判据"。拓扑只认 `ins`/`out`，与延时模型无关。
+
+    DFF 是路径边界（`clk→Q` 之后重新起算），与 `sta` 的寄存器分隔口径一致；
+    多驱动 / 组合环 ⇒ `topo_order` 直接抛（fail-closed，不静默猜一个顺序）。
+    """
+    from .dsynth import topo_order
+
+    order = topo_order(nl)
+    producer = {g.out: g for g in nl.gates}
+    depth, prev = {}, {}
+    for g in order:
+        if g.cell == "DFF":
+            depth[g.name], prev[g.name] = 1, None
+            continue
+        srcs = [producer[n] for n in g.ins if n in producer and n != "CLK"]
+        if srcs:
+            s = max(srcs, key=lambda x: depth.get(x.name, 1))
+            depth[g.name] = depth.get(s.name, 1) + 1
+            prev[g.name] = s.name
+        else:
+            depth[g.name], prev[g.name] = 1, None
+    if not depth:
+        return []
+    by_name = {g.name: g for g in nl.gates}
+    # 同深度取拓扑序里**最先**出现的那条（`max` 取首个极大）⇒ 结果确定、可复现
+    cur = max(order, key=lambda g: depth[g.name])
+    path = []
+    while cur is not None:
+        path.append(cur)
+        p = prev.get(cur.name)
+        cur = by_name.get(p) if p else None
+    path.reverse()
+    return path
+
+
+def discriminates(slack_ideal_ps, slack_wired_ps) -> bool:
+    """判别力**元**判据：`slack(ideal) > 0 > slack(wired)`。
+
+    🔴 这不是签核判据，是"约束层有没有判别力"的判据：
+    - 两侧都 >0 ⇒ 约束太松（改几何也看不出违例）⇒ 无判别力；
+    - 两侧都 <0 ⇒ 约束太紧（永远违例）⇒ 无判别力。
+    按规划 §3-DoD.2：**T1 只登记（legacy 上必不成立），T2 才裁决**。
+    缺任一侧（`None`）按"无判别力"处理 —— 没算不等于有判别力。
+    """
+    if slack_ideal_ps is None or slack_wired_ps is None:
+        return False
+    return slack_ideal_ps > 0.0 > slack_wired_ps
+
+
+def constraint_layer(nl, tech=None, fo_target=None,
+                     comb_delay_ideal_ps=None,
+                     comb_delay_wired_ps=None) -> dict:
+    """S1a + S1c：由 `Tech` + 拓扑派生约束量（**禁出现字面量**）。
+
+    定义（规划 §3-S1）::
+
+        T_ref = Σ_{i ∈ L_top} cell_delay(k_drive_i, FO_target · cin_ff)
+        max_fanout     = FO_target                 （与 S1a 同源，U-1）
+        max_transition = _DEFAULT_SLEW_PS           （**显式假设**，slew 不传播）
+        slack(X)       = T_ref − delay(X)           （X ∈ {ideal, wired}）
+
+    🔴 三条纪律：
+    ① `slack` **不得**由 `delay` 派生（`slack = margin·delay` 恒正 ⇒ 自证）；
+    ② 判据**不许**写 `slack ≥ 0`：T2 预注册 `wired slack = −6.606 ps` 必然违例，
+       写 `≥0` 的唯一"解法"是调 `FO_target` 造假 ⇒ 本函数只给数，判决留 T2；
+    ③ 无门 / 无网表 ⇒ 相应量为 `None`，**不是 0**（"没算"≠"零裕量"）。
+
+    `dff_on_path` 显式给出，且 DFF 段（`clk→Q`）**不计入** `T_ref`：
+    `t_clk_q_ps` 在当前网表（c17 纯组合）没有消费者、未标定；把它当 0 是隐式假设，
+    当 `t_intr` 是错的 —— 故计入会使 `T_ref` 变成"编出来的数"。此边界随返回值同报。
+    """
+    # R5-fix 同款：默认值在调用时取，不在 def 时绑定
+    if tech is None:
+        tech = DC.DEFAULT_TECH
+    fo = FO_TARGET if fo_target is None else float(fo_target)
+    path = longest_path_gates(nl)
+    load_ff = fo * tech.cin_ff
+    comb = [g for g in path if g.cell != "DFF"]
+    stages = [(g.name, g.cell, DC.cell_delay_ps(g.cell, load_ff, tech)) for g in comb]
+    t_ref = sum(d for (_n, _c, d) in stages) if stages else None
+
+    sl_i = None if (t_ref is None or comb_delay_ideal_ps is None) \
+        else t_ref - float(comb_delay_ideal_ps)
+    sl_w = None if (t_ref is None or comb_delay_wired_ps is None) \
+        else t_ref - float(comb_delay_wired_ps)
+
+    return {
+        # ── S1a 时钟周期 ──
+        "clock_period_ps": t_ref,
+        "fo_target": fo,
+        "load_per_stage_ff": load_ff,
+        "n_stages": len(stages),
+        "path": [g.name for g in path],
+        "dff_on_path": sum(1 for g in path if g.cell == "DFF"),
+        "path_basis": "拓扑最长路径（门级连接，按门数；**不读时序**）",
+        # ── S1c 扇出 / 转换 ──
+        "max_fanout": fo,
+        "max_transition_ps": _DEFAULT_SLEW_PS,
+        "max_transition_is_assumption": True,
+        # ── 两套口径的裕量（**只给数，不判满足**）──
+        "slack_ideal_ps": sl_i,
+        "slack_wired_ps": sl_w,
+        "discriminates": discriminates(sl_i, sl_w),
+        # ── 可追溯性：每个量的来源符号（禁字面量 DoD 的机核入口）──
+        "sources": {
+            "clock_period_ps": ["Tech.t_intr_ps", "Tech.r_on_ohm", "Tech.cin_ff",
+                                "FO_TARGET", "Cell.k_drive", "LN2", "OHM_FF_TO_PS"],
+            "max_fanout": ["FO_TARGET"],
+            "max_transition_ps": ["_DEFAULT_SLEW_PS"],
+            "slack_*": ["clock_period_ps", "comb_delay_ideal_ps",
+                        "comb_delay_wired_ps"],
+        },
+        "assumptions": {
+            "fo_target": "预注册 3（见 FO_TARGET 注释的四组实测）",
+            "load_per_stage": "FO_target·cin_ff —— 每级按目标扇出计负载，非实际负载",
+            "max_transition": "slew 不传播，取 _DEFAULT_SLEW_PS 常数（假设，非测量）",
+            "dff": "DFF 段（clk→Q）不计入 T_ref：t_clk_q 在当前网表无消费者、未标定",
+            "verdict": "本层不判满足；`discriminates` 只说明约束有没有判别力",
+        },
+        "not_included": "无时钟树 / 无偏斜 / 无多周期 / 无 IO 延时 / 无 keep-out；"
+                        "周期是**一阶估计**，非时序签核",
+        "claimable": False,
+        "claimable_reason": "T_ref 由一阶 RC + 预注册扇出目标派生 ⇒ MODEL_ESTIMATE",
+    }
+
+
 # ---------------------------------------------------------------------------
 # 功耗（一阶 · **claimable=False**）
 # ---------------------------------------------------------------------------

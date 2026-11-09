@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""S11 门禁：**pad 落点 + M2 引出**（端口网 1→6 布通，总布通 4→7，DRC 0）。
+"""S11 门禁：**pad 落点 + M2 引出**（端口网 1→6 布通，总布通 4→10，DRC 0）。
 
 ═══════════════════════════════════════════════════════════════════════════════
 这一版要证明什么（v0.9.382 · A 改拓扑第一段）
@@ -38,7 +38,7 @@ v0.9.382 把 pad 引出改成 **M2 竖直**（M2 本就是竖直层；pad 在 ba
   S11e 每个 pad **独占一条引出列** ∧ 落在列网格上（同 x 会让 pad 竖段叠在一起）。
   S11f **净收益**：端口网 +5、内部网 −2 ⇒ 净 **+3**（`≥ 1` 才允许启用）。
   S11g 🔴 **pad 引出走 M2 竖段**（≥ pad 数）∧ pad 位置**无 M4 形状**（本版翻正的唯一原因）。
-  S11h `topology_note` 非空且写明「4→7」∧ 含「M2」（披露与数字同行）。
+  S11h `topology_note` 非空且写明「4→10」∧ 含「M2」（披露与数字同行）。
   S11i `_unique_pairs` 对**变长元组**不崩（v0.9.380 修的真 bug，回归探针）。
   S11j 本门禁已登记进 `CORE_SMOKES` + 耗时红线。
 
@@ -76,7 +76,7 @@ PAD_ROUTED = 10         # 启用 pad + M2 引出
 
 
 def main() -> int:
-    print("S11 门禁：pad 落点 + M2 引出（端口网 1→6，总布通 4→7，DRC 0）")
+    print("S11 门禁：pad 落点 + M2 引出（端口网 1→6，总布通 4→10，DRC 0）")
 
     nl = V.parse(V.SAMPLE_VERILOG)
     pl = P.place_real(nl)
@@ -168,8 +168,8 @@ def main() -> int:
 
     # ── S11h 拓扑说明与数字同行 ──────────────────────────────────
     note = po.get("topology_note") or ""
-    check("S11h `topology_note` 非空且写明「4→7」∧ 含「M2」（披露与数字同行，防被删）",
-          "4→7" in note and "M2" in note, repr(note)[:120])
+    check("S11h `topology_note` 非空且写明「4→10」∧ 含「M2」（披露与数字同行，防被删）",
+          "4→10" in note and "M2" in note, repr(note)[:120])
 
     # ── S11i _unique_pairs 对变长元组不崩（v0.9.380 修的真 bug）────
     try:
@@ -202,14 +202,14 @@ def main() -> int:
     print("  [S11f] 端口网 %d→%d（+%d）· 内部网 %d→%d（−%d）⇒ **净 %+d**"
           % (len(port_base), len(port_now), gain,
              len(internal), len(internal_now), loss, gain - loss))
-    print("  [边界] 仍未布 4 条（3 COL_FAIL + 1 DANGLING）· 面积 ×1.806 是真代价 · "
+    print("  [边界] 仍未布 1 条（DANGLING n10）· 面积代价 ×1.807 是真代价 · "
           "DRC 0 仍是子集结论")
 
     if _FALS:
         print("S11 有红色：%s" % ", ".join(_FALS))
         return 1
-    print("S11 全绿 · pad 走 M2 引出（不占 M4 列）⇒ 布通 4→7、DRC 0；"
-          "面积 ×1.806 换来 6 条端口网可布，仍非全布（4 条未布）")
+    print("S11 全绿 · pad 走 M2 引出（不占 M4 列）⇒ 布通 4→10、DRC 0；"
+          "面积 ×1.807 换来 6 条端口网可布，仍非全布（4 条未布）")
     return 0
 
 

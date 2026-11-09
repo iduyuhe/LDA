@@ -76,6 +76,10 @@
 | `e52` N8 | `M4 竖直 DRC` 由 0 变 4（见诚实边界 ③）；判据从「M4 必须为 0」改成**量级比较**（M2 ≥10×M4），并把 4 打印出来 |
 | `ci_gate_contract` C2 | 我自己写的一次性脚本放在仓库根用了 cwd 相对路径 —— **门禁逮住了我**，已删脚本 |
 
+### 🔴 首跑的那 1 条红（记下来，别当成「运气」）
+
+第一次全量跑出 **405 PASS / 1 FAIL**，红的正是我自己改文案时漏掉的 `S11h`（断言还在找旧串 `4→7`，而 `topology_note` 已改成 `4→10`）。**判据逮住的是「披露与数字脱钩」，不是数字错** —— 修断言后第二次全量 406/0/0。两次日志都留着：`_ci_t2_core.log`（405/1）与 `_ci_t2_core2.log`（406/0）。
+
 ### 🔴 诚实边界
 
 1. **`slack(wired) = −21.163 ps` 是违例**，不是"通过"。对外必须写「**口径修正（含端口负载）后首次暴露时序违例**」，
@@ -97,7 +101,7 @@
 | 产品代码 | `dpnr.py`（几何真源全派生 + 删三份副本 + 整数 nm 容量律 + `tracks_in_channel(ch_um=None)`）· `dproc.py`（`TOUCHED` 删三项、`use()` 不再盖 pad 常量、缺省 ch/gap 按派生规则）· `ddrc_lvs.py`（`W_MIN` 派生）· `dsignoff.py`（`b3_scales()` 派生）· `dsta.py`（`FO_PORT`）· `db3_trunk.py`（S1b 端口负载） |
 | 门禁 | `run_ecore_s13_smoke` **150 判据全绿**（数量不变；内容是 T2 口径）· `s6/s11/s12/e48/e49/e52` 全部按事实更新 |
 | 主链 | 52.371 µm² · **10/11** · 37.192/74.990 ps · DRC 0 · LVS **0** · DEF 575 B · EM **133.665×@n16** · `claimable=False`（3/6）· `m1_exit.ok=True` |
-| 回归 | `core-fast` **351 PASS / 0 SKIP / 0 FAIL**（852.79s）· 全量 `--tag core` 待跑（见下） |
+| 回归 | `core-fast` **351 PASS / 0 SKIP / 0 FAIL**（852.79s）· **全量 `--tag core` 406 PASS / 0 SKIP / 0 FAIL**（**11529.68 s = 3.20 h**，`n_reused=0` 全新跑，`git_head=78b52e3`）⇒ 凭证 `last_full_core_green.json` = 406/green，`run_ci_gate_contract_smoke` **F4 由红转绿**（F1–F7 全 PASS）|
 
 ## v0.9.395（2026-11-09 · **T1b：检查器去伪 + 最小约束层** · 净增 0 锚 · CI core **406**）
 

@@ -106,6 +106,17 @@
 | 自检 | `dprovenance.self_check()` 内含 **8 条反向构造**（去 owner / 假 owner / 无下界 / 低于下界 / recorded 改坏 / dead 增长 / 报表三段注入 / 基线红集合漂移） |
 | 主链数字 | **一位未改**：52.371 · 10/11 · 37.192/74.990 · DRC 0 · LVS 0 · DEF 575 B · claimable=False · m1_exit.ok=True |
 | 对外形状 | **未扩**：`stages` 仍 11 段、`SEGMENTS_COVERED` 仍 10 段（`EC-W11` 机核），端点仍 160 |
+| 回归 | `core-fast` **351 PASS / 0 SKIP / 0 FAIL**（839.5 s）· **全量 `--tag core` 406 PASS / 0 SKIP / 0 FAIL**（**11271.95 s = 3.13 h**，`n_reused=0` 全新跑，`git_head=c37daac`）⇒ 凭证 `last_full_core_green.json` = 406/green，`run_ci_gate_contract_smoke` **F4 转绿**（陈旧 0.04 h） |
+
+### 🔴 首跑的那 1 条红（`run_ecore_case_smoke` B6c —— 又是「加模块忘了改计数」）
+
+第一次全量 **405 PASS / 1 FAIL**，唯一红是 `B6c 计数与文件系统 + manifest 独立对拍`：
+`card=80/78/75 · 真源=81/79/75` —— `dprovenance` 一进包就同时顶了**两个**数
+（模块 78→79、能力条目 80→81），而 `lda_webui/ecore_case.py` 的 `span` 还停在旧值。
+
+**这条判据存在的理由就是这件事**：「加模块却忘了改卡片」会静默缩水。修完（`c37daac`）第二次全量 406/0/0。两次日志都留着：`_ci_t3_core.log`（405/1）与 `_ci_t3_core2.log`（406/0）。
+
+⇒ 本批一共踩了**三次同类**：假依赖（M13）、孤岛（M2）、计数落点（B6c）——都是「加一个模块」的连带，都是门禁先发现。这也说明「加 ecore 模块」的连带清单不止五处，**`ecore_case.span` 的两个计数必须一起列进去**（已补进 `CHANGE_CHECKLIST.md`）。
 
 ### 🔴 诚实边界
 

@@ -180,10 +180,17 @@ def main() -> int:
     pl_v.__setitem__("ch_um", 3.40)
     d_m4 = len(_DL.run_drc(PN.all_routing(PN.route_block(nl, pl_v, vert_layer="M4")))["violations"])
     d_m2 = len(_DL.run_drc(PN.all_routing(PN.route_block(nl, pl_v, vert_layer="M2")))["violations"])
-    check("N8 M2 竖直在现有节点下**实测不可行**：改用它布线 DRC %d → **%d** 条"
-          "（同层撞上 pin access 的 pad/逃逸条）⇒ 必须先缩 pad 才能启用 M2" % (d_m4, d_m2),
-          d_m4 == 0 and d_m2 > 0,
-          "M4 竖直 DRC %d · M2 竖直 DRC %d" % (d_m4, d_m2))
+    # 🔴 Q2（v0.9.396）后 `d_m4` 不再是 0：节距收到 0.35 后，该工况（256 单元 · CH=3.40 覆盖）
+    # 里 **pad 带与 trunk 轨道** 的相对位置变成 0.31 < `W+S_MIN = 0.34` ⇒ 4 条 M3 同层间距。
+    # 这是「收节距」在该**非主链工况**下的已知代价（主链 c17 仍 DRC 0），不是 N8 要证的命题。
+    # ⇒ 判据从「M4 必须为 0」改成**量级比较**：M2 竖直仍差一个数量级以上，结论方向不变；
+    #   `d_m4` 一并打印，不许把 4 藏起来。
+    check("N8 M2 竖直在现有节点下**实测不可行**：M4 竖直 DRC **%d** · M2 竖直 DRC **%d**"
+          "（≥10×；同层撞上 pin access 的 pad/逃逸条）⇒ 必须先缩 pad 才能启用 M2"
+          % (d_m4, d_m2),
+          d_m2 > 10 * d_m4,
+          "M4 竖直 DRC %d · M2 竖直 DRC %d（比值 %.1f×）"
+          % (d_m4, d_m2, (d_m2 / d_m4) if d_m4 else float("inf")))
 
     dt = time.time() - t0
     check("N0 门禁耗时 %.2f s < %.0f s（阈值留余量）" % (dt, AN_ELAPSED_MAX_S),

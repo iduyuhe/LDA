@@ -166,8 +166,9 @@ def main() -> int:
 
     # ── C2 逐点逃逸额度 = 闭式 ────────────────────────────────
     # 同 y 邻域里 A(x=0.12) 与 B(x=0.48) 相隔一个 pitch：A 向右受 B 约束。
-    want = PN.PITCH - 2.0 * PN.M2_HALF - DL.S_MIN
-    bud_ab = PN.point_off_budget([(0.12, "A"), (0.48, "B")], 0.12, "A", PN.M2_JOG_MAX)
+    want = PN.PITCH - 2.0 * PN.pad_half() - DL.S_MIN
+    bud_ab = PN.point_off_budget([(0.12, "A"), (0.12 + PN.PITCH, "B")], 0.12, "A",
+                            PN.M2_JOG_MAX)
     bud_same = PN.point_off_budget([(0.48, "A")], 0.12, "A", PN.M2_JOG_MAX)
     check("C2 逃逸额度 = 闭式：A 向左 %.3f（无邻）· 向右 %.4f == P−2·M2_HALF−S_MIN；同网不计邻居"
           % (bud_ab[0], bud_ab[1]),

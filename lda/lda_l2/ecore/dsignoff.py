@@ -367,7 +367,21 @@ def em_net_signoff(length_um: dict, c_wire_ff: dict, c_total_ff: dict,
 #      两侧结果必须逐位一致，且源码互不引用 —— 「两实现」≠「两条独立路径」。
 #   🔴 段内**不设** `n_fail` / `ok` / `pass` —— 本段是诊断，不是判决。
 # ═══════════════════════════════════════════════════════════════════════════
-B3_SCALES = (1, 2, 4, 8, 16, 32)
+def b3_scales(die_w_um, width_um):
+    """密度谱的尺度集合 —— **由尺寸反解，不写死**（Q2/v0.9.396）。
+
+    🔴 旧实现是死常量 `(1,2,4,8,16,32)`：几何一缩，`n=32` 时窗口宽 `die_w/32`
+    会比一条线（0.24µm）还窄 —— 那个尺度**失去定义**（实测 Q2 后 7.590/32 = 0.2372 < 0.24）。
+    死常量在这种情形下只有两种结局：要么崩（`i_scale_upper_bound` 判假），要么被人
+    偷偷放宽判据。正解是**反解上界**：`s_max = 2^⌊log2(die_w/width)⌋`，
+    再细分一档就装不下一条线 ⇒ 谱到 `s_max` 为止。
+    """
+    import math as _m
+    ratio = float(die_w_um) / float(width_um)
+    if ratio < 1.0:
+        return (1,)
+    s_max = 2 ** int(_m.floor(_m.log2(ratio) + 1e-12))
+    return tuple(s for s in (2 ** k for k in range(0, 12)) if s <= s_max)
 B3_SCOPE = "DIAGNOSTIC_ONLY"
 B3_UNION_METHOD = "incremental_rect_subtraction"
 B3_DENSITY_METHOD = "separable_1d_cdf_difference"
@@ -440,7 +454,7 @@ def b3_window_density(rects, n, die_w, die_h):
 
 
 def ec_b3_signoff(shapes, die_w_um, die_h_um, width_um, g_values,
-                  scales=B3_SCALES) -> dict:
+                  scales=None) -> dict:
     """逐层密度谱 + 四口径比值谱（**诊断段**：不判违规、不进 blocking）。
 
     输入全部显式（K0 完备性）：几何 / die 尺寸 / 唯一线宽 / 尺度集合 / 四个分母口径。
@@ -448,6 +462,9 @@ def ec_b3_signoff(shapes, die_w_um, die_h_um, width_um, g_values,
     """
     metals = [s for s in shapes if getattr(s, "kind", None) == "metal"]
     layers = sorted({int(s.layer) for s in metals})
+    # 🔴 Q2：尺度谱按**本片尺寸反解**（缺省即派生；显式传入仍被尊重，供反向探针用）
+    if scales is None:
+        scales = b3_scales(die_w_um, width_um)
     die_area = float(die_w_um) * float(die_h_um)
     by_layer = {L: [(s.x0, s.y0, s.x1, s.y1) for s in metals if int(s.layer) == L]
                 for L in layers}

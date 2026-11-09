@@ -33,11 +33,14 @@ from . import dnode as DN
 from . import dpnr as PN
 
 #: `use()` 会动到的全部属性（顺序无关；判据据此做「退出后逐项还原」检查）
+#: 🔴 Q2（v0.9.396）删掉三项：`dpnr.EXT` / `dpnr.PAD_HALF` / `dpnr.M2_HALF`。
+#:   它们是**同一个量的三份副本**，且都是 import 期求值的常量 —— 在这里 setattr
+#:   只能改副本、改不到几何发射点（二阶早绑定的温床）。现在它们统一由 `dpnr.pad_half()`
+#:   从 `ddetail.VIA` / `ddrc_lvs.ENC` 现取 ⇒ 下面两条真源一旦被替换，几何立刻跟着变。
 TOUCHED = (
     ("ddetail", "W_ROUTE"), ("ddetail", "VIA"), ("ddetail", "TRACK_PITCH"),
     ("ddrc_lvs", "S_MIN"), ("ddrc_lvs", "ENC"), ("ddrc_lvs", "W_MIN"),
-    ("dpnr", "PITCH"), ("dpnr", "W"), ("dpnr", "EXT"),
-    ("dpnr", "PAD_HALF"), ("dpnr", "M2_HALF"),
+    ("dpnr", "PITCH"), ("dpnr", "W"),
     ("dpnr", "CELL_GAP_UM"), ("dpnr", "CH_UM"),
 )
 
@@ -66,8 +69,11 @@ def use(node, channel_um: float = None, cell_gap_um: float = None, lib=None):
     r = nd.route_rules()
     pitch, w, s = r["pitch"], r["w_min"], r["s_min"]
     via, enc = r["via"], r["enc"]
-    ch = (4.0 * pitch) if channel_um is None else float(channel_um)
-    gap = (1.0 * pitch) if cell_gap_um is None else float(cell_gap_um)
+    # 🔴 Q2：缺省通道高与单元间距都**按派生规则**取（不写字面量、不用 1×pitch 的第二套规则）：
+    #    通道要装 `TRACKS_TARGET` 条轨道；间距 = `GAP_K·pitch − 单元宽`（与 `dpnr` 同一规则）。
+    ch = ((PN.TRACKS_TARGET - 1) * pitch + w + PN.DELTA_ESCAPE) \
+        if channel_um is None else float(channel_um)
+    gap = (PN.GAP_K * pitch - PN.CELL_W_UM) if cell_gap_um is None else float(cell_gap_um)
 
     saved = snapshot()
     saved_lib = (PN.CL, dict(PN.CELL_MAP))
@@ -78,12 +84,10 @@ def use(node, channel_um: float = None, cell_gap_um: float = None, lib=None):
         DD.W_ROUTE, DD.VIA, DD.TRACK_PITCH = w, via, pitch
         DL.S_MIN, DL.ENC, DL.W_MIN = s, enc, w
         PN.PITCH, PN.W = pitch, w
-        PN.EXT = via / 2.0 + enc
-        # 🔴 pad 取**精确值** `VIA/2 + ENC`（不加 1nm）。加了 1nm 后 pad 宽 = W + 2nm，
-        # 而相邻引脚恰好一个 pitch ⇒ 净距 = pitch − pad = S_MIN − 2nm < S_MIN
-        # ⇒ 28nm 规则下成片 min_spacing（实测 128 单元 2 条，全是两个接入焊盘）。
-        PN.PAD_HALF = via / 2.0 + enc
-        PN.M2_HALF = via / 2.0 + enc
+        # 🔴 pad 半宽 / 金属延伸量**不再在这里赋值**：它由 `dpnr.pad_half()` 从
+        # `DD.VIA` / `DL.ENC`（上面两行已替换）现取。旧写法 `PN.PAD_HALF = via/2+enc`
+        # 是在切换点算一次、把结果盖到模块常量上 —— 一旦几何发射点读的是自己那份副本，
+        # 切换就失效（v0.9.394 实测：`VIA 0.20→0.30` 时 `PAD_HALF` 仍报 0.1200）。
         PN.CELL_GAP_UM, PN.CH_UM = gap, ch
         yield {"node": nd.name, "pitch": pitch, "w": w, "s": s, "via": via,
                "enc": enc, "channel_um": ch, "cell_gap_um": gap}

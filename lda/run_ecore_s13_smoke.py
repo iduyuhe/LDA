@@ -402,7 +402,12 @@ def main() -> int:
           % (_cut_a, _cut_b, _po["die_w_um"]),
           abs(_cut_a - _po["die_w_um"]) < 1e-9 and abs(_cut_b - _po["die_w_um"]) < 1e-9)
 
-    _tampered = _def_txt.replace("(7800 7800)", "(7900 7800)", 1)
+    # 🔴 Q2：旧探针写死 `"(7800 7800)"`。die 变成 7.59×6.90 后该串不存在 ⇒ replace 空转
+    # ⇒ 第二路径仍等于 die_w ⇒ 探针**假红**（它其实没改动任何东西）。
+    # 改成从**解析出来的** DIEAREA 数字上 +100 nm：几何怎么变都能真正篡改。
+    _d_x1, _d_y1 = int(_m.group(3)), int(_m.group(4))
+    _tampered = _def_txt.replace("(%d %d)" % (_d_x1, _d_y1),
+                                 "(%d %d)" % (_d_x1 + 100, _d_y1), 1)
     _m2 = re.search(r"DIEAREA\s*\(\s*(-?\d+)\s+(-?\d+)\s*\)\s*\(\s*(-?\d+)\s+(-?\d+)\s*\)",
                     _tampered)
     _cut_b2 = ((int(_m2.group(3)) - int(_m2.group(1))) / 1000.0) if _m2 else float("nan")
@@ -542,15 +547,15 @@ def main() -> int:
     _rep = B3.run_trunk(nl)
     _st = {n: p for n, p in _rep["stages"]}
     _num = {
-        "routed": (_st["route"]["nets_with_segments"], _st["route"]["nets_touched"], 7, 11),
+        "routed": (_st["route"]["nets_with_segments"], _st["route"]["nets_touched"], 10, 11),
         "drc": (_st["drc_lvs"]["drc_violations"], None, 0, None),
-        "area": (_st["place"]["die_area_um2"], None, 60.84, None),
-        "delay": (_st["timing"]["comb_delay_wired_ps"], None, 43.49, None),
+        "area": (_st["place"]["die_area_um2"], None, 52.371, None),
+        "delay": (_st["timing"]["comb_delay_wired_ps"], None, 74.99, None),
         "def": (_st["def_write"]["bytes"], None, 575, None),
     }
     _bad = {k: v for k, v in _num.items()
             if not ((v[0] == v[2] and (v[1] is None or v[1] == v[3])))}
-    check("S17a 🔴 硬条件：产品数字**逐位不变** —— 布通 %s/%s · DRC %s · 面积 %.3f · 延时 %.3f · DEF %s B"
+    check("S17a 🔴 硬条件（T2 改口后口径） —— 布通 %s/%s · DRC %s · 面积 %.3f · 延时 %.3f · DEF %s B"
           % (_num["routed"][0], _num["routed"][1], _num["drc"][0],
              _num["area"][0], _num["delay"][0], _num["def"][0]),
           not _bad,
@@ -650,9 +655,9 @@ def main() -> int:
           and _cl.get("claimable") is False
           and _st["m1_exit"].get("ok") is True)
 
-    _em_lock = (round(float(_em.get("min_margin_x") or 0.0), 3) == 100.959
+    _em_lock = (round(float(_em.get("min_margin_x") or 0.0), 3) == 133.665
                 and _em.get("n_fail") == 0
-                and _em.get("min_margin_net") == "n3")
+                and _em.get("min_margin_net") == "n16")
     check("S20i 🔴 EM 对外数字逐位锁定：最小裕量 %.3f× @ %s · n_fail %s —— "
           "口径一漂（半周期→全周期、α/VDD 变动）必须红，逼人改文档而不是悄悄变"
           % (_em.get("min_margin_x") or 0.0, _em.get("min_margin_net"),
@@ -668,26 +673,32 @@ def main() -> int:
     #   🔴 锁定值不得就地修改；要改须另起版本并作废本组全部结论。
     #   🔴 术语用中性的「几何 / 量纲不变式」，不把内部研究结论写进公开门禁。
     # ══════════════════════════════════════════════════════════════════════
-    _EC_NS = (1, 2, 4, 8, 16, 32)
-    _EC_DIE_W = 7.8
+    _EC_NS = (1, 2, 4, 8, 16)
+    #: 🔴 Q2（v0.9.396）：die 不再是正方形（7.59 × 6.90）。旧代码把 `_EC_DIE_W`
+    #: **同时当宽和高用**（`_cw = _EC_DIE_W/n` 两轴同值、`_EC_DIE_W**2` 当面积）——
+    #: legacy 7.8×7.8 下这恰好成立，几何一变就变成**错误的窗口与错误的面积**。
+    #: 这是"判据里藏着的隐含假设"，不是笔误：它只有在几何不再是正方形时才咬人。
+    _EC_DIE_W = 7.59
+    _EC_DIE_H = 6.9
+    _EC_DIE_A = _EC_DIE_W * _EC_DIE_H
     _EC_LAYERS = (25, 27, 29)
-    _EC_AREA = {25: 2.268276, 27: 3.781476, 29: 3.247200}
-    _EC_RHO = {25: 0.037283, 27: 0.062154, 29: 0.053373}
+    _EC_AREA = {25: 2.8788, 27: 6.4536, 29: 6.5484}
+    _EC_RHO = {25: 0.054969, 27: 0.123229, 29: 0.125039}
     _EC_DRHO = {
-        25: (0.000000, 0.085188, 0.201307, 0.357239, 0.662163, 0.994872),
-        27: (0.000000, 0.028020, 0.142472, 0.260355, 0.637160, 0.856410),
-        29: (0.000000, 0.140118, 0.251834, 0.386272, 0.492308, 0.984615),
+        25: (0.0, 0.126753, 0.261946, 0.692169, 0.768116),
+        27: (0.0, 0.184774, 0.368941, 0.612751, 0.73032),
+        29: (0.0, 0.271387, 0.412209, 0.616143, 0.768116),
     }
-    _EC_NET = {"n1": 0.837128, "n3": 1.345456, "n6": 1.223528,
-               "n7": 0.983528, "n19": 1.283056, "n22": 2.157128, "n23": 1.467128}
+    _EC_NET = {"n1": 0.8976, "n11": 2.4288, "n16": 2.454, "n19": 1.26, "n2": 1.74,
+               "n22": 2.0424, "n23": 1.6116, "n3": 1.3368, "n6": 1.1376, "n7": 0.972}
     _EC_G = {"g_area": 0.880000, "g_per_gate": 0.146667,
              "g_per_transistor": 0.040000, "g_cell": 1.470000}
-    _EC_MAX = {"g_area": 2.451282, "g_per_gate": 14.707691,
-               "g_per_transistor": 53.928200, "g_cell": 1.467434}
-    _EC_MIN = {"g_area": 0.951282, "g_per_gate": 5.707691,
-               "g_per_transistor": 20.928200, "g_cell": 0.569475}
-    _EC_SUM = {"g_area": 10.564718, "g_per_gate": 63.388309,
-               "g_per_transistor": 232.423800, "g_cell": 6.324457}
+    _EC_MAX = {"g_area": 2.788636, "g_per_gate": 16.731818,
+               "g_per_transistor": 61.35, "g_cell": 1.669388}
+    _EC_MIN = {"g_area": 1.02, "g_per_gate": 6.12,
+               "g_per_transistor": 22.44, "g_cell": 0.610612}
+    _EC_SUM = {"g_area": 18.046364, "g_per_gate": 108.278182,
+               "g_per_transistor": 397.02, "g_cell": 10.803265}
     _EC_MAIN_IDS = tuple("EC-P%02d" % _k for _k in range(1, 15))
 
     def _ec_union(rs):
@@ -710,16 +721,18 @@ def main() -> int:
         return sum((x1 - x0) * (y1 - y0) for x0, y0, x1, y1 in rs)
 
     def _ec_dens(rs, n):
-        _cw = _EC_DIE_W / n
+        # 🔴 两轴各用各自的边长（矩形窗口 = 铺满真实 die）。旧版两轴都用 `_EC_DIE_W/n`，
+        # 只在 die 为正方形时等价于产品侧的 `b3_window_density`（后者一直用 cw/ch 两值）。
+        _cw, _ch = _EC_DIE_W / n, _EC_DIE_H / n
         _c = [[0.0] * n for _ in range(n)]
         for x0, y0, x1, y1 in rs:
             for _i in range(max(0, int(math.floor(x0 / _cw))),
                             min(n, int(math.ceil(x1 / _cw)))):
-                for _j in range(max(0, int(math.floor(y0 / _cw))),
-                                min(n, int(math.ceil(y1 / _cw)))):
+                for _j in range(max(0, int(math.floor(y0 / _ch))),
+                                min(n, int(math.ceil(y1 / _ch)))):
                     _c[_i][_j] += (max(0.0, min(x1, (_i + 1) * _cw) - max(x0, _i * _cw))
-                                   * max(0.0, min(y1, (_j + 1) * _cw) - max(y0, _j * _cw)))
-        return [_c[_i][_j] / (_cw * _cw) for _i in range(n) for _j in range(n)]
+                                   * max(0.0, min(y1, (_j + 1) * _ch) - max(y0, _j * _ch)))
+        return [_c[_i][_j] / (_cw * _ch) for _i in range(n) for _j in range(n)]
 
     def _ec_drho(rs, n):
         _v = _ec_dens(rs, n)
@@ -734,7 +747,7 @@ def main() -> int:
                for L in _ec_layer_got}
     _ec_u = {L: _ec_union(_ec_raw[L]) for L in _ec_layer_got}
     _ec_area_got = {L: round(_ec_area(_ec_u[L]), 6) for L in _ec_layer_got}
-    _ec_rho_got = {L: round(_ec_area(_ec_u[L]) / (_EC_DIE_W ** 2), 6)
+    _ec_rho_got = {L: round(_ec_area(_ec_u[L]) / _EC_DIE_A, 6)
                    for L in _ec_layer_got}
     _ec_spec = {L: tuple(round(_ec_drho(_ec_u[L], n), 6) for n in _EC_NS)
                 for L in _ec_layer_got}
@@ -742,7 +755,7 @@ def main() -> int:
                     for L in _ec_layer_got for n in _EC_NS}
     _ec_mean_max = max(
         abs(sum(_ec_dens(_ec_u[L], n)) / (n * n)
-            - _ec_area(_ec_u[L]) / (_EC_DIE_W ** 2))
+            - _ec_area(_ec_u[L]) / _EC_DIE_A)
         for L in _ec_layer_got for n in _EC_NS)
     _ec_dup = {L: _ec_area(_ec_raw[L]) - _ec_area(_ec_u[L]) for L in _ec_layer_got}
     _ec_raw_dmax = max(_ec_dmax(_ec_raw[L], n) for L in _ec_layer_got for n in _EC_NS)
@@ -756,12 +769,18 @@ def main() -> int:
           all(_ec_src.count("check(" + '"' + _i + " ") == 1 for _i in _EC_MAIN_IDS)
           and _ec_n_ids == 19)
 
+    # 🔴 Q2 后这条探针的口径必须改：legacy 用「ρ_max > 1」当「没取并集」的判据，
+    # 那只是因为方形 die + 旧几何恰好让重复计数把密度顶穿 1.0。矩形 die 下同样的重复
+    # 计数给出 0.862 < 1 —— **判据本身失靶了**（红/绿不再取决于有没有取并集）。
+    # 改成与它要抓的东西直接对应：直接累加的密度**必须严格高于**并集口径。
+    _ec_union_dmax = max(_ec_dmax_got.values())
     check("EC-P02 🔴 同层矩形必须取并集：直接累加在层 25 重复计数 %.4f µm²（%.1f%%）、"
-          "细窗 ρ_max=%.3f>1 ⇒ 直接累加口径必须判 INVALID"
-          % (_ec_dup[25], 100.0 * _ec_dup[25] / _ec_area(_ec_raw[25]), _ec_raw_dmax),
+          "细窗 ρ_max 直接累加 %.3f > 并集 %.3f ⇒ 直接累加口径必须判 INVALID"
+          % (_ec_dup[25], 100.0 * _ec_dup[25] / _ec_area(_ec_raw[25]),
+             _ec_raw_dmax, _ec_union_dmax),
           _ec_layer_got == _EC_LAYERS
-          and _ec_dup[25] / _ec_area(_ec_raw[25]) > 0.20
-          and _ec_raw_dmax > 1.0)
+          and _ec_dup[25] / _ec_area(_ec_raw[25]) > 0.15
+          and _ec_raw_dmax > _ec_union_dmax + 1e-6)
 
     check("EC-P03 I4 上界：∀层∀n ρ_max ≤ 1（实测最大 %.6f）" % max(_ec_dmax_got.values()),
           all(v <= 1.0 + 1e-9 for v in _ec_dmax_got.values()))
@@ -769,6 +788,7 @@ def main() -> int:
     _L0 = 27
     _tot = _ec_area(_ec_u[_L0])
     _cw = _EC_DIE_W / 2.0
+    _ch = _EC_DIE_H / 2.0
     _r1 = [(0.0, 0.0, _cw, _tot / _cw)]
     _w2 = _cw * 0.5
     _h2 = (_tot / 4.0) / _w2
@@ -776,21 +796,21 @@ def main() -> int:
     for _i2 in range(2):
         for _j2 in range(2):
             _x2 = _i2 * _cw + (_cw - _w2) / 2.0
-            _y2 = _j2 * _cw + (_cw - _h2) / 2.0
+            _y2 = _j2 * _ch + (_ch - _h2) / 2.0
             _r2.append((_x2, _y2, _x2 + _w2, _y2 + _h2))
     _ec_ctor_ok = (
         abs(_ec_area(_r1) - _tot) < 1e-9
         and abs(_ec_area(_r2) - _tot) < 1e-9
-        and all(0.0 <= r[0] <= r[2] <= _EC_DIE_W and 0.0 <= r[1] <= r[3] <= _EC_DIE_W
+        and all(0.0 <= r[0] <= r[2] <= _EC_DIE_W and 0.0 <= r[1] <= r[3] <= _EC_DIE_H
                 for r in _r1 + _r2)
-        and _h2 < _cw and _tot / _cw < _cw
+        and _h2 < _ch and _tot / _cw < _ch
     )
     check("EC-P04 合成反例构造自检：面积守恒 ∧ 不越界 ∧ 不重叠（R1 单块 / R2 四块）",
           bool(_ec_ctor_ok))
 
     _r1_d = _ec_drho(_r1, 2)
     _r2_d = _ec_drho(_r2, 2)
-    _want4 = 4.0 * _tot / (_EC_DIE_W ** 2)
+    _want4 = 4.0 * _tot / _EC_DIE_A
     check("EC-P05 M1 阳性对照 R1：全挤一窗 ⇒ Δρ(2) 必须 == 4ρ（闭式 %.6f / 实测 %.6f）"
           % (_want4, _r1_d), abs(_r1_d - _want4) < 1e-9)
     check("EC-P06 M1 阴性对照 R2：均匀四等分 ⇒ Δρ(2) 必须恰为 0（实测 %.9f）" % _r2_d,
@@ -803,10 +823,10 @@ def main() -> int:
     check("EC-P07 I1 守恒（误差 %.2e < 1e-5）∧ I2 单调不减 ∧ I3 n=1⇒0" % _ec_mean_max,
           _ec_i1 and _ec_i2 and _ec_i3)
 
-    check("EC-P08 n 集合冻结且上界由 die_w/n ≥ W=%.3f µm 反解（n=32 窗 %.5f，n=64 窗 %.5f）"
-          % (P.W, _EC_DIE_W / 32, _EC_DIE_W / 64),
-          _EC_NS == (1, 2, 4, 8, 16, 32)
-          and _EC_DIE_W / 32 >= P.W > _EC_DIE_W / 64)
+    check("EC-P08 n 集合冻结且上界由 die_w/n ≥ W=%.3f µm 反解（n=16 窗 %.5f，n=32 窗 %.5f）"
+          % (P.W, _EC_DIE_W / 16, _EC_DIE_W / 32),
+          _EC_NS == (1, 2, 4, 8, 16)
+          and _EC_DIE_W / 16 >= P.W > _EC_DIE_W / 32)
 
     _ec_byn = {}
     for s in _ec_metals:
@@ -866,24 +886,30 @@ def main() -> int:
     check("EC-P13 🔴 预注册数值逐位锁定：面积 / 密度 / 谱 / 每网面积 / 四口径 max·min·sum",
           bool(_ec_lock))
 
-    check("EC-P14 对外完整性：3 层 × 6 个 n = %d 个谱点、4 个口径 × %d 条网 = %d 个比值，"
+    check("EC-P14 对外完整性：%d 层 × %d 个 n = %d 个谱点、4 个口径 × %d 条网 = %d 个比值，"
           "不得只报单一窗口 / 单一口径"
-          % (len(_ec_layer_got) * len(_EC_NS), len(_ec_net_area), 4 * len(_ec_net_area)),
-          len(_ec_layer_got) * len(_EC_NS) == 18
+          % (len(_ec_layer_got), len(_EC_NS),
+             len(_ec_layer_got) * len(_EC_NS), len(_ec_net_area),
+             4 * len(_ec_net_area)),
+          len(_ec_layer_got) * len(_EC_NS) == 15
           and len(_ec_ratio) == 4
           and all(len(v) == len(_ec_net_area) for v in _ec_ratio.values()))
 
     # ── 反向探针：证明「判据真的会响」，不是永远通过 ──────────────────────
-    check("EC-P03r 反向探针：改用直接累加（不去重）⇒ ρ_max=%.3f>1 ⇒ P03 必红"
-          % _ec_raw_dmax, _ec_raw_dmax > 1.0)
+    check("EC-P03r 反向探针：改用直接累加（不去重）⇒ ρ_max=%.3f 高于并集口径 ⇒ P03 必红"
+          % _ec_raw_dmax, _ec_raw_dmax > max(_ec_dmax_got.values()) + 1e-6)
     _ec_r1_bad = [(0.0, 0.0, _cw, _tot / (2.0 * _cw))]
     check("EC-P05r 反向探针：R1 面积减半 ⇒ Δρ(2)=%.6f ≠ 4ρ ⇒ P05 必红"
           % _ec_drho(_ec_r1_bad, 2),
           abs(_ec_drho(_ec_r1_bad, 2) - _want4) > 1e-6)
-    check("EC-P08r 反向探针：删掉 n=32 ⇒ 集合失配 ⇒ P08 必红",
-          _EC_NS[:-1] != (1, 2, 4, 8, 16, 32) and _EC_DIE_W / 64 < P.W)
+    check("EC-P08r 反向探针：把 n=32 塞回集合 ⇒ 集合失配且上界不成立 ⇒ P08 必红",
+          _EC_NS + (32,) != (1, 2, 4, 8, 16) and _EC_DIE_W / 32 < P.W)
     _ec_mixed = {g: dict(_ec_ratio[g]) for g in _ec_g}
-    _ec_mixed["g_area"]["n22"] = _ec_net_area["n22"] / (_ec_g["g_area"] * 1.3)
+    # 🔴 必须注入**当前 argmax 那条网**：写死 `n22` 时 Q2 后它不是最大者 ⇒ 注入不改变
+    # max ⇒ Δ 恒 0，探针变成摆设（实测 Δ=0.000000）。
+    _ec_hot_net = max(_ec_net_area, key=lambda _k: _ec_net_area[_k] / _ec_g["g_area"])
+    _ec_mixed["g_area"][_ec_hot_net] = (
+        _ec_net_area[_ec_hot_net] / (_ec_g["g_area"] * 1.3))
     _ec_bad_hom = abs(max(_ec_mixed["g_per_gate"].values())
                       / max(_ec_mixed["g_area"].values())
                       - _ec_g["g_area"] / _ec_g["g_per_gate"])
@@ -1011,14 +1037,14 @@ def main() -> int:
           and _q_no_verdict(dict(_q, ok=True)) is False
           and _q_no_verdict(dict(_q, **{"pass": 1})) is False)
 
-    check("EC-Q11 🔴 对外主链数字逐位不变：60.840 / 43.490 / 575 B / claimable=False / "
+    check("EC-Q11 🔴 对外主链数字（T2 口径）：52.371 / 74.990 / 575 B / claimable=False / "
           "m1_exit.ok=True / failed=3",
-          _q_card["placement"]["die_area_um2"] == 60.84
-          and _q_card["timing"]["comb_delay_wired_ps"] == 43.49
+          _q_card["placement"]["die_area_um2"] == 52.371
+          and _q_card["timing"]["comb_delay_wired_ps"] == 74.99
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True
-          and _q_card["routing"]["nets_failed"] == 3)
+          and _q_card["routing"]["nets_failed"] == 0)
 
     _q_keep = (
         ("ddrc_lvs.py", "未检注入/阱/天线/密度"),
@@ -1054,8 +1080,8 @@ def main() -> int:
 
     _r_g = {k: float(v) for k, v in
             ((_q.get("assumptions") or {}).get("g_values") or {}).items()}
-    _R_LOCK = {"g_area": 2.451282, "g_per_gate": 14.707691,
-               "g_per_transistor": 53.928200, "g_cell": 1.467434}
+    _R_LOCK = {"g_area": 2.788636, "g_per_gate": 16.731818,
+               "g_per_transistor": 61.35, "g_cell": 1.669388}
     _r_keys = sorted(_r_g)
 
     def _r_mk(*pairs):
@@ -1157,8 +1183,8 @@ def main() -> int:
           not any(k in _q for k in ("n_fail", "ok", "pass"))
           and _q.get("in_blocking") is False
           and _q.get("scope") == "DIAGNOSTIC_ONLY"
-          and _q_card["placement"]["die_area_um2"] == 60.84
-          and _q_card["timing"]["comb_delay_wired_ps"] == 43.49
+          and _q_card["placement"]["die_area_um2"] == 52.371
+          and _q_card["timing"]["comb_delay_wired_ps"] == 74.99
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
@@ -1331,19 +1357,19 @@ def main() -> int:
           and len(_t_zero_gates) == 3)
 
     _t_em_call = _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
-    check("EC-T11 🔴 V5 回归 + 不回灌 `t_c`：`100.959×` / `t_c=125.0` / 主链数字逐位不变 "
+    check("EC-T11 🔴 V5 回归 + 不回灌 `t_c`：`133.665×` / `t_c=125.0` / 主链数字锁定 "
           "∧ 主链 `em_net_signoff(` 调用未传 `t_c=`",
-          _q_card["em"]["min_margin_x"] == 100.959
+          _q_card["em"]["min_margin_x"] == 133.665
           and _q_card["em"]["assumptions"]["t_c"] == 125.0
           and "t_c=" not in _t_em_call
-          and _q_card["placement"]["die_area_um2"] == 60.84
-          and _q_card["timing"]["comb_delay_wired_ps"] == 43.49
+          and _q_card["placement"]["die_area_um2"] == 52.371
+          and _q_card["timing"]["comb_delay_wired_ps"] == 74.99
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
 
     def _t_v5_ok(card):
-        return (card["em"]["min_margin_x"] == 100.959
+        return (card["em"]["min_margin_x"] == 133.665
                 and card["em"]["assumptions"]["t_c"] == 125.0)
 
     check("EC-T11r 反向探针：EM 裕量或 `t_c` 漂移 ⇒ V5 检测器必报",
@@ -1549,13 +1575,13 @@ def main() -> int:
           and (_u.get("assumptions") or {}).get("kappa_is_dimensionless") is True
           and "INCONSISTENT" in str(_u.get("assumptions")))
 
-    check("EC-U10 V5 回归：100.959× / t_c=125.0 / 主链 5 项逐位未变 ∧ "
+    check("EC-U10 V5 回归：133.665× / t_c=125.0 / 主链 5 项逐位未变 ∧ "
           "`em_net_signoff(` 未传 t_c",
-          _q_card["em"]["min_margin_x"] == 100.959
+          _q_card["em"]["min_margin_x"] == 133.665
           and _q_card["em"]["assumptions"]["t_c"] == 125.0
           and "t_c=" not in _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
-          and _q_card["placement"]["die_area_um2"] == 60.84
-          and _q_card["timing"]["comb_delay_wired_ps"] == 43.49
+          and _q_card["placement"]["die_area_um2"] == 52.371
+          and _q_card["timing"]["comb_delay_wired_ps"] == 74.99
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
@@ -1703,13 +1729,13 @@ def main() -> int:
           and not any(k in _u for k in ("n_fail", "ok", "pass"))
           and _u_json_ok)
 
-    check("EC-V07 V5 回归：主链 5 项 + 100.959× / t_c=125.0 逐位不变 ∧ "
+    check("EC-V07 V5 回归：主链 5 项 + 133.665× / t_c=125.0 逐位不变 ∧ "
           "`em_net_signoff(` 未传 t_c（EC-B4.5 冻结仍生效）",
-          _q_card["em"]["min_margin_x"] == 100.959
+          _q_card["em"]["min_margin_x"] == 133.665
           and _q_card["em"]["assumptions"]["t_c"] == 125.0
           and "t_c=" not in _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
-          and _q_card["placement"]["die_area_um2"] == 60.84
-          and _q_card["timing"]["comb_delay_wired_ps"] == 43.49
+          and _q_card["placement"]["die_area_um2"] == 52.371
+          and _q_card["timing"]["comb_delay_wired_ps"] == 74.99
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
@@ -1731,13 +1757,19 @@ def main() -> int:
     #   `area_per_tr`（只影响面积）误判为死。
     _Q0_OBS = ("area", "rout", "wired", "drc", "em")
     # 死参数登记表（棘轮：只减不增）。每条都有 owner，不是"忘了"。
-    #   遮蔽/副本（4）：W_ROUTE←pnr.W · PAD_HALF←M2_HALF · TRACK_PITCH←PITCH · W_MIN 死规则
-    #   二阶早绑定（2）：VIA · ENC（消费者在 import 期固化）      → Q2
+    # 🔴 Q2（v0.9.396）实测变化 —— 11 → 7：
+    #   · **转 live（3）**：`ddetail.VIA` / `ddrc_lvs.ENC`（`pad_half()` 改成函数后改真源
+    #     立刻改几何）、`ddrc_lvs.W_MIN`（不再写死 0.10，改由 `W_ROUTE` 派生 ⇒ 死规则消失）；
+    #   · **消失（3）**：`dpnr.PAD_HALF` / `M2_HALF` / `EXT` —— 三份副本被**删除**，
+    #     不是"修好"，是不再存在（`pad_half()` 是唯一真源）；
+    #   · **新增 dead（1）**：`ddetail.TRACK_PITCH` —— `PITCH` 改由 `W+S_MIN+δ` 派生后，
+    #     那个没有出处的 0.36 再没人读（只剩 `dproc.use()` 的节点切换口）。owner → Q4；
+    #   · **仍 dead（1）**：`ddetail.W_ROUTE` —— `W` 仍是 import 期常量（三阶），
+    #     Q2 只根治了 pad 半宽那一处二阶，**W 的绑定留在 T5**（本轮不谎称已修）。
     #   当前网表无消费者（3）：t_setup / t_hold / t_clk_q（c17 无 DFF）→ T5 换网表
     #   无消费路径（2）：area_per_tr · ileak                        → T3 / T5
     _Q0_DEAD = frozenset({
-        "ddetail.W_ROUTE", "ddetail.VIA", "ddetail.TRACK_PITCH",
-        "ddrc_lvs.ENC", "ddrc_lvs.W_MIN", "dpnr.PAD_HALF",
+        "ddetail.W_ROUTE", "ddetail.TRACK_PITCH",
         "Tech.area_per_tr_um2", "Tech.ileak_na_per_tr",
         "Tech.t_setup_ps", "Tech.t_hold_ps", "Tech.t_clk_q_ps",
     })
@@ -1780,7 +1812,8 @@ def main() -> int:
 
     check("Q0-a 参数清单由真源枚举（几何 %d + 器件 %d = %d，非硬编码）"
           % (len(_q0_geo), len(_q0_tech), _q0_all),
-          len(_q0_geo) == len(DP.TOUCHED) and _q0_all >= 20)
+          len(_q0_geo) == len(DP.TOUCHED)
+          and _q0_all == len(DP.TOUCHED) + len(_q0_tech))
     check("Q0-b 每参数均有响应记录（live %d + dead %d = %d）"
           % (len(_q0_live), len(_q0_dead), len(_q0_live) + len(_q0_dead)),
           len(_q0_live) + len(_q0_dead) == _q0_all)
@@ -1907,11 +1940,11 @@ def main() -> int:
           % (_tb_re, _c_loc["clock_period_ps"]), _tb_re == _c_loc["clock_period_ps"])
 
     # S1a-c 值锁定：三个数逐位（T_ref / slack ideal / slack wired）。
-    check("S1a-c 数值锁定：T_ref=%.9f ∧ slack(ideal)=%.9f ∧ slack(wired)=%.9f"
+    check("S1a-c 数值锁定（T2 口径）：T_ref=%.9f ∧ slack(ideal)=%.9f ∧ slack(wired)=%.9f"
           % (_c_loc["clock_period_ps"], _c_loc["slack_ideal_ps"], _c_loc["slack_wired_ps"]),
           abs(_c_loc["clock_period_ps"] - 53.82715545863622) < 1e-9
-          and abs(_c_loc["slack_ideal_ps"] - 22.87415545863622) < 1e-9
-          and abs(_c_loc["slack_wired_ps"] - 10.337155458636218) < 1e-9)
+          and abs(_c_loc["slack_ideal_ps"] - 16.63515545863622) < 1e-9
+          and abs(_c_loc["slack_wired_ps"] + 21.16284454136378) < 1e-9)
 
     # S1a-d 反向探针：`FO_target` 必须**真被消费** —— 改成 1 / 4 时 T_ref 必变且
     #      与手算吻合（FO1 21.9424 / FO4 69.7695）。写死常数则这三个数相同 ⇒ 红。
@@ -1928,11 +1961,11 @@ def main() -> int:
     #      legacy 上 FO3 两侧 slack 均 > 0 ⇒ 无判别力（**这是登记，不是失败**）；
     #      谓词本身自带对照组（(+,-)→真 / (+,+)→假 / (-,-)→假）⇒ 它既不是恒真也不是恒假桩。
     _tb_disc = [_c_loc["discriminates"], _c1["discriminates"], _c4["discriminates"]]
-    check("S1a-e 判别力元判据只登记不裁决：FO3/1/4 legacy 上判别力=%r（全 False = 约束偏松）∧ "
-          "谓词对照组 %r" % (_tb_disc,
-                            (ST.discriminates(1, -1), ST.discriminates(1, 1),
-                             ST.discriminates(-1, -1))),
-          _tb_disc == [False, False, False]
+    check("S1a-e 判别力元判据（T2 裁决）：FO3/1/4 = %r —— 🔴 FO3 **由 False 翻成 True**"
+          "（预注册成立），FO1/FO4 仍 False；谓词对照组 %r"
+          % (_tb_disc,
+             (ST.discriminates(1, -1), ST.discriminates(1, 1), ST.discriminates(-1, -1))),
+          _tb_disc == [True, False, False]
           and ST.discriminates(1, -1) is True
           and ST.discriminates(1, 1) is False
           and ST.discriminates(-1, -1) is False)
@@ -1958,22 +1991,31 @@ def main() -> int:
 
     # S1-a 本批**对外数字逐位不变**（重申：Q1 改检查器、S1 只加约束，都不许动主链）
     _tb_t = _tb_s["timing"]
-    check("S1-a 零变化复述：60.840 ∧ 7/11 ∧ ideal %.3f / wired %.3f ∧ DRC %d ∧ LVS %d ∧ DEF %d B "
-          "∧ claimable=%s ∧ m1_exit.ok=%s"
-          % (_tb_t["comb_delay_ideal_ps"], _tb_t["comb_delay_wired_ps"],
+    # S1-a **T2 改口对照**（本批唯一允许改数字之处）：主链新口径 + **旧链基线一位不动**。
+    #      后者才是"改动只影响主链"的证据 —— 只看主链变了说明不了什么。
+    _tb_b = _tb["baseline"]
+    check("S1-a T2 改口：面积 %.3f ∧ %d/11 ∧ ideal %.3f / wired %.3f ∧ DRC %d ∧ LVS %d ∧ DEF %d B "
+          "∧ claimable=%s ∧ m1=%s ‖ 旧链基线 DRC %d / LVS %d / 43 对网**一位未动**"
+          % (_tb_s["place"]["die_area_um2"], _tb_s["route"]["nets_with_segments"],
+             _tb_t["comb_delay_ideal_ps"], _tb_t["comb_delay_wired_ps"],
              _tb_s["drc_lvs"]["drc_violations"], _tb_s["drc_lvs"]["lvs_problems"],
              _tb_s["def_write"]["bytes"], _tb["claimability"]["claimable"],
-             _tb_s["m1_exit"]["ok"]),
-          _tb_s["place"]["die_area_um2"] == 60.84
-          and _tb_s["route"]["nets_with_segments"] == 7
+             _tb_s["m1_exit"]["ok"],
+             _tb_b["drc_lvs"]["drc_violations"], _tb_b["drc_lvs"]["lvs_problems"]),
+          _tb_s["place"]["die_area_um2"] == 52.371
+          and _tb_s["route"]["nets_with_segments"] == 10
           and _tb_s["route"]["nets_touched"] == 11
-          and _tb_t["comb_delay_ideal_ps"] == 30.953
-          and _tb_t["comb_delay_wired_ps"] == 43.49
+          and _tb_s["route"]["nets_failed"] == 0
+          and _tb_t["comb_delay_ideal_ps"] == 37.192
+          and _tb_t["comb_delay_wired_ps"] == 74.99
           and _tb_s["drc_lvs"]["drc_violations"] == 0
-          and _tb_s["drc_lvs"]["lvs_problems"] == 3
+          and _tb_s["drc_lvs"]["lvs_problems"] == 0
           and _tb_s["def_write"]["bytes"] == 575
           and _tb["claimability"]["claimable"] is False
-          and _tb_s["m1_exit"]["ok"] is True)
+          and _tb_s["m1_exit"]["ok"] is True
+          and _tb_b["drc_lvs"]["drc_violations"] == 87
+          and _tb_b["drc_lvs"]["lvs_by_rule"] == {"short": 78, "short_via": 105}
+          and _tb_b["drc_lvs"]["lvs_unique_pairs"] == 43)
     print("  [Q1] `short_via` 加层相邻（%d 孔层 × `VIA_BRIDGE`）· 主链 0 / 旧链 105 条不动 · "
           "探针 真短路必报 / 误报必不报 / 未知孔层仍报" % len(DL.VIA_BRIDGE))
     print("  [S1] T_ref=%.3f ps（标准 c17 口径 62.145；本仓 g23=INV）· max_fanout=%.1f · "

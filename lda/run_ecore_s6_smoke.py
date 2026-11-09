@@ -522,8 +522,12 @@ def main() -> int:
 
     # T2 线载单调 + 与 dextract 同源：卡片值 == 独立复算；加负载必更慢
     _wl = DE.wire_loads_from_shapes(shp)
-    _ideal = ST.sta(nl, topo_sort=True)      # 与 T1 的 _ideal_comb 同值，此处留作对照
-    _wired = ST.sta(nl, wire_load_ff=_wl, topo_sort=True)
+    # 🔴 T2/S1b：卡片口径已含端口负载 `FO_PORT·cin_ff` ⇒ 门禁复算必须同口径，
+    #    否则这里比的是「有端口负载 vs 无端口负载」两个不同口径（实测差 6.239 ps）。
+    from lda_l2.ecore import dcell as _DC
+    _pl = ST.FO_PORT * _DC.DEFAULT_TECH.cin_ff
+    _ideal = ST.sta(nl, port_load_ff=_pl, topo_sort=True)   # 与 T1 的 _ideal_comb 对照
+    _wired = ST.sta(nl, wire_load_ff=_wl, port_load_ff=_pl, topo_sort=True)
     check("T2 线载同源且单调：独立复算 ideal=%.3f / wired=%.3f ps ∧ wired > ideal "
           "∧ 总线载 %.3f fF（%d 条网）"
           % (_ideal.comb_delay_ps, _wired.comb_delay_ps, sum(_wl.values()), len(_wl)),

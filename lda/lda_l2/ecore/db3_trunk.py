@@ -321,8 +321,14 @@ def run_trunk(nl, *, baseline: bool = True):
 
     lengths = DE.net_length_um(shapes)
     wl = DE.wire_loads_from_shapes(shapes)      # 与 `dextract` 同一公式，不另写一份
-    tm_ideal = ST.sta(nl, topo_sort=True)
-    tm = ST.sta(nl, wire_load_ff=wl, topo_sort=True)
+    # 🔴 T2 · S1b：端口负载 `port_load_ff = FO_port · cin_ff`（`FO_port` 默认 1 ⇒ 1 fF）。
+    #    旧口径 `port_load_ff = 0` 把输出端口当成**不驱动任何东西** ⇒ ideal/wired 都偏乐观，
+    #    且与 `FO_target` 的口径不自洽（引脚扇出算 3、端口算 0）。这不是"调参"，是口径修正：
+    #    对外必须写「含端口负载后首次暴露时序违例」，不得写成「性能下降」。
+    from lda_l2.ecore import dcell as _DCell          # 就地导入：本段早于 EM 段的 DCell 绑定
+    _pl_ff = ST.FO_PORT * _DCell.DEFAULT_TECH.cin_ff
+    tm_ideal = ST.sta(nl, port_load_ff=_pl_ff, topo_sort=True)
+    tm = ST.sta(nl, wire_load_ff=wl, port_load_ff=_pl_ff, topo_sort=True)
     if tm.comb_delay_ps < tm_ideal.comb_delay_ps - 1e-9:
         raise AssertionError("段4 守恒失败：带线载延时 %.4f < 理想 %.4f —— "
                              "加负载不可能变快（模型或注入路径写反了）"

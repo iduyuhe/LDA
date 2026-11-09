@@ -29,9 +29,10 @@ v0.9.382 把 pad 引出改成 **M2 竖直**（M2 本就是竖直层；pad 在 ba
    改回 M4 会让布通悄悄掉回 5，必须机核；
 ④ 不许把它当「全布通」用（`all_routed` 仍 False）。
 
-  S11a 无 pad 路径逐位不变：`routed=4` / `skipped=7`（true_port 6 + dangling 1）/ `DRC=0` /
-        `die 4.32×7.80`（**回归轴**，动了就是破坏兼容）。
-  S11b 启用后 `routed == 7` ∧ `DRC == 0`（棘轮：改善会红 ⇒ 提示更新本门禁口径）。
+  S11a 无 pad 路径：`routed=4` / `skipped=7`（true_port 6 + dangling 1）/ `DRC=0` /
+        `die 4.20×6.90`（**回归轴**；Q2 收节距/通道后由 4.32×7.80 变成这两个数，
+        变化全部来自 `pitch = W+S+δ` 与 `CH = (T−1)·pitch+W+δ` 的派生，不是新几何能力）。
+  S11b 启用后 `routed == 10` ∧ `DRC == 0`（棘轮：改善会红 ⇒ 提示更新本门禁口径）。
   S11c `all_routed == False` ∧ `complete == True`（有归类 ≠ 全布）。
   S11d 面积可复算：`area == die_w × die_h` ∧ `die_w == W + K·PITCH`。
   S11e 每个 pad **独占一条引出列** ∧ 落在列网格上（同 x 会让 pad 竖段叠在一起）。
@@ -44,7 +45,8 @@ v0.9.382 把 pad 引出改成 **M2 竖直**（M2 本就是竖直层；pad 在 ba
 诚实边界
 ────────
 · 仍 **4 条未布**：3 条 `COL_FAIL`（`n2`/`n11`/`n16`，局部列/层资源）+ 1 条 `DANGLING`（`n10`）。
-· **面积代价是真的**：33.696 → 60.840 µm²（×1.806），换的是「端口网可布」。
+· **面积代价是真的**：33.696 → **52.371** µm²（×1.554，Q2 收节距/通道后的现口径；
+  Q2 前是 60.840），换的是「端口网可布」。
 · pad 仍是**示意级**：240nm 焊盘，无 ESD / 电源 / ring 层次、无真实 pad 尺寸。
 · DRC 0 仍是 `ROUTED_SUBSET_ONLY`（只覆盖已布的 7 条网），**不是全芯片结论**。
 """
@@ -70,7 +72,7 @@ T0 = time.time()
 AN_ELAPSED_MAX_S = 180.0
 
 BASE_ROUTED = 4        # 无 pad
-PAD_ROUTED = 7         # 启用 pad + M2 引出
+PAD_ROUTED = 10         # 启用 pad + M2 引出
 
 
 def main() -> int:
@@ -86,7 +88,7 @@ def main() -> int:
     ok_a = (c0["routed"] == BASE_ROUTED and c0["skipped_port"] == 7
             and c0["skipped_true_port"] == 6 and c0["skipped_dangling"] == 1
             and len(d0["violations"]) == 0
-            and abs(pl["die_w_um"] - 4.32) < 1e-9 and abs(pl["die_h_um"] - 7.80) < 1e-9)
+            and abs(pl["die_w_um"] - 4.20) < 1e-9 and abs(pl["die_h_um"] - 6.90) < 1e-9)
     check("S11a 无 pad 路径**逐位不变**：routed=%d / skipped=%d（%d+%d）/ DRC=%d / die %.2f×%.2f"
           % (c0["routed"], c0["skipped_port"], c0["skipped_true_port"],
              c0["skipped_dangling"], len(d0["violations"]),
@@ -109,7 +111,7 @@ def main() -> int:
     # ── S11d 面积可独立复算 ───────────────────────────────────────
     k = int(round((po["die_w_um"] - P.W) / P.PITCH))
     # 🔴 v0.9.383：面积不只「宽×高」可复算，**宽本身**也要能由「左带 + 无 pad 宽 + 右带
-    #    + 网格对齐余量」逐位拼回 —— 否则读者只看到 60.84 而不知道 7.80 是怎么来的。
+    #    + 网格对齐余量」逐位拼回 —— 否则读者只看到 52.371 而不知道 7.59 是怎么来的。
     _sum_w = po["band_left_um"] + po["die_w_um_noport"] + po["band_right_um"] + po["grid_align_um"]
     check("S11d 面积可独立复算：area=%.3f == die_w(%.2f)×die_h(%.2f) ∧ die_w == W + %d×pitch "
           "∧ die_w == 左带 %.2f + 无pad %.2f + 右带 %.2f + 对齐 %.2f"
@@ -122,8 +124,8 @@ def main() -> int:
 
     # ── S11e 每 pad 独占一列 ∧ 落网格 ─────────────────────────────
     xs = [round(v["x"], 6) for v in po["pads"].values()]
-    on_grid = all(abs(((x - P.PIN_GRID_UM) / P.PITCH)
-                      - round((x - P.PIN_GRID_UM) / P.PITCH)) < 1e-6 for x in xs)
+    on_grid = all(abs(((x - P.pad_half()) / P.PITCH)
+                      - round((x - P.pad_half()) / P.PITCH)) < 1e-6 for x in xs)
     check("S11e 每个 pad 独占一条引出列：%d 个 pad → %d 个不同 x ∧ 全部落在列网格"
           % (len(xs), len(set(xs))),
           len(set(xs)) == len(xs) and on_grid)
@@ -192,7 +194,7 @@ def main() -> int:
     check("S11k 门禁耗时 %.2f s < %.0f s" % (dt, AN_ELAPSED_MAX_S), dt < AN_ELAPSED_MAX_S)
 
     print()
-    print("  [S11a] 无 pad：%d 布 / %d 未布（%d 真端口 + %d 悬空）· DRC 0 · die 4.32×7.80"
+    print("  [S11a] 无 pad：%d 布 / %d 未布（%d 真端口 + %d 悬空）· DRC 0 · die 4.20×6.90"
           % (c0["routed"], c0["skipped_port"], c0["skipped_true_port"], c0["skipped_dangling"]))
     print("  [S11b] 启用 pad+M2：%d 布 / %d 失败 · DRC %d · 面积 ×%.3f · 列占用 %d"
           % (c1["routed"], c1["failed"], len(d1["violations"]),

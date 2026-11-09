@@ -43,7 +43,10 @@ from . import ddetail as DD
 from . import dplac as PL
 
 # ---- 规则假设（MODEL_ESTIMATE · 一阶）----
-W_MIN = 0.10             # µm · 最小金属线宽
+#: 🔴 Q2（v0.9.396）：`W_MIN` 原先写死 0.10，而实际线宽 `W_ROUTE = 0.24`
+#: ⇒ 这条规则**永不触发**（死规则，Q0-c 登记在册）。改成从线宽真源派生：
+#: 规则说「不小于当前工艺的线宽」，线宽一变规则跟着变 —— 死规则消失。
+W_MIN = DD.W_ROUTE       # µm · 最小金属线宽（真源 = ddetail.W_ROUTE，不再写死 0.10）
 S_MIN = 0.10             # µm · 最小同层间距
 #: 🔴 数值容差（µm）：**1e-6 µm = 1e-3 nm**，远小于本仓的 1nm 制造网格。
 #: 存在的唯一原因：当 `pitch == W + S` 时，相邻轨道恰好「间距 == S_MIN」，

@@ -92,7 +92,7 @@ def _trunk_len(rt: dict) -> float:
     """M3 trunk 的总长（只统计走线层里跨该网全部列的横条）。"""
     tot = 0.0
     for s in rt["shapes_route"]:
-        if s.layer == DD.L_M3 and abs((s.y1 - s.y0) - PN.W) < 1e-6 and (s.x1 - s.x0) > 2 * PN.EXT:
+        if s.layer == DD.L_M3 and abs((s.y1 - s.y0) - PN.W) < 1e-6 and (s.x1 - s.x0) > 2 * PN.pad_half():
             tot += s.x1 - s.x0
     return round(tot, 4)
 
@@ -150,12 +150,15 @@ def main():
           % (len(va_t), n_rt_t, n_int_t, unrt_t, len(va_b), n_rt_b, n_int_b, fails_b))
 
     # ── C4 逐点逃逸额度的闭式（与实现逐位对拍）──────────────────
-    # 同 y 带上 A(x=0.12) 与 B(x=0.48) 相距一个 pitch。A 向左没有邻居 ⇒ 额度 = jog_max；
-    # A 向右受 B 约束 ⇒ 额度 = P − 2·M2_HALF − S_MIN = 0.36 − 0.242 − 0.10 = 0.018。
+    # 同 y 带上 A(x=0.12) 与 B(相距**一个 pitch**) 。A 向左没有邻居 ⇒ 额度 = jog_max；
+    # A 向右受 B 约束 ⇒ 额度 = P − 2·pad_half − S_MIN。
+    # 🔴 旧版把 B 写死 0.48（= 0.12 + 0.36）：节距一收到 0.35，这个数就成了**第二份节距真源**，
+    # 探针比的是 0.36 间距下的额度 vs 0.35 的闭式 ⇒ 假红。改为 `pad_half()+PITCH` 派生。
     # 这个 0.018 正是本模块 v0.9.351 算出的「内向逃逸总量 0.02」的精确化。
     # 新签名（v0.9.352）：`others = [(x, net)]` + 本引脚 net（同网不算邻居）
-    bud_ab = PN.point_off_budget([(0.12, "A"), (0.48, "B")], 0.12, "A", PN.M2_JOG_MAX)
-    want_right = PN.PITCH - 2.0 * PN.M2_HALF - DL.S_MIN
+    bud_ab = PN.point_off_budget([(0.12, "A"), (0.12 + PN.PITCH, "B")], 0.12, "A",
+                            PN.M2_JOG_MAX)
+    want_right = PN.PITCH - 2.0 * PN.pad_half() - DL.S_MIN
     # 实测：全量 DRC 已归零 ⇒ 同 y 带上异网 M2 条的最近间隙必须 ≥ S_MIN（不再靠「违例」)
     metals = [s for s in PN.all_routing(rt_t) if s.kind == "metal" and s.layer == DD.L_M2]
     worst = None

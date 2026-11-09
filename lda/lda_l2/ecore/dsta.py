@@ -175,7 +175,8 @@ def sta(nl, tech=None, port_load_ff: float = 0.0,
     #   原签名 `tech=DC.DEFAULT_TECH` 在 import 时求值一次 ⇒ 之后换 Tech 实例
     #   主链（`ST.sta(nl, topo_sort=True)` 不传 tech）永远读旧值，参数看似"死"。
     #   改为 None 后取值，`DEFAULT_TECH` 未变时**逐位不变**（T1a 零变化实证：
-    #   base 43.490 不变；r_on×4 → 155.959、t_intr×4 → 61.490 两条手算吻合）。
+    #   T1a 时点 base 43.490 不变；r_on×4 → 155.959、t_intr×4 → 61.490 两条手算吻合。
+    #   （T2 起 base = 74.990 ps —— 数值变、关系不变。）
     if tech is None:
         tech = DC.DEFAULT_TECH
     load = loads_of(nl, port_load_ff, tech, wire_load_ff)
@@ -284,7 +285,7 @@ def _inet(port, bit):
 # T1b · S1a / S1c 最小约束层（**零数字变化**：只把"量尺"造出来，不改量出的数）
 # ═══════════════════════════════════════════════════════════════════════════
 # 🔴 为什么这一层值得单独存在：在此之前，仓库里**没有任何地方定义"周期应该多长"**，
-#   于是"延时 43.490 ps"这个数字**没有满足/不满足可言** —— 一个没有约束的数字无法
+#   于是"延时 74.990 ps"（T2 口径）这个数字**没有满足/不满足可言** —— 没有约束的数字无法
 #   证伪，也无法在 T2 改几何后回答"是变好了还是变差了"。本层只做四件事：
 #   把 `clock_period` / `max_fanout` / `max_transition` 由 `Tech` + 拓扑派生，
 #   并给出两套口径的 `slack`（ideal / wired）—— **只给数，不给判决**。
@@ -295,6 +296,11 @@ def _inet(port, bit):
 #: FO4 `+49.907 / +12.109`（全绿）；FO3 在 Q2 后翻转成 `+31.192 / −6.606`。
 #: ⇒ 只有 FO3 在"改几何后才显现违例"，其余两组要么永远红、要么永远绿（无判别力）。
 FO_TARGET = 3.0
+
+#: T2 · S1b：**端口**扇出（一个输出端口驱动几个下游）。默认 1 ⇒ `port_load_ff = 1 fF`。
+#: 🔴 旧口径把端口负载写死 0（"端口不驱动任何东西"），与 `FO_TARGET=3` 的口径不自洽
+#: —— 引脚扇出算 3、端口算 0。补上它以后 ideal 30.953 → 37.192 ps。
+FO_PORT = 1.0
 
 
 def longest_path_gates(nl) -> list:

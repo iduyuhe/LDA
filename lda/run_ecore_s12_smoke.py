@@ -16,7 +16,7 @@
   M1b 归因**覆盖全部未布网**（`skipped ∪ failed`），`unattributed` 必须为空。
   M1c 归因数**不重复计数**：`len(attribution) == skipped + failed`（同一网不得两条原因）。
   M1d 归因**语义正确**：`n10` 必须 `DANGLING`；6 条端口网必须 `PORT_UNMODELED`。
-  M1e 布通率 `7/11` 且 `is_full_chip_routing` **由 routed==total 派生**（不是手填 False）。
+  M1e 布通率 `10/11` 且 `is_full_chip_routing` **由 routed==total 派生**（不是手填 False）。
   M1f 反向 A（抹掉一条归因）：该网变「未布且无归因」⇒ `ok=False` ∧ `unattributed` 非空。
   M1g 反向 B（枚举收紧）：只允许 `DANGLING` ⇒ `PORT_UNMODELED` 成 `bad_reason` ⇒ `ok=False`。
   M1h 反向 C（谎报全布）：`routed==total` ⇒ `is_full_chip_routing=True` ∧ ratio `11/11`
@@ -31,7 +31,7 @@
 ────────
 · 本门禁证明的是「**这个阶段的数字可信**」，**不是**「c17 已签核」：
   `claimable` 仍 False（M1j 守），签核仍要六条全满足（含 `all_nets_routed`）。
-· 判据本身**不改善几何**；布通 4/11 → **7/11** 是 v0.9.382 改拓扑（pad 走 M2 引出）的功劳，
+· 判据本身**不改善几何**；布通 4/11 → 7/11（v0.9.382 改拓扑 pad 走 M2）→ **10/11**（T2/Q2 几何根治），
   不是判据的功劳 —— 两者必须分开记。DRC 0 仍是 `ROUTED_SUBSET_ONLY`。
 · 「改拓扑后能不能布通」仍未知 —— 本判据只是把「不可达」这件事**说清楚**，不是解决它。
 """
@@ -105,23 +105,32 @@ def main() -> int:
           "把 routed 改成 total ⇒ %s/%s ∧ True）"
           % (m1["routed_ratio"], m1["is_full_chip_routing"],
              r_full["routed_ratio"], r_full["is_full_chip_routing"]),
-          m1["routed_ratio"] == "7/11" and m1["is_full_chip_routing"] is False
+          m1["routed_ratio"] == "10/11" and m1["is_full_chip_routing"] is False
           and r_full["is_full_chip_routing"] is True)
 
     # ── M1f 反向 A：抹掉一条归因 ⇒ 必红 ───────────────────────────
+    #    🔴 Q2 后布通 7→10，只剩 1 条未布网 ⇒ 写死 `n2`（现在已布通）会让探针**空转**：
+    #    抹掉一条并不存在的记录，什么都不会变。抹谁必须从**当前**未布网里取。
+    #    归因来自三处（`skipped_port_nets` / `in_row_m3_fail` / `unrouted`）——
+    #    Q2 后 `unrouted` 已空（只剩悬空网走 `skipped_port_nets`）⇒ 三处一起抹才算抹掉归因。
+    _victim = sorted(m1["attribution"])[0]
     fake_a = dict(rt)
-    fake_a["unrouted"] = [n for n in rt["unrouted"] if n != "n2"]
+    for _k in ("skipped_port_nets", "in_row_m3_fail", "unrouted"):
+        fake_a[_k] = [n for n in (rt.get(_k) or []) if n != _victim]
     ra = P.m1_exit_assessment(fake_a, drc, lvs)
-    check("M1f 反向 A（少一条归因）：抹掉 `n2` 的“布失败”记录 ⇒ ok=%s ∧ unattributed=%r"
-          % (ra["ok"], ra["unattributed"]),
-          ra["ok"] is False and ra["unattributed"] == ["n2"])
+    check("M1f 反向 A（少一条归因）：抹掉 `%s` 的“布失败”记录 ⇒ ok=%s ∧ unattributed=%r"
+          % (_victim, ra["ok"], ra["unattributed"]),
+          ra["ok"] is False and ra["unattributed"] == [_victim])
 
     # ── M1g 反向 B：枚举收紧 ⇒ PORT_UNMODELED 成 bad_reason ───────
-    rb = P.m1_exit_assessment(rt, drc, lvs, reasons=("DANGLING",))
-    _n_non_dang = len([n for n, r in m1["attribution"].items() if r != "DANGLING"])
-    check("M1g 反向 B（枚举收紧到只剩 DANGLING）：ok=%s ∧ bad_reason %d 条（须 = 非悬空的未布网 %d 条）"
-          % (rb["ok"], len(rb["bad_reason"]), _n_non_dang),
-          rb["ok"] is False and len(rb["bad_reason"]) == _n_non_dang and _n_non_dang >= 1)
+    #    🔴 Q2 后「端口未布」已归零 ⇒ 收 DANGLING 不再使任何网变 bad_reason（探针空转）。
+    #    改成收 **PORT_UNMODELED**：剩下的悬空网立刻成为「原因不在枚举内」。
+    rb = P.m1_exit_assessment(rt, drc, lvs, reasons=("PORT_UNMODELED",))
+    _n_not_port = len([n for n, r in m1["attribution"].items() if r != "PORT_UNMODELED"])
+    check("M1g 反向 B（枚举收紧到只剩 PORT_UNMODELED）：ok=%s ∧ bad_reason %d 条"
+          "（须 = 非端口原因的未布网 %d 条）"
+          % (rb["ok"], len(rb["bad_reason"]), _n_not_port),
+          rb["ok"] is False and len(rb["bad_reason"]) == _n_not_port and _n_not_port >= 1)
 
     # ── M1i 缺数据按不成立 ───────────────────────────────────────
     r_nodrc = P.m1_exit_assessment(rt, None, lvs)
@@ -132,11 +141,15 @@ def main() -> int:
     # ── M1j claimable 没被放宽 ───────────────────────────────────
     rep = B3.run_trunk(nl)
     cl = rep.get("claimability") or {}
-    check("M1j `claimable` 未放宽：claimable=%s ∧ blocking=%s（四条，含 lvs_zero）"
+    # 🔴 Q2 后 LVS 归零 ⇒ `lvs_zero` 转真、不再阻塞（四条 → 三条）。这不是放宽：
+    #    六条里成立数由 2 涨到 3，仍不可签核（`all_nets_routed` 因 n10 悬空恒 False）。
+    check("M1j `claimable` 未放宽：claimable=%s ∧ blocking=%s（三条；lvs_zero 已转真）"
           % (cl.get("claimable"), ",".join(cl.get("blocking") or [])),
           cl.get("claimable") is False
           and sorted(cl.get("blocking") or []) ==
-          ["all_nets_routed", "hold_checked", "lvs_scope_full_chip", "lvs_zero"])
+          ["all_nets_routed", "hold_checked", "lvs_scope_full_chip"]
+          and cl["conditions"]["lvs_zero"] is True
+          and sum(1 for v in cl["conditions"].values() if v) == 3)
 
     # ── M1k 卡片同源 + selfcheck 空 ──────────────────────────────
     from lda_webui import digital_case as DC                    # noqa: E402
@@ -169,13 +182,14 @@ def main() -> int:
     print("  [M1e] 布通率 %s（is_full_chip_routing=%s，派生量）"
           % (m1["routed_ratio"], m1["is_full_chip_routing"]))
     print("  [M1j] claimable 仍 %s —— **阶段出口 ≠ 签核资格**" % cl.get("claimable"))
-    print("  [边界] 布通 7/11 来自 v0.9.382 的拓扑改动（pad 走 M2），不是判据功劳；DRC 0 仍是子集结论")
+    print("  [边界] 布通 10/11 来自 Q2 几何根治（删 1nm 副本 + 节距/通道派生），不是判据功劳；"
+          "DRC 0 仍只对已布 10 条网成立")
 
     if _FALS:
         print("S12 有红色：%s" % ", ".join(_FALS))
         return 1
-    print("S12 全绿 · M1 出口判据已改口径：已布网干净 + 未布网逐条枚举归因（6 端口 + 1 悬空）"
-          " + 布通率 7/11 显式披露；claimable 未放宽")
+    print("S12 全绿 · M1 出口判据：已布网干净 + 未布网逐条枚举归因（1 条悬空；端口未布已归零）"
+          " + 布通率 10/11 显式披露；claimable 未放宽")
     return 0
 
 

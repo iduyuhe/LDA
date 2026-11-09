@@ -32,6 +32,15 @@ ECORE_EXCLUDE_MODULES = {"__init__", "capability_manifest"}
 # ---------------------------------------------------------------------------
 ECORE_CAPABILITY_MANIFEST = [
     {
+        "capability": "出处判决（可重算三表 + 数值安全量分类）与**支配约束报表**（五态："
+                      "PASS / FAIL / UNCONSTRAINED / REGISTERED_ONLY / UNDECIDABLE）",
+        "module": "lda_l2.ecore.dprovenance",
+        "symbols": ["derivable_table", "unattr_table", "dead_rules_table",
+                    "num_eps_table", "provenance_audit", "constraint_report",
+                    "t_ref_for", "scales_for", "self_check"],
+        "introduced_by": "T3 (v0.9.397)", "guard": "run_ecore_s13_smoke.py",
+    },
+    {
         "capability": "晶体管级长沟道 NMOS 模型（平方律 三区 + gm/gds 解析）",
         "module": "lda_l2.ecore.mosfet",
         "symbols": ["NmosParams", "id_gm_gds", "id_saturation_closed", "vdsat",

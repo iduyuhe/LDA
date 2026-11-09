@@ -1,5 +1,130 @@
 # Changelog
 
+## v0.9.397（2026-11-09 · **T3：出处判决（三表 + `num_eps` + 支配约束报表）** · 净增 0 锚 · CI core **406**）
+
+### 一句话
+
+**零数字变化**，但系统第一次能回答「这个数是达标、是违例、还是根本没人管」——
+此前 `drc = 0` 与 `slack(wired) = −21.163 ps` 在报告里长得一样。
+
+### 🔴 支配约束报表（本批新增产出，12 行 · 五态）
+
+| id | 值 | 支配约束 | 裕量 | verdict |
+|---|---|---|---|---|
+| `area` | 52.371 µm² | **无**（G6 无目标函数） | — | **`UNCONSTRAINED`** |
+| `routed` | 10/11 | 容量律 `T ≥ d` | −1 | **`FAIL`** |
+| `nets_failed` | 0 | 路由完整性 | 0 | `PASS` |
+| `drc` | 0 | DRC 规则集 | 0 | `PASS`（`ROUTED_SUBSET_ONLY`） |
+| `lvs` | 0 | 连通性 | 0 | `PASS`（`ROUTED_SUBSET_ONLY`） |
+| `delay_ideal` | 37.192 ps | `T_ref = 53.827` | **+16.635** | `PASS` |
+| `delay_wired` | 74.990 ps | `T_ref = 53.827` | **−21.163** | **`FAIL`** |
+| `hold` | — | `t_hold` | — | **`UNDECIDABLE`** |
+| `em` | 133.665× @n16 | `min_margin ≥ 1` | +132.665 | `PASS` |
+| `def_bytes` | 575 B | **无** | — | **`UNCONSTRAINED`** |
+| `max_fanout` | 3.0 | `= FO_target` | — | **`REGISTERED_ONLY`** |
+| `max_transition` | 50 ps | `_DEFAULT_SLEW_PS`（假设） | — | **`REGISTERED_ONLY`** |
+
+🔴 **五态不是三态**，因为这是五件不同的事：
+- `PASS` 有约束且满足 · `FAIL` 有约束且不满足；
+- **`UNCONSTRAINED` = 没有支配约束 —— 不是合格**。把「没人管」写成绿灯是本报表最容易被美化的一处，
+  已加守卫判据 `EC-W06`：`area` / `def_bytes` 必须 `UNCONSTRAINED` 且**不在 `PASS` 集合里**；
+- `REGISTERED_ONLY` = 有门槛但本网表上无判别力（`max_fanout=3` 而实际最大扇出 2；`max_transition` 因 slew 不传播恒真）
+  ⇒ 规划 §0.4-4.6 DoD③：**禁计入「已具备约束能力」**；
+- `UNDECIDABLE` = 有约束但缺输入（`hold`：检查器未实现 + `n_dff=0`）。**缺就说缺**，
+  不写「若检查了就 PASS」的分支 —— 那支既无判据支撑，又会被 AST 判据当成手填颜色。
+
+### 🔴 出处四分类（不是三表，是四类）
+
+| 表 | 条数 | 内容 | 棘轮 |
+|---|---|---|---|
+| `derivable` | **8** | `pitch` / `ch` / `gap` / `pad_half` / `w_min` / `port_load` / `t_ref` / `scales` | 每条存 `recompute()`，与 `recorded` 不等即红 |
+| `unattr` | **7** | `via` / `enc` / `s_min` / `area_per_tr`（→ T4）· `r_on` / `t_intr` / `k_drive×18`（→ T5） | 只减不增，**逐名**登记，owner 必须在合法枚举内 |
+| `dead_rules` | **0** | T2 让 `W_MIN` 派生自 `W_ROUTE` 后清空 | 只减不增 |
+| `num_eps` | **1** | `SPACE_EPS = 1e-6 µm` | **下界可算**（≈2.2e-15 µm ⇒ 余量 4.5e8×） |
+
+🔴 **`derivable` 存 `recompute()` 而不是公式字符串**：字符串没法执行，「有出处」就退化成一句注释 ——
+删了代码照样绿。判据 `EC-W03` 用**独立重算路径**（`t_ref_for()` 自己按定义式求和，不调 `constraint_layer()`）
+复核，`EC-W03r` 用漏掉 `t_intr` 的错误公式证明它**真在算**（差 6.000 ps = 3 级 × 2 ps）。
+
+🔴 **`num_eps` 必须与 `unattr` 分开**：前者能算出下界（浮点分辨率 × 量级），只是取值取整齐；
+后者是「值根本算不出来」。混成一锅就会让「可算的容差」冒充「不可考的缺口」，反过来也一样。
+
+### 🔴 本轮最有价值的不是表，是**判据自己抓出的一个漏洞**
+
+`EC-W08` 初版只查 `verdict="PASS"` 这类**字符串字面量**。真实破坏测试把
+`_verdict(sl_w >= 0)` 换成裸名 `else PASS` 时：
+
+- **判据全绿**（`PASS` 是 `ast.Name` 不是 `ast.Constant`，外层 `IfExp` 还被算进「派生 8 处」）；
+- **报表已经撒谎**（`delay_wired` 从 `FAIL` 变 `PASS`，−21.163 ps 的违例消失了）。
+
+修成「查 `verdict` 的**取值位置**（递归穿透 `IfExp`）」后，两种手填形态都被 3 条判据同时抓到
+（`EC-W01` 自检的 `baseline_fail_set_drift`、`EC-W05` 红集合漂移、`EC-W08` AST 手填）。
+破坏后必红、还原后**逐字节一致**。两次破坏都留了实测输出。
+
+⚠️ 同一处还踩了本仓的老病：初版循环变量写 `_n`，而 `_n` 在 `main` 前面已是**闭包名**（:308 在用）
+⇒ 直接 `NameError`。已改名 `_pv_nd` 并留注释。
+
+### 🔴 新模块一出生就是孤岛 —— 被两道门禁当场抓住（本批第二个「判据比我先发现问题」）
+
+`dprovenance` 加进去后 core-fast 立刻红 2 条，都不是误报：
+
+| 门禁 | 红项 | 真因 |
+|---|---|---|
+| `run_ecore_capability_guard_smoke` | ② 反向完备 | ecore 每模块必须在 `ECORE_CAPABILITY_MANIFEST` 登记 |
+| `run_ecore_reuse_metrics_smoke` | M2 / M12 / M13 | `dprovenance` **零入度**（只有门禁在用）⇒ 新增孤岛 |
+
+🔴 更值得记的是 M13 那一击：我在 `self_check()` 里为了跑报表探针**函数内 import 了 `db3_trunk`**，
+于是静态依赖图里凭空多出一条 `dprovenance → db3_trunk` 的边 —— 而 M13 的全部意义就是
+「把扫描根缩回 ecore，`db3_trunk` 必须被判无消费者」，这条假边直接**把反证前提打掉了**。
+`R3_DEBT` 是空表、注释明写「任何新模块一出生没消费者，立刻判红，不是先记债」，所以正解只有一条：
+**给它一个真的非门禁下游**。
+
+处置（不是绕门禁）：
+1. `self_check(netlist, report)` 改成**参数注入**，模块不再 import 产品链；`report_probes` 三态显式
+   （`RAN` / `SKIPPED_NO_INPUT`），门禁侧断言必须是 `RAN` —— **跳过 ≠ 通过**；
+2. `dsignoff.signoff_ledger()` 引用 `dprovenance`（签核的第一个问题本来就是「这个数过不过」）；
+   `EC-W12` 断言台账与报表**逐位一致** ⇒ 消费者是**真用**，不是为空壳骗入度；
+3. `dprovenance` 登记进 `ECORE_CAPABILITY_MANIFEST`，并加进 `NEW_MODULES`（让 R3 也盯它）。
+
+### 🔴 三条判据改名（**不改实现**）
+
+| 判据 | 原名问题 | 改后 |
+|---|---|---|
+| `EC-P12` | 「不得手填独立常量」，而代码比的正是**手填 goldens `_EC_G`** | 「产品侧由网表/几何现算 ∧ 与手填 goldens 逐位相等（goldens 按 §4 规则二豁免）」 |
+| `S20b` | 「独立复算」，实为**同一实现跑第二遍** | 「重跑复算（同实现第二次跑，非第二实现）」，并注明它抓不到「实现本身错」（由 `EC-T09`/`EC-V05` 分管） |
+| `EC-Q05` | 「独立复算」，实为算法独立 + 共享字面量 golden | 补注「**算法/数据路径**独立；⚠️ golden 不独立」 |
+
+规划 §0.4-4.9 记「4 条判据名字仍名不副实」。实测**只找到这 3 条**（第 4 条未指明、也不硬凑）——
+名字是声明，会过期，也会撒谎；但**凑数也是撒谎**。
+
+### 🔴 门禁与数字
+
+| 项 | 结果 |
+|---|---|
+| `run_ecore_s13_smoke` | **150 → 164 判据，164/164 全绿**（~0.4 s） |
+| 新增判据 | `EC-W01`..`EC-W12` + `EC-W03r` / `EC-W08r`（14 条，含 2 条反向探针 + 1 条 AST 机核 + 1 条消费者真用） |
+| 自检 | `dprovenance.self_check()` 内含 **8 条反向构造**（去 owner / 假 owner / 无下界 / 低于下界 / recorded 改坏 / dead 增长 / 报表三段注入 / 基线红集合漂移） |
+| 主链数字 | **一位未改**：52.371 · 10/11 · 37.192/74.990 · DRC 0 · LVS 0 · DEF 575 B · claimable=False · m1_exit.ok=True |
+| 对外形状 | **未扩**：`stages` 仍 11 段、`SEGMENTS_COVERED` 仍 10 段（`EC-W11` 机核），端点仍 160 |
+
+### 🔴 诚实边界
+
+1. **报表不给签核结论**：`claimable=False`（n10 悬空）。它只回答「每个数字的判定状态」，不回答「能不能签核」。
+2. `drc` / `lvs` 仍是 `ROUTED_SUBSET_ONLY` ⇒ 只对已布 10 条网成立，不得读成全片干净。
+3. **面积与 DEF 无支配约束** ⇒ 只能说「是什么」，不能说「好不好」。本征程**仍无目标函数（G6）**。
+4. **出处缺口 7 条一条未消灭**：本批只**判决**（登记 + 定 owner），没动 `Tech` / DRC rule deck。
+   ⇒ 「参数有出处」**仍不成立**，成立的只有「每条无出处量都登记在册且有负责人」。
+5. `unattr` 的 owner 写 `T4/T5` 是**计划**，不是承诺已解决；`T4` 若改走别的路线，本表必须同批改 owner。
+6. 规则集仍是自建教科书尺度、**非 foundry PDK**。
+
+### 交付清单
+
+| 项 | 内容 |
+|---|---|
+| 新增模块 | `lda/lda_l2/ecore/dprovenance.py`（**纯数据 + 纯函数**，`derivable_table` / `unattr_table` / `dead_rules_table` / `num_eps_table` / `provenance_audit` / `constraint_report` / `t_ref_for` / `scales_for` / `self_check`） |
+| 门禁 | `run_ecore_s13_smoke` 164 判据；`EC-P12` / `S20b` / `EC-Q05` 改名不改实现 |
+| 版本 | 五处同步 0.9.396 → **0.9.397** |
+
 ## v0.9.396（2026-11-09 · **T2：Q2 几何根治 + S1b 端口负载 —— 本征程第一次改数字** · 净增 0 锚 · CI core **406**）
 
 ### 一句话

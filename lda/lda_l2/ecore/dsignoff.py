@@ -358,6 +358,26 @@ def em_net_signoff(length_um: dict, c_wire_ff: dict, c_total_ff: dict,
     }
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# ④b T3：签核台账（把「数字」变成「数字 + 判定状态」）
+#   🔴 为什么放在 `dsignoff`：签核的第一个问题就是「这个数过不过」。
+#      在此之前，`drc=0` 与 `slack(wired)=−21.163 ps` 在报告里长得一样 ——
+#      读者只能自己判断哪个是达标、哪个是违例、哪个**根本没人管**。
+#   🔴 判定逻辑在 `dprovenance.constraint_report`（那边有 12 条反向构造自检）；
+#      本函数只负责「签核语境」：进 blocking 的口径仍由 `claimability` 决定，**不在这里**。
+# ═══════════════════════════════════════════════════════════════════════════
+def signoff_ledger(report, netlist=None):
+    """签核台账：逐数字给出「支配约束 / 裕量 / 五态颜色 / 适用范围」。
+
+    🔴 函数内 import `dprovenance`：顶层 import 会让 `dsignoff` 在 `dpnr` 之前拉入整条
+    几何链（`dpnr → dcroute/dmtrack/...`），依赖顺序变脆；而 AST 扫描**能看见**函数内
+    import ⇒ 依赖图照旧记边，不是"藏起来"。
+
+    ⚠️ 返回的是**判定状态**，不是签核结论：`claimable` 仍由 `claimability()` 六条决定。
+    """
+    from . import dprovenance as PV
+    return PV.constraint_report(report, netlist)
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # ⑤b EC-B3.1：几何 / 量纲诊断（只报谱与不变式，不判违规、不进 blocking）

@@ -111,7 +111,10 @@ TOPLEVEL_ALLOW = {
 R3_DEBT = {}
 
 #: 本阶段新增模块（R3 的对象）。必须都真实存在（防拼错 ⇒ 判据空转）。
-NEW_MODULES = ("dliberty", "dlef", "dverilog", "ddef", "db3_trunk", "dxcheck")
+#: 新模块（R3 检查面）：本阶段新增的 ecore 模块必须在这里 —— 不在 = 逃过「出生即有下游」的检查。
+#: v0.9.397（T3）追加 `dprovenance`：它的非门禁下游 = `dsignoff.signoff_ledger`（签核台账）。
+NEW_MODULES = ("dliberty", "dlef", "dverilog", "ddef", "db3_trunk", "dxcheck",
+               "dprovenance")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

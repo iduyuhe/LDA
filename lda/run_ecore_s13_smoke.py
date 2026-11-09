@@ -77,6 +77,7 @@ from lda_l2.ecore import ddrc_lvs as DL        # noqa: E402
 from lda_l2.ecore import dpnr as P             # noqa: E402
 from lda_l2.ecore import dplac as DPL          # noqa: E402
 from lda_l2.ecore import dproc as DP           # noqa: E402
+from lda_l2.ecore import dprovenance as PV     # noqa: E402
 from lda_l2.ecore import dsignoff as DS        # noqa: E402
 from lda_l2.ecore import dsta as ST            # noqa: E402
 from lda_l2.ecore import dverilog as V         # noqa: E402
@@ -592,7 +593,11 @@ def main() -> int:
                 if abs(_wl2[_dn] - float((_pn.get(_dn) or {}).get("c_wire_ff", -1.0))) > 1e-12]
     _cm_len = [_dn for _dn in _len2
                if abs(_len2[_dn] - float((_pn.get(_dn) or {}).get("length_um", -1.0))) > 1e-3]
-    check("S20b 每网线长/线载独立复算一致：%d 条网，线载不一致 %r，线长不一致 %r"
+    # 🔴 T3 改名（不改实现）：这是**同一个实现跑第二遍**，不是第二个实现。
+    #   它能抓「段内数字不是从这份几何来的」，抓不到「这个实现本身算错」——
+    #   后者由 EC-T09（显式双重求和 vs 单次递推）与 EC-V05（字节码不引用产品符号）分管。
+    check("S20b 每网线长/线载**重跑复算**一致（同实现第二次跑，非第二实现）："
+          "%d 条网，线载不一致 %r，线长不一致 %r"
           % (len(_wl2), _cm_wire[:4], _cm_len[:4]),
           not _cm_wire and not _cm_len and len(_pn) == len(_wl2))
 
@@ -870,7 +875,11 @@ def main() -> int:
     _ec_g_ok = (all(round(gv, 6) == _EC_G[g] for g, gv in _ec_g.items())
                 and _ec_g["g_per_gate"] == _ec_g["g_area"] / nl.n_gates()
                 and _ec_g["g_per_transistor"] == _ec_g["g_area"] / nl.n_transistors())
-    check("EC-P12 四个 g 单一来源、全片统一、由网表/几何复算（不得手填独立常量）",
+    # 🔴 T3 改名（**不改实现**）：原名「不得手填独立常量」与代码相反 —— 下面 `_EC_G` 正是
+    #   手填常量表（按 §4 规则二豁免条款、由两条独立路径同值后才写入）。改名后说的才是实情：
+    #   产品侧 g **由网表/几何现算**（不读常量），判据要求它与 goldens 逐位相等。
+    check("EC-P12 四个 g 全片统一且**由网表/几何现算**（产品侧不读常量）∧ 与手填 goldens "
+          "`_EC_G` 逐位相等（goldens 按 §4 规则二豁免条款：双路径同值后才写入）",
           bool(_ec_g_ok))
 
     _ec_lock = (
@@ -984,8 +993,11 @@ def main() -> int:
         if (_qr.get("max"), _qr.get("min"), _qr.get("sum")) != (
                 _EC_MAX[_qg], _EC_MIN[_qg], _EC_SUM[_qg]):
             _q_bad.append(_qg)
-    check("EC-Q05 🔴 K2 数据路径独立：产品段 vs 门禁从源重跑 P&R 的扫描线复算逐位一致"
-          "（偏差=%r）" % _q_bad, not _q_bad)
+    # 🔴 T3 补注（不改实现）：本条证明的是**算法与数据路径独立**（门禁自己跑 P&R + 自己扫描线），
+    #   **不**证明 golden 独立 —— `_EC_AREA` 等约 40 个常量仍是共享字面量（§4 规则二豁免条款）。
+    #   旧名「独立复算」会让读者以为两侧毫无共享，属名不副实。
+    check("EC-Q05 🔴 K2 **算法/数据路径**独立：产品段 vs 门禁从源重跑 P&R 的扫描线复算逐位一致"
+          "（偏差=%r）；⚠️ golden 不独立（共享字面量，按 §4 规则二豁免）" % _q_bad, not _q_bad)
 
     _q_raw_area = sum(abs((s.x1 - s.x0) * (s.y1 - s.y0))
                      for s in _sh2 if s.kind == "metal")
@@ -2022,6 +2034,214 @@ def main() -> int:
           "max_transition=%.1f（假设）· 判别力=%s（T1 登记，T2 裁决）"
           % (_c_loc["clock_period_ps"], _c_loc["max_fanout"],
              _c_loc["max_transition_ps"], _c_loc["discriminates"]))
+
+    # ── T3 / Q3：出处判决（三表 + `num_eps` 分类 + **支配约束报表**）─────────
+    #   🔴 本批**零数字变化**：只加只读登记与报表，不改任何上游计算。
+    #   🔴 判据不许只测"表存在" —— 每张表都要能被改坏后报出来（`PV.self_check()` 内含 8 条反向构造）。
+    #   输入由门禁注入（`dprovenance` 自己不 import 产品链 —— 见其 docstring 的假依赖事故）；
+    #   ⚠️ 必须断言 `report_probes == "RAN"`：跳过 ≠ 通过，忘了传参就静默失靶。
+    _pv_sc = PV.self_check(nl, _tb)
+    _pv_au = PV.provenance_audit(nl)
+    _pv_cr = PV.constraint_report(_tb, nl)
+    _pv_by = {r["id"]: r for r in _pv_cr["rows"]}
+
+    check("EC-W01 三表 + `num_eps` 齐全且**逐名**登记：derivable %d · unattr %d · dead %d · "
+          "num_eps %d（自检 **12 条**反向构造全过=%s · 报表探针=%s；问题=%r）"
+          % (_pv_sc["n_derivable"], _pv_sc["n_unattr"], _pv_sc["n_dead_rules"],
+             _pv_sc["n_num_eps"], _pv_sc["ok"], _pv_sc["report_probes"], _pv_sc["problems"]),
+          _pv_sc["ok"] and _pv_au["ok"]
+          and _pv_sc["report_probes"] == "RAN"
+          and _pv_sc["n_unattr"] == 7 and _pv_sc["n_dead_rules"] == 0
+          and _pv_sc["n_num_eps"] == 1 and _pv_sc["n_derivable"] == 8)
+
+    # EC-W02：unattr 逐名 == 规划 §0.4-4.1 的 7 条（换一个同条数的集合也算漂移）
+    _pv_want = ("cell.k_drive", "geom.enc", "geom.s_min", "geom.via",
+                "tech.area_per_tr_um2", "tech.r_on_ohm", "tech.t_intr_ps")
+    check("EC-W02 `unattr` 逐名锁定（条数相同但换人 = 漂移）：%r"
+          % (_pv_au["unattr_ids"],),
+          tuple(_pv_au["unattr_ids"]) == _pv_want
+          and _pv_au["ratchet"]["unattr_max"] == 7)
+
+    # EC-W03：`derivable` 的 6 条即算量必须与 `recorded` 逐位相同；
+    #         另 2 条依赖网表/尺寸的量走**独立重算**（不调 `constraint_layer`）
+    _pv_tref_ind = PV.t_ref_for(nl)
+    _pv_cl = ST.constraint_layer(nl, comb_delay_ideal_ps=_tb_t["comb_delay_ideal_ps"],
+                                 comb_delay_wired_ps=_tb_t["comb_delay_wired_ps"])
+    _pv_scales_ind = PV.scales_for(_tb_s["place"]["die_w_um"], DL.W_MIN)
+    check("EC-W03 `derivable` 现算复核：`T_ref` 独立重算 %.9f == 产品 %.9f ∧ "
+          "`scales` 独立重算 %r == 卡片 %r ⇒ 「有出处」不是一句声明"
+          % (_pv_tref_ind, _pv_cl["clock_period_ps"], _pv_scales_ind,
+             tuple(_tb_s["ec_b3"]["assumptions"]["scales"])),
+          abs(_pv_tref_ind - _pv_cl["clock_period_ps"]) < 1e-9
+          and _pv_scales_ind == tuple(_tb_s["ec_b3"]["assumptions"]["scales"]))
+
+    # EC-W03r：反向 —— 把 `t_ref` 的独立路径换成"抄产品"，两条相等就成了自证。
+    #   用**错误公式**（漏掉 `t_intr`）复算 ⇒ 必须与产品不等，证明这条判据能分辨两条路径。
+    _pv_tref_bad = sum(DC.CELLS[g.cell].k_drive * DC.LN2 * DC.DEFAULT_TECH.r_on_ohm
+                       * ST.FO_TARGET * DC.DEFAULT_TECH.cin_ff * DC.OHM_FF_TO_PS
+                       for g in ST.longest_path_gates(nl))
+    check("EC-W03r 反向探针：漏掉 `t_intr` 的公式给出 %.6f（差 %.6f ps）⇒ 独立重算**真在算**，"
+          "不是把产品值抄过来" % (_pv_tref_bad, _pv_tref_ind - _pv_tref_bad),
+          abs(_pv_tref_bad - _pv_cl["clock_period_ps"]) > 1.0
+          and abs((_pv_tref_ind - _pv_tref_bad)
+                  - len(ST.longest_path_gates(nl)) * DC.DEFAULT_TECH.t_intr_ps) < 1e-9)
+
+    # EC-W04：`dead_rules` 必须**空**（T2 让 `W_MIN` 派生自 `W_ROUTE`），且棘轮方向可证伪
+    _pv_dead_fake = PV.provenance_audit(tables={"dead_rules": {"W_MIN": {"why": "伪造"}}})
+    check("EC-W04 `dead_rules` 为空（`W_MIN` 已派生自 `W_ROUTE`，不再是「0.10 < 0.24 恒不触发」）∧ "
+          "棘轮可证伪（塞回一条 ⇒ 审计必红=%s）"
+          % (not _pv_dead_fake["ok"]),
+          _pv_au["dead_rule_ids"] == [] and _pv_au["ratchet"]["dead_rules_max"] == 0
+          and not _pv_dead_fake["ok"])
+
+    # EC-W05 🔴 支配约束报表：12 行、五态齐全、**恰好两个红**（布通 + wired 时序）
+    check("EC-W05 支配约束报表 %d 行 · 五态 %r · **恰好两个红**=%r（其余：无约束 %r / 登记而已 %r / 缺输入 %r）"
+          % (_pv_cr["n_rows"], _pv_cr["counts"], _pv_cr["summary"]["FAIL"],
+             _pv_cr["summary"]["UNCONSTRAINED"], _pv_cr["summary"]["REGISTERED_ONLY"],
+             _pv_cr["summary"]["UNDECIDABLE"]),
+          _pv_cr["n_rows"] == 12
+          and sorted(_pv_cr["summary"]["FAIL"]) == ["delay_wired", "routed"]
+          and sorted(_pv_cr["summary"]["UNCONSTRAINED"]) == ["area", "def_bytes"]
+          and sorted(_pv_cr["summary"]["REGISTERED_ONLY"]) == ["max_fanout", "max_transition"]
+          and _pv_cr["summary"]["UNDECIDABLE"] == ["hold"]
+          and all(_pv_cr["counts"][v] > 0 for v in (PV.PASS, PV.FAIL, PV.UNCONSTRAINED,
+                                                    PV.REGISTERED_ONLY, PV.UNDECIDABLE)))
+
+    # EC-W06 🔴 **防「没人管算合格」**：无约束项的 verdict 必须是 UNCONSTRAINED 且**不在 PASS 集合里**。
+    #   这是本报表最容易被"美化"的一处 —— 把面积写成绿灯，读者就会以为 52.371 是"合格"。
+    _pv_leak = [i for i in ("area", "def_bytes") if i in _pv_cr["summary"][PV.PASS]]
+    check("EC-W06 无约束项守卫：`area` / `def_bytes` 均 UNCONSTRAINED（governing=%r）∧ "
+          "**未混进 PASS 集合**（泄漏=%r）"
+          % ([_pv_by[i]["governing"] for i in ("area", "def_bytes")], _pv_leak),
+          not _pv_leak
+          and all(_pv_by[i]["verdict"] == PV.UNCONSTRAINED
+                  and _pv_by[i]["governing"] is None for i in ("area", "def_bytes")))
+
+    # EC-W07 🔴 规划 §0.4-4.6 DoD③：`max_fanout` / `max_transition` 必须标「登记、c17 上无判别力」，
+    #   禁计入「已具备约束能力」⇒ verdict 只能是 REGISTERED_ONLY，且文案必须带这句。
+    _pv_reg = (_pv_by["max_fanout"], _pv_by["max_transition"])
+    check("EC-W07 `max_fanout` / `max_transition` 只能 `REGISTERED_ONLY`（实际扇出 < 上限；slew 不传播"
+          " ⇒ 恒真），文案须含「无判别力」：%r"
+          % ([r["note"][:26] for r in _pv_reg],),
+          all(r["verdict"] == PV.REGISTERED_ONLY for r in _pv_reg)
+          and all("无判别力" in r["note"] for r in _pv_reg)
+          and all(r["id"] not in _pv_cr["summary"][PV.PASS] for r in _pv_reg))
+
+    # EC-W08 🔴 **颜色是算出来的，不是写死的** —— AST 机核：`verdict=` 表达式里
+    #   **不得出现 `PASS`/`FAIL` 这两个名字，也不得出现同名字符串字面量**。
+    #   这两种写法都会让「改 report ⇒ 颜色翻面」失效（报表退化成手填）。
+    #
+    #   ⚠️ 本条初版只查 `ast.Constant`，**真实破坏测试当场抓出它漏**：把
+    #   `_verdict(sl_w >= 0)` 换成裸名 `PASS` 时，`PASS` 是 `ast.Name` 不是 `Constant`，
+    #   而且外层是 `IfExp` ⇒ 被原判据算进「派生 8 处」里，**判据全绿而报表已撒谎**。
+    #   现在改成查表达式里的**全部 Name 与 Constant**，并额外要求 `_verdict(` 出现 ≥5 次。
+    #   ⚠️ 循环变量必须叫 `_pv_nd`：`_n` 在本函数前面已是闭包名（:308 在用）。
+    _pv_src = inspect.getsource(PV.constraint_report)
+    _pv_tree = ast.parse(_pv_src)
+
+    def _pv_leaves(_e):
+        """`verdict` 的**取值位置**（只穿透 `IfExp`）：返回 (合规叶子数, 手填清单)。
+
+        🔴 必须递归而**不能** `ast.walk` 全扫：初版全扫把 `route["nets_failed"]` 这类
+        **字典键字符串**误报成手填（4 处假红）。判据过宽与过窄一样是错的。
+        """
+        if isinstance(_e, ast.IfExp):
+            _a, _b = _pv_leaves(_e.body)
+            _c, _d = _pv_leaves(_e.orelse)
+            return (_a + _c, _b + _d)
+        if isinstance(_e, ast.Constant) and isinstance(_e.value, str):
+            return (0, [_e.value])                      # 字面量 "PASS"
+        if isinstance(_e, ast.Name):
+            return (1, [_e.id] if _e.id in (PV.PASS, PV.FAIL) else [])
+        if isinstance(_e, ast.Call):
+            return (1, [])                              # `_verdict(...)`：值由实算决定
+        return (0, ["<%s>" % type(_e).__name__])
+
+    _pv_leaves_n, _pv_hand, _pv_kw = 0, [], 0
+    for _pv_nd in ast.walk(_pv_tree):
+        if isinstance(_pv_nd, ast.keyword) and _pv_nd.arg == "verdict":
+            _pv_kw += 1
+            _n_leaf, _bad = _pv_leaves(_pv_nd.value)
+            _pv_leaves_n += _n_leaf
+            _pv_hand += _bad
+    _pv_calls = sum(1 for _pv_nd in ast.walk(_pv_tree)
+                    if isinstance(_pv_nd, ast.Call)
+                    and getattr(_pv_nd.func, "id", "") == "_verdict")
+    check("EC-W08 🔴 AST 机核：`verdict` %d 处（取值叶子 %d 个：2 处条件式各拆 2 支）、"
+          "`_verdict(` 调用 %d 处；**手填（字面量/裸名 `PASS`·`FAIL`）必须为 0**（实测 %r）"
+          % (_pv_kw, _pv_leaves_n, _pv_calls, _pv_hand),
+          _pv_kw == 12 and _pv_leaves_n == 14 and _pv_calls >= 5 and _pv_hand == [])
+
+    # EC-W08r 反向探针（**两种手填形态都要抓**）：字符串 `"PASS"` 与裸名 `PASS`
+    _pv_syn = ast.parse('def f():\n'
+                        '    rows.append(dict(id="a", verdict="PASS"))\n'
+                        '    rows.append(dict(id="b", verdict=(UNDECIDABLE if c else PASS)))\n')
+    _pv_syn_hit = []
+    for _pv_nd2 in ast.walk(_pv_syn):
+        if isinstance(_pv_nd2, ast.keyword) and _pv_nd2.arg == "verdict":
+            _pv_syn_hit += _pv_leaves(_pv_nd2.value)[1]
+    check("EC-W08r 反向探针：合成源码里 `verdict=\"PASS\"` 与裸名 `else PASS` 两种手填 ⇒ "
+          "检测器都报出 %r（必须恰好 2 处）" % (_pv_syn_hit,),
+          sorted(_pv_syn_hit) == ["PASS", "PASS"])
+
+    # EC-W09 `num_eps` 与 `unattr` 不许混：前者**算得出下界**且无 owner；后者有无 owner 是硬条件
+    _pv_eps = PV.num_eps_table()
+    check("EC-W09 `num_eps` 与 `unattr` 分得开：`SPACE_EPS` 下界 %.3e µm ⇒ 余量 %.1e×、"
+          "`owner_step` 须为 None（有下界就不是缺口）"
+          % (_pv_eps["ddrc_lvs.SPACE_EPS"]["bound"],
+             _pv_eps["ddrc_lvs.SPACE_EPS"]["value"] / _pv_eps["ddrc_lvs.SPACE_EPS"]["bound"]),
+          _pv_eps["ddrc_lvs.SPACE_EPS"]["owner_step"] is None
+          and _pv_eps["ddrc_lvs.SPACE_EPS"]["bound"] > 0
+          and _pv_eps["ddrc_lvs.SPACE_EPS"]["value"] >= _pv_eps["ddrc_lvs.SPACE_EPS"]["bound"]
+          and not (set(_pv_eps) & set(_pv_au["unattr_ids"])))
+
+    # EC-W10 T3 **零数字变化**：出处判决只加字段，主链 8 个数逐位不动（独立于 S1-a 的第二道锁）
+    check("EC-W10 T3 零变化：面积 %.3f ∧ %d/11 ∧ %.3f/%.3f ps ∧ DRC %d ∧ LVS %d ∧ DEF %d ∧ "
+          "claimable=%s ∧ m1=%s —— 出处判决未动任何上游计算"
+          % (_tb_s["place"]["die_area_um2"], _tb_s["route"]["nets_with_segments"],
+             _tb_t["comb_delay_ideal_ps"], _tb_t["comb_delay_wired_ps"],
+             _tb_s["drc_lvs"]["drc_violations"], _tb_s["drc_lvs"]["lvs_problems"],
+             _tb_s["def_write"]["bytes"], _tb["claimability"]["claimable"],
+             _tb_s["m1_exit"]["ok"]),
+          _tb_s["place"]["die_area_um2"] == 52.371
+          and _tb_s["route"]["nets_with_segments"] == 10
+          and _tb_t["comb_delay_ideal_ps"] == 37.192
+          and _tb_t["comb_delay_wired_ps"] == 74.99
+          and _tb_s["drc_lvs"]["drc_violations"] == 0
+          and _tb_s["drc_lvs"]["lvs_problems"] == 0
+          and _tb_s["def_write"]["bytes"] == 575
+          and _tb["claimability"]["claimable"] is False
+          and _tb_s["m1_exit"]["ok"] is True)
+
+    # EC-W11 T3 **不扩 API 形状**：`provenance` 不进 `stages`、`SEGMENTS_COVERED` 仍 10 段。
+    #   加段会连带 EC-B 系列的段形态锁定（顶层键数 / 段数），与本批「只做归因」不符。
+    from lda_webui import digital_case as _DGC        # noqa: E402 — 就地导入，避免顶层多一个 webui 依赖
+    check("EC-W11 T3 不扩对外形状：`stages` 仍 %d 段（无 `provenance`）∧ `SEGMENTS_COVERED` 仍 %d 段"
+          % (len(_tb["stages"]), len(_DGC.SEGMENTS_COVERED)),
+          all(n != "provenance" for n, _ in _tb["stages"])
+          and len(_DGC.SEGMENTS_COVERED) == 10
+          and "provenance" not in _DGC.SEGMENTS_COVERED)
+
+    # EC-W12 🔴 消费者必须**真的用**（不是为了让模块"有入度"挂个空壳）：
+    #   `dsignoff.signoff_ledger` 是 `dprovenance` 的**非门禁**下游 —— 签核台账与报表逐位一致。
+    #   没有它，`dprovenance` 就是零入度孤岛（`run_ecore_reuse_metrics_smoke` 的 M2 会红），
+    #   而「加个空壳函数骗入度」正是那道门禁 M14 要防的事。
+    _pv_led = DS.signoff_ledger(_tb, nl)
+    check("EC-W12 签核台账（`dsignoff.signoff_ledger`）与报表逐位一致：%d 行 · 五态 %r —— "
+          "`dprovenance` 有**真**非门禁下游（不是空壳骗入度）"
+          % (_pv_led["n_rows"], _pv_led["counts"]),
+          _pv_led["n_rows"] == _pv_cr["n_rows"]
+          and _pv_led["summary"] == _pv_cr["summary"]
+          and _pv_led["counts"] == _pv_cr["counts"])
+
+    print("  [T3] 出处判决：derivable 8（含 2 条走独立重算）· unattr **7**（逐条有 owner，"
+          "棘轮只减不增）· dead_rules **0**（T2 修完 `W_MIN`）· num_eps 1（`SPACE_EPS` 下界可算）")
+    print("  [T3] 支配约束报表 %d 行：PASS %r · **FAIL %r** · 无约束 %r · 登记无判别力 %r · 缺输入 %r"
+          % (_pv_cr["n_rows"], _pv_cr["summary"][PV.PASS], _pv_cr["summary"][PV.FAIL],
+             _pv_cr["summary"][PV.UNCONSTRAINED], _pv_cr["summary"][PV.REGISTERED_ONLY],
+             _pv_cr["summary"][PV.UNDECIDABLE]))
+    print("  [T3 边界] 报表**不给签核结论**（claimable=False）；`drc`/`lvs` 仍是 ROUTED_SUBSET_ONLY；"
+          "面积与 DEF 无支配约束 ⇒ 只能说「是什么」")
 
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)

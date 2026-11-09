@@ -209,11 +209,16 @@ def _baseline_report(nl, nets_all) -> dict:
     }
 
 
-def run_trunk(nl, *, baseline: bool = True):
+def run_trunk(nl, *, baseline: bool = True, lib=None):
     """跑通「parse 输出 → place → route → drc/lvs → DEF」全链，返回带守恒断言的报告。
 
     每段都断言「吃的是上一段输出」；任一守恒失败 → 抛 AssertionError（fail-closed）。
     `baseline=True` 时并排给出旧链 `detail_route` 的数字（双报一版，防口径静默替换）。
+
+    🔴 `lib`（T4）：给 Liberty 对象则**延时改查 NLDM 表**，`None` 走闭式（历史口径）。
+    **保护性约束**：`lib=None` 时全链数字与历史逐位相同；`lib=` 给与本仓尺度对齐的库时
+    也逐位相同（c17 的负载全落在表网格点上 ⇒ 线性函数的两点插值精确）——
+    唯一变化是 `timing.lib_chain` 从 `closed` 变 `liberty:<库名>`，即**出处**变了。
     """
     from lda_l2.ecore import ddef as DD                       # 延迟导入，避免顶层重依赖
     from lda_l2.ecore import ddrc_lvs, dpnr
@@ -327,14 +332,20 @@ def run_trunk(nl, *, baseline: bool = True):
     #    对外必须写「含端口负载后首次暴露时序违例」，不得写成「性能下降」。
     from lda_l2.ecore import dcell as _DCell          # 就地导入：本段早于 EM 段的 DCell 绑定
     _pl_ff = ST.FO_PORT * _DCell.DEFAULT_TECH.cin_ff
-    tm_ideal = ST.sta(nl, port_load_ff=_pl_ff, topo_sort=True)
-    tm = ST.sta(nl, wire_load_ff=wl, port_load_ff=_pl_ff, topo_sort=True)
+    tm_ideal = ST.sta(nl, port_load_ff=_pl_ff, topo_sort=True, lib=lib)
+    tm = ST.sta(nl, wire_load_ff=wl, port_load_ff=_pl_ff, topo_sort=True, lib=lib)
     if tm.comb_delay_ps < tm_ideal.comb_delay_ps - 1e-9:
         raise AssertionError("段4 守恒失败：带线载延时 %.4f < 理想 %.4f —— "
                              "加负载不可能变快（模型或注入路径写反了）"
                              % (tm.comb_delay_ps, tm_ideal.comb_delay_ps))
     report["stages"].append(("timing", {
         "chain": TRUNK_CHAIN, "topo_sorted": True,
+        # 🔴 T4：本次延时**从哪来**。`closed` = 一阶闭式（历史口径）；
+        #   `liberty:<名>` = 查 NLDM 表。同名同值不是巧合，见 run_trunk docstring。
+        "lib_chain": ("closed" if lib is None
+                      else "liberty:%s" % getattr(lib, "name", "?")),
+        "lib_clamped": int(getattr(tm, "lib_clamped", 0)),
+        "lib_fallback_cells": list(getattr(tm, "lib_fallback_cells", ()) or ()),
         "nets_with_wire": len(wl),
         # 🔴 未布的网按 **0 线载** 处理 ⇒ 走这些网的路径**偏乐观**（必须显式说）
         "nets_without_wire": len(nets_all) - len(wl),

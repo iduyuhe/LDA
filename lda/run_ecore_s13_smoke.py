@@ -73,6 +73,7 @@ from lda_l2.ecore import db3_trunk as B3        # noqa: E402
 from lda_l2.ecore import dcell as DC           # noqa: E402
 from lda_l2.ecore import ddef as DF            # noqa: E402
 from lda_l2.ecore import ddetail as DET        # noqa: E402
+from lda_l2.ecore import dliberty as LB         # noqa: E402
 from lda_l2.ecore import ddrc_lvs as DL        # noqa: E402
 from lda_l2.ecore import dpnr as P             # noqa: E402
 from lda_l2.ecore import dplac as DPL          # noqa: E402
@@ -2233,6 +2234,163 @@ def main() -> int:
           _pv_led["n_rows"] == _pv_cr["n_rows"]
           and _pv_led["summary"] == _pv_cr["summary"]
           and _pv_led["counts"] == _pv_cr["counts"])
+
+    # ── T4 / S2：库接线（数据契约）────────────────────────────────────────
+    #   🔴 本批的真相：`SAMPLE_LIBERTY`（pF 尺度、INVX1 命名）与本仓 c17（0–2 fF、
+    #   0.77 µm²）差 3 个数量级 —— 直接接线会 100% 钳位且全部 fallback，
+    #   所以另建 `SAMPLE_LIBERTY_L2`：**把本仓 Tech 显式化**（同名 INV/NAND2、fF 尺度）。
+    #   它证明的是「代码常量 → 数据文件」这条**通路**不引入偏差，不是"接了真库"。
+    _lib_l2 = LB.parse_liberty(LB.SAMPLE_LIBERTY_L2)
+    _lib_pf = LB.parse_liberty(LB.SAMPLE_LIBERTY)
+    _lib_ld = ST.lib_defaults(_lib_l2)
+
+    _lib_dim = next(a.table for a in ST.lib_map(_lib_l2)["INV"].arcs if a.table)
+    check("EC-X01 数据契约可解析：`SAMPLE_LIBERTY_L2` → %r（与 `dcells` 同名）· "
+          "表 %d slew × %d load · 库级 vdd=%.2f V / %.0f °C / mt=%.1f ps / cin=%.1f fF"
+          % (sorted(ST.lib_map(_lib_l2)), len(_lib_dim[0]), len(_lib_dim[1]),
+             _lib_ld["nom_voltage_v"], _lib_ld["nom_temperature_c"],
+             _lib_ld["default_max_transition_ps"],
+             _lib_ld["default_input_pin_cap_ff"]),
+          sorted(ST.lib_map(_lib_l2)) == ["INV", "NAND2"]
+          and _lib_ld["nom_voltage_v"] == DC.DEFAULT_TECH.vdd
+          and _lib_ld["nom_temperature_c"] == DS.T_REF_C
+          and _lib_ld["default_max_transition_ps"] == ST._DEFAULT_SLEW_PS
+          and _lib_ld["default_input_pin_cap_ff"] == DC.DEFAULT_TECH.cin_ff)
+
+    # EC-X02 🔴 **保护性约束**（T4 第一纪律）：不给库 ⇒ 主链 9 数逐位不变
+    _lib_rep_off = B3.run_trunk_from_verilog(V.SAMPLE_VERILOG, baseline=False)
+    _lib_t_off = {n: d for n, d in _lib_rep_off["stages"]}["timing"]
+    check("EC-X02 保护性约束（`lib=None`）：主链 9 数逐位不变 · %.3f µm² / %d/11 / "
+          "%.3f / %.3f ps / DRC %d / LVS %d / DEF %d B / claimable=%s / m1=%s · "
+          "`lib_chain=%s`"
+          % (_tb_s["place"]["die_area_um2"], _tb_s["route"]["nets_with_segments"],
+             _lib_t_off["comb_delay_ideal_ps"], _lib_t_off["comb_delay_wired_ps"],
+             _tb_s["drc_lvs"]["drc_violations"], _tb_s["drc_lvs"]["lvs_problems"],
+             _tb_s["def_write"]["bytes"], _tb["claimability"]["claimable"],
+             _tb_s["m1_exit"]["ok"], _lib_t_off["lib_chain"]),
+          _lib_t_off["lib_chain"] == "closed"
+          and _lib_t_off["comb_delay_ideal_ps"] == 37.192
+          and _lib_t_off["comb_delay_wired_ps"] == 74.99
+          and _tb_s["place"]["die_area_um2"] == 52.371
+          and _tb_s["route"]["nets_with_segments"] == 10
+          and _tb_s["drc_lvs"]["drc_violations"] == 0
+          and _tb_s["drc_lvs"]["lvs_problems"] == 0
+          and _tb_s["def_write"]["bytes"] == 575
+          and _tb["claimability"]["claimable"] is False
+          and _tb_s["m1_exit"]["ok"] is True)
+
+    # EC-X03 🔴 接线是**纯通路**：lib=L2 与闭式逐位相同，且零钳位零回落
+    _lib_rep_on = B3.run_trunk_from_verilog(V.SAMPLE_VERILOG, baseline=False, lib=_lib_l2)
+    _lib_t_on = {n: d for n, d in _lib_rep_on["stages"]}["timing"]
+    check("EC-X03 lib=L2 纯通路：ideal %.9f / wired %.9f **与闭式逐位相同** · "
+          "`lib_chain=%s` · clamped=%d · fallback=%r"
+          % (_lib_t_on["comb_delay_ideal_ps"], _lib_t_on["comb_delay_wired_ps"],
+             _lib_t_on["lib_chain"], _lib_t_on["lib_clamped"],
+             _lib_t_on["lib_fallback_cells"]),
+          _lib_t_on["lib_chain"] == "liberty:SAMPLE_PDK_L2"
+          and _lib_t_on["comb_delay_ideal_ps"] == _lib_t_off["comb_delay_ideal_ps"]
+          and _lib_t_on["comb_delay_wired_ps"] == _lib_t_off["comb_delay_wired_ps"]
+          and _lib_t_on["lib_clamped"] == 0
+          and _lib_t_on["lib_fallback_cells"] == [])
+
+    # EC-X04 非网格 load 的插值误差：闭式对 load **线性** ⇒ 两点插值**精确**，
+    #   所以误差只能是浮点量级。这条给的是「为什么差为 0」的理由，不是「调参调到 0」。
+    _lib_tab = next(a.table for a in ST.lib_map(_lib_l2)["INV"].arcs if a.table)
+    _lib_err = []
+    for _ld_ff in (0.5, 1.5, 3.0, 6.0, 7.25):
+        _closed = DC.cell_delay_ps("INV", _ld_ff, DC.DEFAULT_TECH)
+        _lv, _cl = ST.interp_nldm(_lib_tab, ST._DEFAULT_SLEW_PS, _ld_ff)
+        _lib_err.append((_ld_ff, abs(_lv - _closed), _cl))
+    check("EC-X04 非网格 load 的插值误差 ≤1e-12 ps：%r ⇒ 闭式对 load 线性、"
+          "两点插值精确（差为 0 有理由，不是调出来的）"
+          % ([("%.2f fF" % a, "%.2e" % b) for a, b, _c in _lib_err],),
+          all(b <= 1e-12 for _a, b, _c in _lib_err)
+          and not any(c for _a, _b, c in _lib_err))
+
+    # EC-X05 🔴🔴 **本批最强判据**：改 Tech ⇒ 闭式跟着变、**lib 一动不动**
+    #   ⇒ 库确实是**独立数据源**，不是闭式的马甲。只测"lib≈闭式"证明不了这一点。
+    _lib_T2 = dataclasses.replace(DC.DEFAULT_TECH,
+                                  r_on_ohm=DC.DEFAULT_TECH.r_on_ohm * 2.0)
+    _lib_a1 = ST.sta(nl, port_load_ff=1.0, topo_sort=True)
+    _lib_b1 = ST.sta(nl, port_load_ff=1.0, topo_sort=True, lib=_lib_l2)
+    _lib_a2 = ST.sta(nl, tech=_lib_T2, port_load_ff=1.0, topo_sort=True)
+    _lib_b2 = ST.sta(nl, tech=_lib_T2, port_load_ff=1.0, topo_sort=True, lib=_lib_l2)
+    check("EC-X05 🔴 库是独立数据源：`r_on×2` ⇒ 闭式 %.3f→%.3f ps（×%.4f）· "
+          "**lib %.3f→%.3f ps（×%.4f）一动不动**"
+          % (_lib_a1.comb_delay_ps, _lib_a2.comb_delay_ps,
+             _lib_a2.comb_delay_ps / _lib_a1.comb_delay_ps,
+             _lib_b1.comb_delay_ps, _lib_b2.comb_delay_ps,
+             _lib_b2.comb_delay_ps / _lib_b1.comb_delay_ps),
+          abs(_lib_a2.comb_delay_ps - _lib_a1.comb_delay_ps) > 20.0
+          and _lib_b2.comb_delay_ps == _lib_b1.comb_delay_ps)
+
+    # EC-X06 反向探针（**尺度错配**）：把 load 轴 fF→pF 放大 1000×，名字不动。
+    #   🔴 症状**不是**钳位 —— c17 的 0–2 fF 全落在 [0, 1000] 这一格里，钳位根本不发生；
+    #   真症状是「**插值被拉平**」：表在 1000 fF 处的值被摊到 1000 fF 的跨度上 ⇒
+    #   负载灵敏度塌缩 1000 倍、延时严重失真。**初版判据写成「clamped>0 且延时≥100×」
+    #   当场红了** —— 因为我把症状想错了。判据要盯**失真**，不是盯钳位。
+    _lib_bad_src = LB.SAMPLE_LIBERTY_L2.replace(
+        'index_1 ( "0.0, 0.001, 0.002, 0.004, 0.008" ) ;',
+        'index_1 ( "0.0, 1.0, 2.0, 4.0, 8.0" ) ;')
+    assert _lib_bad_src != LB.SAMPLE_LIBERTY_L2, "反向构造点没命中"
+    _lib_bad = LB.parse_liberty(_lib_bad_src)
+    _lib_bad_tab = next(a.table for a in ST.lib_map(_lib_bad)["INV"].arcs if a.table)
+
+    def _slope(tab, lo, hi):
+        a, _c1 = ST.interp_nldm(tab, ST._DEFAULT_SLEW_PS, lo)
+        b, _c2 = ST.interp_nldm(tab, ST._DEFAULT_SLEW_PS, hi)
+        return (b - a) / (hi - lo)
+
+    _lib_slope_ok = _slope(_lib_tab, 1.0, 2.0)
+    _lib_slope_bad = _slope(_lib_bad_tab, 1.0, 2.0)
+    _lib_bad_sta = ST.sta(nl, port_load_ff=1.0, topo_sort=True, lib=_lib_bad)
+    _lib_ratio = _lib_bad_sta.comb_delay_ps / _lib_a1.comb_delay_ps
+    check("EC-X06 反向探针（尺度错配）：load 轴 fF→pF ×1000 ⇒ **斜率塌缩** "
+          "%.4f→%.6f ps/fF（×%.0f）· 总延时 %.2f vs 闭式 %.2f ps（×%.2f）· "
+          "clamped=%d（**钳位不是主症状**，失真才是）"
+          % (_lib_slope_ok, _lib_slope_bad,
+             _lib_slope_ok / _lib_slope_bad if _lib_slope_bad else float("inf"),
+             _lib_bad_sta.comb_delay_ps, _lib_a1.comb_delay_ps, _lib_ratio,
+             _lib_bad_sta.lib_clamped),
+          _lib_slope_bad < _lib_slope_ok / 100.0
+          and abs(_lib_ratio - 1.0) > 0.5)
+
+    # EC-X07 反向探针（命名错配）：pF 库的 cell 叫 INVX1/NAND2X1 ⇒ 全部 fallback，
+    #   且**如实记入** `lib_fallback_cells`（不静默回落）。
+    _lib_pf_sta = ST.sta(nl, port_load_ff=1.0, topo_sort=True, lib=_lib_pf)
+    check("EC-X07 反向探针（命名错配）：`SAMPLE_LIBERTY` 的 cell 是 INVX1/NAND2X1 ⇒ "
+          "fallback=%r（**不静默**）· 延时回落到闭式 %.3f ps"
+          % (sorted(_lib_pf_sta.lib_fallback_cells), _lib_pf_sta.comb_delay_ps),
+          sorted(_lib_pf_sta.lib_fallback_cells) == ["INV", "NAND2"]
+          and _lib_pf_sta.comb_delay_ps == _lib_a1.comb_delay_ps)
+
+    # EC-X08 🔴 出处翻转而数字不变：`max_transition` 从「假设」变「库数据」
+    _lib_c0 = ST.constraint_layer(nl, comb_delay_ideal_ps=37.192,
+                                  comb_delay_wired_ps=74.990)
+    _lib_c1 = ST.constraint_layer(nl, comb_delay_ideal_ps=37.192,
+                                  comb_delay_wired_ps=74.990, lib=_lib_l2)
+    check("EC-X08 出处翻转而数字不变：`max_transition` %.1f → %.1f ps · "
+          "`is_assumption` %s → %s · source `%s` → `%s` · 判别力 %s→%s"
+          % (_lib_c0["max_transition_ps"], _lib_c1["max_transition_ps"],
+             _lib_c0["max_transition_is_assumption"],
+             _lib_c1["max_transition_is_assumption"],
+             _lib_c0["max_transition_source"], _lib_c1["max_transition_source"],
+             _lib_c0["discriminates"], _lib_c1["discriminates"]),
+          _lib_c0["max_transition_is_assumption"] is True
+          and _lib_c1["max_transition_is_assumption"] is False
+          and _lib_c0["max_transition_ps"] == _lib_c1["max_transition_ps"] == 50.0
+          and _lib_c0["max_transition_source"] == "_DEFAULT_SLEW_PS"
+          and _lib_c1["max_transition_source"] == "Liberty.default_max_transition"
+          and _lib_c0["clock_period_ps"] == _lib_c1["clock_period_ps"])
+
+    print("  [T4] 库接线（数据契约）：`SAMPLE_LIBERTY_L2` 2 cell（INV/NAND2 · 与 dcells 同名）"
+          "· load 轴 0–8 fF · **与闭式逐位相同**（线性函数两点插值精确）")
+    print("  [T4] 库级默认 **只报不接**：vdd %.2f V · %.0f °C · cin %.1f fF —— "
+          "接它们会改 EM/几何，属 T4b（需独立验收）"
+          % (_lib_ld["nom_voltage_v"], _lib_ld["nom_temperature_c"],
+             _lib_ld["default_input_pin_cap_ff"]))
+    print("  [T4 边界] 这是「代码常量 → 数据文件」的**通路验证**，不是接了真库："
+          "真库数据会改口，需外部输入；本仓非 foundry PDK")
 
     print("  [T3] 出处判决：derivable 8（含 2 条走独立重算）· unattr **7**（逐条有 owner，"
           "棘轮只减不增）· dead_rules **0**（T2 修完 `W_MIN`）· num_eps 1（`SPACE_EPS` 下界可算）")

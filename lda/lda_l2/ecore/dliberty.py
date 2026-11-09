@@ -763,3 +763,107 @@ SAMPLE_LIBERTY = r"""library ("SAMPLE_PDK") {
   }
 }
 """
+
+# ══════════════════════════════════════════════════════════════════════════════
+# T4 数据契约：**与本仓 Tech 尺度对齐**的合成库（`SAMPLE_LIBERTY` 是 pF 尺度，
+#   与本仓 c17（0–2 fF、0.77 µm²）差 3 个数量级 —— 直接接线会 100% 钳位，见 T4 测算）。
+#
+# 🔴 **本库是什么**：把 `dcell.DEFAULT_TECH` 与 `dcells` 的几何**显式化成一份 Liberty 文本**。
+#    值完全一致（vdd 0.9 / 125 °C / max_transition 50 ps / cin 1 fF / area 0.7688·1.47 µm²），
+#    表值 = 闭式延时在该网格点上的采样。
+# 🔴 **本库不是什么**：**不是**任何真实工艺数据、**不是** foundry PDK、**不是**独立实测语料。
+#    它的唯一用途是证明「把代码常量换成数据文件」这条**通路**不引入偏差
+#    （数字逐位不变 + 改 Tech 时库表不动 = 库确是独立数据源）。
+#    换真库数据⇒会改口，那需要外部输入，本仓没有。
+#
+# 🔴 **slew 轴是退化维度**：每行 4 个值完全相同，因为被显式化的闭式模型不含 slew 项。
+#    真库会有真实 slew 依赖 —— 这一点**不做假**，如实保留平的列。
+#    `default_max_transition = 0.05 ns = 50 ps` 与本仓 `dsta._DEFAULT_SLEW_PS` **同值**；
+#    这是「库与设计对齐」的选择，不是巧合 —— 换真库它会不同（那才是改口点）。
+# ══════════════════════════════════════════════════════════════════════════════
+SAMPLE_LIBERTY_L2 = r"""
+library ("SAMPLE_PDK_L2") {
+  comment : "LDA L2-scale synthetic library: explicit data contract of the in-repo Tech";
+  library_features ( "report_delay_calculation", "report_power_calculation" ) ;
+  time_unit : "1ns" ;
+  voltage_unit : "1V" ;
+  current_unit : "1mA" ;
+  capacitive_load_unit ( 1.0, "pf" ) ;
+  nom_voltage : 0.9 ;
+  nom_temperature : 125 ;
+  default_cell_leakage_power : 0.0 ;
+  default_fanout_load : 1.0 ;
+  default_inout_pin_cap : 0.0 ;
+  default_input_pin_cap : 0.001 ;
+  default_output_pin_cap : 0.0 ;
+  default_max_transition : 0.05 ;
+
+  lu_table_template (delay_l2) {
+    variable_1 : "total_output_net_capacitance" ;
+    variable_2 : "input_net_transition" ;
+    index_1 ( "0.0, 0.001, 0.002, 0.004, 0.008" ) ;
+    index_2 ( "0.01, 0.05, 0.1, 0.2" ) ;
+  }
+
+  cell (INV) {
+    area : 0.7688 ;
+    pin (A) {
+      direction : input ;
+      capacitance : 0.001 ;
+      timing () {
+        related_pin : "Z" ;
+        timing_sense : negative_unate ;
+        cell_fall (delay_l2) {
+          values (                    "0.002, 0.002, 0.002, 0.002", \
+                   "0.005465735902799727, 0.005465735902799727, 0.005465735902799727, 0.005465735902799727", \
+                   "0.008931471805599453, 0.008931471805599453, 0.008931471805599453, 0.008931471805599453", \
+                   "0.015862943611198905, 0.015862943611198905, 0.015862943611198905, 0.015862943611198905", \
+                   "0.02972588722239781, 0.02972588722239781, 0.02972588722239781, 0.02972588722239781" ) ;
+        }
+      }
+    }
+    pin (Z) {
+      direction : output ;
+      capacitance : 0.0 ;
+      timing () {
+        related_pin : "A" ;
+        timing_sense : positive_unate ;
+        cell_fall (delay_l2) {
+          values (                    "0.002, 0.002, 0.002, 0.002", \
+                   "0.005465735902799727, 0.005465735902799727, 0.005465735902799727, 0.005465735902799727", \
+                   "0.008931471805599453, 0.008931471805599453, 0.008931471805599453, 0.008931471805599453", \
+                   "0.015862943611198905, 0.015862943611198905, 0.015862943611198905, 0.015862943611198905", \
+                   "0.02972588722239781, 0.02972588722239781, 0.02972588722239781, 0.02972588722239781" ) ;
+        }
+      }
+    }
+  }
+
+  cell (NAND2) {
+    area : 1.47 ;
+    pin (A) {
+      direction : input ;
+      capacitance : 0.001 ;
+      timing () {
+        related_pin : "ZN" ;
+        timing_sense : negative_unate ;
+        cell_fall (delay_l2) {
+          values (                    "0.002, 0.002, 0.002, 0.002", \
+                   "0.008238324625039506, 0.008238324625039506, 0.008238324625039506, 0.008238324625039506", \
+                   "0.014476649250079016, 0.014476649250079016, 0.014476649250079016, 0.014476649250079016", \
+                   "0.02695329850015803, 0.02695329850015803, 0.02695329850015803, 0.02695329850015803", \
+                   "0.05190659700031606, 0.05190659700031606, 0.05190659700031606, 0.05190659700031606" ) ;
+        }
+      }
+    }
+    pin (B) {
+      direction : input ;
+      capacitance : 0.001 ;
+    }
+    pin (ZN) {
+      direction : output ;
+      capacitance : 0.0 ;
+    }
+  }
+}
+"""

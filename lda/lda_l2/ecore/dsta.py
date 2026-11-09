@@ -95,6 +95,35 @@ def loads_of(nl, port_load_ff: float = 0.0, tech=None,
 _DEFAULT_SLEW_PS = 50.0
 
 
+def lib_defaults(lib):
+    """从 Liberty 抽**库级默认**（T4 数据契约）：`{pv, 转换时间, 输入电容}`。
+
+    返回 `None` 表示「没给库」；**键缺 → 值为 None**（"库没写" ≠ 0）。
+
+    🔴 单位换算只有一条假设：Liberty 的 `time_unit` 在本仓按 **ns** 解释（`to_model`
+    早已如此）；`capacitive_load_unit` 按 **pf**。换库若改这两条，必须同步改这里
+    —— 已在 `assumption` 里写明，不静默。
+    """
+    if lib is None:
+        return None
+    a = getattr(lib, "attrs", {}) or {}
+
+    def _num(key):
+        v = a.get(key)
+        return float(v.num) if (v is not None and getattr(v, "tag", "") == "num") else None
+
+    _mt_ns, _cin_pf = _num("default_max_transition"), _num("default_input_pin_cap")
+    return {
+        "library": getattr(lib, "name", None),
+        "nom_voltage_v": _num("nom_voltage"),
+        "nom_temperature_c": _num("nom_temperature"),
+        "default_max_transition_ps": None if _mt_ns is None else _mt_ns * 1000.0,
+        "default_input_pin_cap_ff": None if _cin_pf is None else _cin_pf * 1000.0,
+        "unit_assumption": "time_unit=ns · capacitive_load_unit=pf（与 to_model 同口径）",
+        "source": "liberty",
+    }
+
+
 def lib_map(lib):
     """`LibertyLibrary` → `{cell: CellView}`（**复用** `dliberty.to_model`，绝不另写解析）。
 
@@ -359,7 +388,7 @@ def discriminates(slack_ideal_ps, slack_wired_ps) -> bool:
 
 def constraint_layer(nl, tech=None, fo_target=None,
                      comb_delay_ideal_ps=None,
-                     comb_delay_wired_ps=None) -> dict:
+                     comb_delay_wired_ps=None, lib=None) -> dict:
     """S1a + S1c：由 `Tech` + 拓扑派生约束量（**禁出现字面量**）。
 
     定义（规划 §3-S1）::
@@ -367,6 +396,9 @@ def constraint_layer(nl, tech=None, fo_target=None,
         T_ref = Σ_{i ∈ L_top} cell_delay(k_drive_i, FO_target · cin_ff)
         max_fanout     = FO_target                 （与 S1a 同源，U-1）
         max_transition = _DEFAULT_SLEW_PS           （**显式假设**，slew 不传播）
+                         └ T4 起：给 `lib=` 则改取 Liberty `default_max_transition`
+                           ⇒ `max_transition_is_assumption` 由 True **翻成 False**
+                           （出处从"假设"变"数据"）。**数字可以不变**，语义必须变。
         slack(X)       = T_ref − delay(X)           （X ∈ {ideal, wired}）
 
     🔴 三条纪律：
@@ -383,6 +415,11 @@ def constraint_layer(nl, tech=None, fo_target=None,
     if tech is None:
         tech = DC.DEFAULT_TECH
     fo = FO_TARGET if fo_target is None else float(fo_target)
+    # 🔴 T4：转换时间上限的出处 —— 库给就用库，库不给仍是**假设**（不许假装有出处）
+    _ld = lib_defaults(lib)
+    _mt_lib = None if _ld is None else _ld.get("default_max_transition_ps")
+    mt_ps = _DEFAULT_SLEW_PS if _mt_lib is None else float(_mt_lib)
+    mt_is_asm = _mt_lib is None
     path = longest_path_gates(nl)
     load_ff = fo * tech.cin_ff
     comb = [g for g in path if g.cell != "DFF"]
@@ -405,8 +442,10 @@ def constraint_layer(nl, tech=None, fo_target=None,
         "path_basis": "拓扑最长路径（门级连接，按门数；**不读时序**）",
         # ── S1c 扇出 / 转换 ──
         "max_fanout": fo,
-        "max_transition_ps": _DEFAULT_SLEW_PS,
-        "max_transition_is_assumption": True,
+        "max_transition_ps": mt_ps,
+        "max_transition_is_assumption": mt_is_asm,
+        "max_transition_source": ("_DEFAULT_SLEW_PS" if mt_is_asm
+                                  else "Liberty.default_max_transition"),
         # ── 两套口径的裕量（**只给数，不判满足**）──
         "slack_ideal_ps": sl_i,
         "slack_wired_ps": sl_w,
@@ -416,19 +455,30 @@ def constraint_layer(nl, tech=None, fo_target=None,
             "clock_period_ps": ["Tech.t_intr_ps", "Tech.r_on_ohm", "Tech.cin_ff",
                                 "FO_TARGET", "Cell.k_drive", "LN2", "OHM_FF_TO_PS"],
             "max_fanout": ["FO_TARGET"],
-            "max_transition_ps": ["_DEFAULT_SLEW_PS"],
+            "max_transition_ps": (["_DEFAULT_SLEW_PS"] if mt_is_asm else
+                                  ["Liberty.default_max_transition"]),
             "slack_*": ["clock_period_ps", "comb_delay_ideal_ps",
                         "comb_delay_wired_ps"],
         },
         "assumptions": {
             "fo_target": "预注册 3（见 FO_TARGET 注释的四组实测）",
             "load_per_stage": "FO_target·cin_ff —— 每级按目标扇出计负载，非实际负载",
-            "max_transition": "slew 不传播，取 _DEFAULT_SLEW_PS 常数（假设，非测量）",
+            "max_transition": ("slew 不传播，取 _DEFAULT_SLEW_PS 常数（假设，非测量）"
+                               if mt_is_asm else
+                               "取自 Liberty `default_max_transition`（数据，非假设）；"
+                               "slew 仍不传播（本项是**上限值**的出处，不是 slew 计算）"),
             "dff": "DFF 段（clk→Q）不计入 T_ref：t_clk_q 在当前网表无消费者、未标定",
             "verdict": "本层不判满足；`discriminates` 只说明约束有没有判别力",
         },
         "not_included": "无时钟树 / 无偏斜 / 无多周期 / 无 IO 延时 / 无 keep-out；"
                         "周期是**一阶估计**，非时序签核",
+        # ── T4 库级默认（**只报不改**：vdd/温度/输入电容要改它们会动 EM 与几何，另批）──
+        "lib_defaults": _ld,
+        "lib_ignored": (None if _ld is None else {
+            "nom_voltage_v": "库写了但**未接线**：接它会改 EM 电流（i ∝ V）与功耗 ⇒ 另批",
+            "nom_temperature_c": "库写了但**未接线**：接它会改 EM 温度标度 ⇒ 另批",
+            "default_input_pin_cap_ff": "库写了但**未接线**：接它会改 all 负载与几何 ⇒ 另批",
+        }),
         "claimable": False,
         "claimable_reason": "T_ref 由一阶 RC + 预注册扇出目标派生 ⇒ MODEL_ESTIMATE",
     }

@@ -103,6 +103,7 @@
 | 放宽登记 | `K2_SHARED_WHITELIST` ∅ → 1 项（带棘轮 + 四条接管判据） |
 | 版本 | `pyproject` / `README`（顶行 + 版本链）/ `CHANGELOG` / `CONTRIBUTING` / `k0_audit.json` 五处同步 **0.9.394 → 0.9.395** |
 | 主链数字 | **一位未改**：60.840 µm² · 7/11 · 30.953/43.490 ps · DRC 0 · LVS **已布网 0 / 全口径 3**（3 = 2 `net_no_shapes` + 1 `pin_not_reached`，全是未布网的形态）· DEF 575 B · `claimable=False` · `m1_exit.ok=True` |
+| **全量 D2** | **406 PASS / 0 SKIP / 0 FAIL**，`11006.87 s`（**3.06 h**）· `n_reused=0`（删 checkpoint 全新跑）· `git_head=243d9f3` · 凭证 `last_full_core_green.json` = `406 / green` ⇒ `run_ci_gate_contract_smoke` 的 F4 由红转绿（F1–F7 全 PASS）· 跑完就地写脏的三份受跟踪报告已 `git checkout --` 还原 |
 
 ## v0.9.394（2026-11-08 · **T1a：R5 默认参数早绑定根治 + Q0 可观测性门禁** · 净增 0 锚 · CI core **406**）
 

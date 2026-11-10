@@ -32,6 +32,14 @@ ECORE_EXCLUDE_MODULES = {"__init__", "capability_manifest"}
 # ---------------------------------------------------------------------------
 ECORE_CAPABILITY_MANIFEST = [
     {
+        "capability": "单元版图**模板化**：结构公式（代码）+ 校准参数表（数据）⇒ 与手写几何"
+                      "**逐位等价**；并给出 18 个逻辑单元的诚实覆盖表（谁有模板 / 谁缺什么）",
+        "module": "lda_l2.ecore.dcelltpl",
+        "symbols": ["gen_inv", "gen_nand2", "build", "verify_bitwise",
+                    "coverage", "self_check"],
+        "introduced_by": "P5 (v0.9.401)", "guard": "run_ecore_s13_smoke.py",
+    },
+    {
         "capability": "单元几何的**可造性判定**（给定缩放比例 ⇒ DRC/LVS 是否仍干净）"
                       "与**宽度硬下限**（引脚 pad + 接入间距 ⇒ 面积收益天花板）",
         "module": "lda_l2.ecore.dnodefit",

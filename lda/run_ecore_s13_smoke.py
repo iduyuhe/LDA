@@ -76,6 +76,7 @@ from lda_l2.ecore import ddef as DF            # noqa: E402
 from lda_l2.ecore import ddetail as DET        # noqa: E402
 from lda_l2.ecore import dliberty as LB         # noqa: E402
 from lda_l2.ecore import dnodefit as NF        # noqa: E402
+from lda_l2.ecore import dcelltpl as TP       # noqa: E402
 from lda_l2.ecore import ddrc_lvs as DL        # noqa: E402
 from lda_l2.ecore import dpnr as P             # noqa: E402
 from lda_l2.ecore import dplac as DPL          # noqa: E402
@@ -2611,6 +2612,66 @@ def main() -> int:
           and _tb_s["m1_exit"]["ok"] is True
           and _s3_main["truncated"] is False
           and _s3_main["n_picked"] == _s3_main["n_gates_total"])
+
+    # ── P5：单元版图模板化（结构公式 + 校准参数表）────────────────────────────
+    #   🔴 DoD 三条**不能同时成立**（实测）：② 逐位相同 ✅ · ① 18 个全可造 ❌ · ③ 零参数加单元 ❌
+    _tp_sc = TP.self_check()
+    _tp_v = {n: TP.verify_bitwise(n) for n in ("INV_X1", "NAND2_X1")}
+    _tp_cov = TP.coverage()
+    _tp_missing = {k: v["status"] for k, v in _tp_cov["cells"].items()
+                   if v["status"] != "TEMPLATED"}
+
+    check("EC-L01 DoD② **逐位相同成立**：INV_X1 矩形/引脚同=%s DRC %d LVS %d · "
+          "NAND2_X1 同=%s DRC %d LVS %d（手写 vs 模板）"
+          % (_tp_v["INV_X1"]["same_rects"], _tp_v["INV_X1"]["drc"], _tp_v["INV_X1"]["lvs"],
+             _tp_v["NAND2_X1"]["same_rects"], _tp_v["NAND2_X1"]["drc"], _tp_v["NAND2_X1"]["lvs"]),
+          _tp_sc["ok"] and _tp_sc["problems"] == []
+          and all(v["bitwise"] for v in _tp_v.values())
+          and all(v["same_pins"] for v in _tp_v.values())
+          and all(v["drc"] == 0 and v["lvs"] == 0 for v in _tp_v.values()))
+
+    # EC-L02 参数压缩比：**参数个数必须显著小于坐标数**，否则只是把常量搬了个地方
+    check("EC-L02 参数压缩：INV_X1 **%d 参数 ← %d 个坐标数**（×%.2f）· "
+          "NAND2_X1 **%d ← %d**（×%.2f）"
+          % (_tp_v["INV_X1"]["n_params"], _tp_v["INV_X1"]["coord_numbers"],
+             _tp_v["INV_X1"]["coord_numbers"] / float(_tp_v["INV_X1"]["n_params"]),
+             _tp_v["NAND2_X1"]["n_params"], _tp_v["NAND2_X1"]["coord_numbers"],
+             _tp_v["NAND2_X1"]["coord_numbers"] / float(_tp_v["NAND2_X1"]["n_params"])),
+          _tp_v["INV_X1"]["n_params"] == 33 and _tp_v["INV_X1"]["coord_numbers"] == 72
+          and _tp_v["NAND2_X1"]["n_params"] == 38 and _tp_v["NAND2_X1"]["coord_numbers"] == 100
+          and all(v["n_params"] * 2 < v["coord_numbers"] for v in _tp_v.values()))
+
+    # EC-L03 🔴 **保护性约束**：手写版仍是主链真源（模板不替换 `dcells.CELLS`）
+    check("EC-L03 保护性约束：`dcells.CELLS['INV_X1']` 仍是手写 `build_inv`（%s）· "
+          "`NAND2_X1` 仍是 `build_nand2`（%s）⇒ 模板是**等价表达**，不是替换"
+          % (CL.CELLS["INV_X1"].__name__, CL.CELLS["NAND2_X1"].__name__),
+          CL.CELLS["INV_X1"].__name__ == "build_inv"
+          and CL.CELLS["NAND2_X1"].__name__ == "build_nand2")
+
+    # EC-L04 DoD① **不成立**：覆盖表必须诚实（2/18，非满非空，且 16 个各有明确原因）
+    _tp_kinds = sorted(set(_tp_missing.values()))
+    check("EC-L04 DoD① **不成立且如实登记**：模板覆盖 **%d/%d** · 缺 %d 个，原因分类 %r"
+          % (_tp_cov["n_templated"], _tp_cov["n_total"], _tp_cov["n_missing"], _tp_kinds),
+          _tp_cov["n_templated"] == 2 and _tp_cov["n_total"] == 18
+          and _tp_cov["n_missing"] == 16
+          and 0 < _tp_cov["n_templated"] < _tp_cov["n_total"]
+          and set(_tp_kinds) <= {"NEEDS_INTERDIGIT", "NEEDS_COMPOSITE", "TODO"})
+
+    # EC-L05 反向探针：参数改 **1nm** ⇒ 必须不再逐位（证明比较是真比较，不是恒真）
+    _tp_bad = dict(TP.PARAMS["INV_X1"])
+    _tp_bad["w"] = _tp_bad["w"] + 1
+    _tp_bad_cell = TP.build("INV_X1", _tp_bad)
+    check("EC-L05 反向探针：`INV_X1` 的 `w` 改 +1nm ⇒ 与手写版**不再逐位**（%s）"
+          " ⇒ EC-L01 的「逐位相同」是真比较" % (_tp_bad_cell.w,),
+          _tp_bad_cell.w == 621 and TP._sig(_tp_bad_cell) != TP._sig(CL.CELLS["INV_X1"]()))
+
+    # EC-L06 DoD③ **不成立**：n≥3 是**拓扑**限制（不是参数问题）—— 理由必须含退化器件
+    _tp_n3 = _tp_missing.get("NAND3"), _tp_missing.get("NOR3")
+    check("EC-L06 DoD③ **不成立**：`NAND3`/`NOR3` = %r（需叉指）；"
+          "理由含「(VDD,VDD) 退化器件」=%s ⇒ 加新单元**不是**改 0 行"
+          % (_tp_n3, "退化器件" in _tp_cov["cells"]["NAND3"]["why"]),
+          _tp_n3 == ("NEEDS_INTERDIGIT", "NEEDS_INTERDIGIT")
+          and "退化器件" in _tp_cov["cells"]["NAND3"]["why"])
 
     print("  [T5/Q4] 可造性判定：宽度下限 **%d nm**（pad %d + 接入 %d）⇒ INV 余 %d nm（%.1f%%）· "
           "NAND2 余 %d nm（%.1f%%）"

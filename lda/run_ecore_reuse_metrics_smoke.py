@@ -116,7 +116,9 @@ R3_DEBT = {}
 NEW_MODULES = ("dliberty", "dlef", "dverilog", "ddef", "db3_trunk", "dxcheck",
                "dprovenance",
                #: v0.9.400（T5/Q4）：非门禁下游 = `dnode.compare(..., with_capacity=True)`（节点视图的单元容量）
-               "dnodefit")
+               "dnodefit",
+               #: v0.9.401（P5）：非门禁下游 = `dsignoff.signoff_ledger`（台账顶层 `cell_layout_coverage`）
+               "dcelltpl")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

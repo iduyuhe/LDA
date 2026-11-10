@@ -376,7 +376,29 @@ def signoff_ledger(report, netlist=None):
     ⚠️ 返回的是**判定状态**，不是签核结论：`claimable` 仍由 `claimability()` 六条决定。
     """
     from . import dprovenance as PV
-    return PV.constraint_report(report, netlist)
+    out = PV.constraint_report(report, netlist)
+
+    # 🔴 P5（v0.9.401）：单元版图覆盖 —— **只加顶层键、绝不动 `rows`**。
+    #   `rows` 的行数与 `verdict` 取值叶子数被 `EC-W01`（12 个叶子）与 `EC-W06`
+    #   （area/def_bytes 必须 UNCONSTRAINED）锁定；往 rows 里塞一行会把那两条判据打红。
+    #   签核台账里"这颗单元有没有版图"本来就是一等问题，所以放在台账顶层。
+    try:
+        from . import dcelltpl as TP
+        cov = TP.coverage()
+        out["cell_layout_coverage"] = {
+            "n_templated": cov["n_templated"],
+            "n_total": cov["n_total"],
+            "status": ("PARTIAL" if 0 < cov["n_templated"] < cov["n_total"] else
+                       ("FULL" if cov["n_templated"] == cov["n_total"] else "NONE")),
+            "why_missing": {k: v["status"] for k, v in cov["cells"].items()
+                            if v["status"] != "TEMPLATED"},
+            "scope": "DIAGNOSTIC_ONLY",
+            "not_claimed": ("模板覆盖 ≠ 可造性覆盖：2/18 有「逐位等价模板」，"
+                            "不等于另外 16 个不可造 —— 它们只是还没有版图"),
+        }
+    except Exception as exc:                       # noqa: BLE001 — 覆盖算不出来不能拖垮台账
+        out["cell_layout_coverage"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
+    return out
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -398,6 +398,24 @@ def signoff_ledger(report, netlist=None):
         }
     except Exception as exc:                       # noqa: BLE001 — 覆盖算不出来不能拖垮台账
         out["cell_layout_coverage"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
+
+    # 🔴 P2（v0.9.402）：驱动能力的**结构可算性** —— 同样只加顶层键、不动 `rows`。
+    #   结论是「形状可算、绝对值不可算」，所以 `k_drive` **仍在 unattr 表**（DoD② 未达成）。
+    try:
+        from . import dkdrive as KD
+        rep = KD.deviation_report()
+        out["drive_model"] = {
+            "n_cells": rep["n_cells"],
+            "median_abs_dev": rep["median_abs_dev"],
+            "max_abs_dev": rep["max_abs_dev"],
+            "by_class": rep["by_class"],
+            "k_drive_source": "hand_filled（模型只判形状，不改值）",
+            "scope": "DIAGNOSTIC_ONLY",
+            "not_claimed": ("不改 `k_drive`/`t_intr`，主链 9 数一位未动；"
+                            "「截距独立算出」不成立（缺 W/L 与 μ 标定）"),
+        }
+    except Exception as exc:                       # noqa: BLE001
+        out["drive_model"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
     return out
 
 

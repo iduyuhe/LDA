@@ -32,6 +32,14 @@ ECORE_EXCLUDE_MODULES = {"__init__", "capability_manifest"}
 # ---------------------------------------------------------------------------
 ECORE_CAPABILITY_MANIFEST = [
     {
+        "capability": "驱动能力 `k_drive` 的**结构可算性判定**：给定 family + 输入数 + μ 假设，"
+                      "算出 k 的**形状**并逐单元与手填值比偏差（结论：形状可算、绝对值不可算）",
+        "module": "lda_l2.ecore.dkdrive",
+        "symbols": ["k_shape", "k_models", "deviation_report", "shape_check",
+                    "self_check", "PREREG"],
+        "introduced_by": "P2 (v0.9.402)", "guard": "run_ecore_s13_smoke.py",
+    },
+    {
         "capability": "单元版图**模板化**：结构公式（代码）+ 校准参数表（数据）⇒ 与手写几何"
                       "**逐位等价**；并给出 18 个逻辑单元的诚实覆盖表（谁有模板 / 谁缺什么）",
         "module": "lda_l2.ecore.dcelltpl",

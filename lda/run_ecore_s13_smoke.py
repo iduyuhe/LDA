@@ -77,6 +77,7 @@ from lda_l2.ecore import ddetail as DET        # noqa: E402
 from lda_l2.ecore import dliberty as LB         # noqa: E402
 from lda_l2.ecore import dnodefit as NF        # noqa: E402
 from lda_l2.ecore import dcelltpl as TP       # noqa: E402
+from lda_l2.ecore import dkdrive as KD        # noqa: E402
 from lda_l2.ecore import ddrc_lvs as DL        # noqa: E402
 from lda_l2.ecore import dpnr as P             # noqa: E402
 from lda_l2.ecore import dplac as DPL          # noqa: E402
@@ -2672,6 +2673,79 @@ def main() -> int:
           % (_tp_n3, "退化器件" in _tp_cov["cells"]["NAND3"]["why"]),
           _tp_n3 == ("NEEDS_INTERDIGIT", "NEEDS_INTERDIGIT")
           and "退化器件" in _tp_cov["cells"]["NAND3"]["why"])
+
+    # ── P2：驱动能力的结构可算性（形状可算 / 绝对值不可算）────────────────────
+    #   🔴 DoD「11 个 family 截距能被独立算出」**不成立**：最好的组合模型中位偏差 4.1%、
+    #   最大 25.9%，且 nor/or 必须换口径（最坏路径在上拉）才不结构性错。
+    #   DoD「k_drive 从 unattr 移出」也**不成立** —— 本批不改值，只判形状。
+    _kd_sc = KD.self_check()
+    _kd_rep = KD.deviation_report()
+    _kd_sh = KD.shape_check()
+    _kd_inv = DC.CELLS["INV"]
+
+    check("EC-K01 判定器自检（含 3 条反向构造）=%s · 18 单元全算到（%d）· `k_drive` 未被改写"
+          "（NAND2=%.2f / INV=%.2f）"
+          % (_kd_sc["ok"], _kd_rep["n_cells"], DC.CELLS["NAND2"].k_drive,
+             _kd_inv.k_drive),
+          _kd_sc["ok"] and _kd_sc["problems"] == []
+          and _kd_rep["n_cells"] == 18
+          and DC.CELLS["NAND2"].k_drive == 1.80 and _kd_inv.k_drive == 1.00)
+
+    # EC-K02 **形状可算**（这是成立的那一半）：同 family 内单调 + 相对斜率误差
+    check("EC-K02 ✅ **形状可算**：%d 个多点 family 手填/模型**全单调** · 相对斜率最大误差 **%.1f%%**"
+          "（nand %.1f%% · nor %.1f%% · and %.1f%% · or %.1f%%）"
+          "—— ⚠️ 规划称「同 family 外推 2.7%%」，本仓实测 **%.1f%%**，以实测为准"
+          % (_kd_sh["n_families_multi"], _kd_sh["max_ratio_err"] * 100,
+             _kd_sh["families"]["nand"]["ratio_err"] * 100,
+             _kd_sh["families"]["nor"]["ratio_err"] * 100,
+             _kd_sh["families"]["and"]["ratio_err"] * 100,
+             _kd_sh["families"]["or"]["ratio_err"] * 100,
+             _kd_sh["max_ratio_err"] * 100),
+          _kd_sh["all_mono"] and _kd_sh["n_families_multi"] == 4
+          and _kd_sh["max_ratio_err"] < 0.15
+          and _kd_sh["max_ratio_err"] > 0.02)        # 必须**不为 0**：为 0 说明模型就是照抄
+
+    # EC-K03 🔴 **绝对值不可算**（DoD① 不成立，且如实分类）
+    check("EC-K03 🔴 **截距算不出**：中位偏差 **%.1f%%** · 最大 **%.1f%%**（%s）· "
+          "分类 5%%内 %d / 20%%内 %d / 结构性 %d —— 10 个「5%%内」恰好是「下拉串联数」族"
+          % (_kd_rep["median_abs_dev"] * 100, _kd_rep["max_abs_dev"] * 100,
+             _kd_rep["worst_cell"], _kd_rep["by_class"].get("WITHIN_5PCT", 0),
+             _kd_rep["by_class"].get("WITHIN_20PCT", 0),
+             _kd_rep["by_class"].get("STRUCTURAL", 0)),
+          _kd_rep["median_abs_dev"] < 0.06
+          and _kd_rep["max_abs_dev"] > 0.20          # 有结构性偏差才是实话
+          and _kd_rep["by_class"].get("WITHIN_5PCT", 0) == 10)
+
+    # EC-K04 🔴 **保护性约束**：本批**不改值** —— 主链 9 数一位未动
+    check("EC-K04 保护性约束（本批只判不改）：主链 %.3f µm² · %d/11 · %.3f/%.3f ps · "
+          "`t_intr` 仍 %.1f ps（常数，未换 ln2·R·C_self）"
+          % (_tb_s["place"]["die_area_um2"], _tb_s["route"]["nets_with_segments"],
+             _tb_t["comb_delay_ideal_ps"], _tb_t["comb_delay_wired_ps"],
+             DC.DEFAULT_TECH.t_intr_ps),
+          _tb_s["place"]["die_area_um2"] == 52.371
+          and _tb_s["route"]["nets_with_segments"] == 10
+          and _tb_t["comb_delay_ideal_ps"] == 37.192
+          and _tb_t["comb_delay_wired_ps"] == 74.99
+          and DC.DEFAULT_TECH.t_intr_ps == 2.0)
+
+    # EC-K05 **预注册**：若采用模型值，主链会变多少（只登记，不实施）
+    _kd_ti = KD.PREREG["t_intr_ps"]["candidates"]
+    _kd_mc = KD.PREREG["main_chain_if_adopted"]
+    check("EC-K05 预注册（未实施）：`t_intr` 2.0 → %s ps（三候选，缺器件数据）⇒ "
+          "主链 ideal 37.192 → %s ps（%s）—— 改它连带动 `T_ref`/slack/三角，属**独立发布**"
+          % (list(_kd_ti.values()), list(_kd_mc["ideal_ps"].values())[1:],
+             ["+%.1f%%" % v for v in list(_kd_mc["delta_pct"].values())[1:]]),
+          len(_kd_ti) == 3
+          and abs(_kd_mc["ideal_ps"]["1·cin"] - 41.589) < 0.01
+          and abs(_kd_mc["ideal_ps"]["2·cin"] - 51.986) < 0.01
+          and abs(_kd_mc["ideal_ps"]["3·cin"] - 62.383) < 0.01)
+
+    # EC-K06 反向探针：μ 从 0.40 改 0.10 ⇒ NAND2 的瓶颈**翻侧** ⇒ 模型值必须变
+    _kd_b1 = KD.k_models(mu=0.40)["NAND2"]["bottleneck"]
+    _kd_b2 = KD.k_models(mu=0.10)["NAND2"]["bottleneck"]
+    check("EC-K06 反向探针：μ 0.40→0.10 ⇒ NAND2 `bottleneck` %.4f→%.4f（翻侧）"
+          " ⇒ μ 真进了模型（不是摆设）" % (_kd_b1, _kd_b2),
+          abs(_kd_b1 - _kd_b2) > 0.1)
 
     print("  [T5/Q4] 可造性判定：宽度下限 **%d nm**（pad %d + 接入 %d）⇒ INV 余 %d nm（%.1f%%）· "
           "NAND2 余 %d nm（%.1f%%）"

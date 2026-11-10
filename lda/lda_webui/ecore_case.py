@@ -1636,8 +1636,9 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             # 🔴 v0.9.400（T5/Q4）：`dnodefit` 进包 ⇒ 模块数 79→80、能力条目 81→82。
             #   加 ecore 模块的连带里，这两个计数与 manifest 是**同一件事的两处落点**。
             # v0.9.401（P5）：`dcelltpl` 进包 ⇒ 模块数 80→81、能力条目 82→83。
-            "modules": 81,               # ecore 包内模块数（不含 __init__.py；P5 新增 dcelltpl）
-            "capability_modules": 83,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力条目数
+            # v0.9.402（P2）：`dkdrive` 进包 ⇒ 模块数 81→82、能力条目 83→84。
+            "modules": 82,               # ecore 包内模块数（不含 __init__.py；P2 新增 dkdrive）
+            "capability_modules": 84,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力条目数
             "entrypoints": 75,           # 常驻门禁数（lda/run_ecore_*_smoke.py，含 S2–S13 + 复用度量）
                                          # 🔴 这三个数由 `run_ecore_case_smoke` B6c 与
                                          #   **文件系统 + manifest 独立对拍**（此前是硬编码对硬编码）。

@@ -97,6 +97,16 @@ W_floor = pad + (两异网引脚接入点间距) = 240 + 342 = 582 nm
 | 新模块连带 | `dnodefit` 进包 ⇒ manifest 登记 + `ecore_case.span` **modules 79→80 / capability_modules 81→82** + 进 `NEW_MODULES` + 真消费者 `dnode.compare(with_capacity=True)` |
 | 主链 9 数 | **一位未改**（52.371 · 10/11 · 37.192/74.990 · DRC 0 · LVS 0 · DEF 575 B · claimable=False · m1=True） |
 | 对外形状 | **未扩**：`stages` 仍 11 段、`SEGMENTS_COVERED` 仍 10 段；`truncated` **不进** `place` 段（现算验证） |
+| 回归 | `core-fast` **351 PASS / 0 SKIP / 0 FAIL**（858.58 s）· **全量 `--tag core` 406 PASS / 0 SKIP / 0 FAIL**（**11297.10 s = 3.14 h**，`n_reused=0`，`git_head=406cdcf`）⇒ 凭证 green，`F4` 转绿（陈旧 0.06 h）。**连续三批首跑即全绿** |
+
+### 🔴 首跑的两条红（都不是产品缺陷，但都值得记）
+
+**第一条：`run_ci_gate_contract` C2** —— 它全仓扫 1258 个 `.py` 找「用 cwd 相对路径访问产物」的违约，把我留在仓库根的临时脚本 `_add_t5.py` / `_q4_probe.py` / `_fix_trunc.py` 一并判成违约。删掉临时文件即绿。**教训：临时脚本要放在扫描范围外，或跑门禁前先清。**
+
+**第二条（更重要）：`run_reachability` R1 —— `dnode.cell_capacity` 零引用**。
+我为让 `dnodefit` 有非门禁下游，在 `dnode` 里加了 `cell_capacity()`；**结果这个「消费者」自己没人调用** ⇒ 等于把孤岛从 `dnodefit` 搬到了 `cell_capacity`。这正是本仓红线「**删自己的零引用函数，不扩 `DEAD_BASELINE`**」所指的情形。
+
+处置：删掉 `cell_capacity`，改由 `compare(..., with_capacity=True)` 承载（默认关，不改 `e52` 的结构与耗时）。**这也是「造消费者」与「真被消费」的区别** ——只为了让静态图好看而新增函数，门禁一眼就看穿。
 
 ### 🔴 诚实边界
 

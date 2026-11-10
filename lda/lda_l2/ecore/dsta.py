@@ -485,6 +485,91 @@ def constraint_layer(nl, tech=None, fo_target=None,
 
 
 # ---------------------------------------------------------------------------
+# T4b：三角签核（ff / tt / ss）—— **零改口**，但暴露一条结构性局限
+# ---------------------------------------------------------------------------
+def signoff_corners(nl, wire_load_ff=None, port_load_ff=None, corners=None,
+                    lib=None) -> dict:
+    """把 `Tech` 按 corner 缩放后重算 `T_ref` / `ideal` / `wired` / `slack` 三组。
+
+    corner 因子来自 `dsignoff.CORNERS = {名: (k_r, k_c)}`：**`r_on` 乘 `k_r`、`cin_ff` 乘 `k_c`**。
+    （`dsignoff` 里同一对因子用于网级 RC 的 `(kr, kc)`；此处用于门级 `Tech` —— 两者口径一致。）
+
+    🔴 **tt 必须逐位等于单点口径**：不给 corner 时主链算什么，`tt` 就必须是什么。
+    这是本函数的**保护性约束**，也是「三角签核没有偷偷改口径」的唯一证据。
+
+    🔴🔴 **结构性局限（必须与结果同报，不许藏）**：
+    `T_ref` 由 `Tech + 拓扑 + FO_target` 派生，而 `delay` 也由 `Tech` 派生 ⇒ **两者同源**，
+    按同一套 `(kr, kc)` 缩放时**部分相互抵消** ⇒ `slack` 对 corner 极不敏感
+    （实测 c17：`T_ref` 散布 44.4%，而 `slack(wired)` 只从 −19.40 动到 −22.42，**3.02 ps**）。
+    ⇒ 本三角**抓不到真实的 corner 风险**。要抓，`T_ref` 必须来自**外部时钟 spec**（不由 Tech 派生），
+    那时 T_ref 是常数、delay 随 corner 变，slack 才会真正散布。**这属 T5 的架构前提，不在本批。**
+    """
+    from dataclasses import replace as _dc_replace
+
+    from . import dcell as _DC
+    from . import dsignoff as _SG
+
+    _c = dict(corners or _SG.CORNERS)
+    if "tt" not in _c:
+        raise ValueError("corner 表缺 `tt` —— 没有参考角就没有「相对 tt 的散布」")
+
+    _pl0 = (FO_PORT * _DC.DEFAULT_TECH.cin_ff) if port_load_ff is None \
+        else float(port_load_ff)
+    out = {"corners": {}, "unit": "ps", "lib_chain":
+                           ("closed" if lib is None else
+                            "liberty:%s" % getattr(lib, "name", "?"))}
+    for name, (kr, kc) in _c.items():
+        tk = _dc_replace(_DC.DEFAULT_TECH,
+                                 r_on_ohm=_DC.DEFAULT_TECH.r_on_ohm * float(kr),
+                                 cin_ff=_DC.DEFAULT_TECH.cin_ff * float(kc))
+        # 🔴 端口负载随 `cin_ff` 一起缩放（它是「扇出 × 输入电容」，不是独立量）
+        pl = FO_PORT * tk.cin_ff if port_load_ff is None else float(port_load_ff)
+        a = sta(nl, tech=tk, port_load_ff=pl, topo_sort=True, lib=lib)
+        b = (sta(nl, tech=tk, wire_load_ff=wire_load_ff, port_load_ff=pl,
+                 topo_sort=True, lib=lib)
+             if wire_load_ff else a)
+        cl = constraint_layer(nl, tech=tk, comb_delay_ideal_ps=a.comb_delay_ps,
+                              comb_delay_wired_ps=b.comb_delay_ps, lib=lib)
+        out["corners"][name] = {
+            "k_r": float(kr), "k_c": float(kc),
+            "r_on_ohm": tk.r_on_ohm, "cin_ff": tk.cin_ff,
+            "t_ref_ps": cl["clock_period_ps"],
+            "ideal_ps": a.comb_delay_ps,
+            "wired_ps": b.comb_delay_ps,
+            "slack_ideal_ps": cl["slack_ideal_ps"],
+            "slack_wired_ps": cl["slack_wired_ps"],
+            "max_transition_ps": cl["max_transition_ps"],
+        }
+
+    tt = out["corners"]["tt"]
+    out["spread_pct"] = {}
+    for key in ("t_ref_ps", "ideal_ps", "wired_ps"):
+        vals = [v[key] for v in out["corners"].values()]
+        out["spread_pct"][key] = ((max(vals) - min(vals)) / tt[key] * 100.0) \
+            if tt[key] else None
+    sl = [v["slack_wired_ps"] for v in out["corners"].values()]
+    out["slack_wired"] = {
+        "min_ps": min(sl), "max_ps": max(sl),
+        "span_ps": max(sl) - min(sl),
+        "all_negative": all(x < 0 for x in sl),
+        "n_negative": sum(1 for x in sl if x < 0),
+        "n_corners": len(sl),
+    }
+    out["tt_port_load_ff"] = _pl0
+    out["corners_order"] = sorted(out["corners"], key=lambda k: out["corners"][k]["r_on_ohm"])
+    out["in_blocking"] = False
+    out["scope"] = "DIAGNOSTIC_ONLY"
+    out["structural_limit"] = (
+        "`T_ref` 与 `delay` **同源**（都来自 `Tech`）⇒ 按同一 `(kr,kc)` 缩放时部分抵消 ⇒ "
+        "`slack` 对 corner 不敏感（T_ref 散布 %.1f%% 而 slack 只动 %.3f ps）"
+        % (out["spread_pct"]["t_ref_ps"], out["slack_wired"]["span_ps"]))
+    out["not_included"] = (
+        "corner 只缩放 `r_on` / `cin_ff` 两个量；不含温度对迁移率/阈值的影响、不含电压对延时的影响、"
+        "不含 clock uncertainty / OCV / AOCV / POCV —— 三角是**两个参数的散布**，不是 PVT 签核")
+    return out
+
+
+# ---------------------------------------------------------------------------
 # 功耗（一阶 · **claimable=False**）
 # ---------------------------------------------------------------------------
 def switching_power_nw(nl, f_hz: float, alpha: float = 0.1,

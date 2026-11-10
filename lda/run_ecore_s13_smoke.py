@@ -2383,6 +2383,110 @@ def main() -> int:
           and _lib_c1["max_transition_source"] == "Liberty.default_max_transition"
           and _lib_c0["clock_period_ps"] == _lib_c1["clock_period_ps"])
 
+    # ── T4b / S2：三角签核（ff / tt / ss）—— **零改口**，但暴露一条结构性局限 ──
+    #   🔴 本批不做 PVT/area/LEF（那三项会改主链 9 数，需独立预注册）；只做**三角**，
+    #   因为它零改口且规划 DoD 明确要求「至少报三组而非一组」。
+    _cn = ST.signoff_corners(nl, wire_load_ff=_wl2)
+    _cn_tt = _cn["corners"]["tt"]
+    # 🔴 **表示差异 vs 真差异**：report 里的 `comb_delay_*` 是 **3 位取整**（37.192 / 74.990），
+    #   而 `signoff_corners` 给的是未取整值（37.191623125 / 74.989632028）。
+    #   拿取整值做「逐位相等」判据 ⇒ 假红（差值 8.7e-4 全是舍入）。故此处**现算一份未取整**。
+    _cn_pl = ST.FO_PORT * DC.DEFAULT_TECH.cin_ff
+    _cn_ideal = ST.sta(nl, port_load_ff=_cn_pl, topo_sort=True).comb_delay_ps
+    _cn_wired = ST.sta(nl, wire_load_ff=_wl2, port_load_ff=_cn_pl, topo_sort=True).comb_delay_ps
+    _cn_cl = ST.constraint_layer(nl, comb_delay_ideal_ps=_cn_ideal,
+                                 comb_delay_wired_ps=_cn_wired)
+
+    check("EC-Y01 三角齐备且因子锁 `dsignoff.CORNERS`：%r（按 r_on 升序）· "
+          "ff/tt/ss k_r=%r k_c=%r"
+          % (_cn["corners_order"],
+             [_cn["corners"][k]["k_r"] for k in _cn["corners_order"]],
+             [_cn["corners"][k]["k_c"] for k in _cn["corners_order"]]),
+          _cn["corners_order"] == ["ff", "tt", "ss"]
+          and all(abs(_cn["corners"][k]["k_r"] - DS.CORNERS[k][0]) < 1e-12
+                  and abs(_cn["corners"][k]["k_c"] - DS.CORNERS[k][1]) < 1e-12
+                  for k in _cn["corners_order"]))
+
+    # EC-Y02 🔴 **保护性约束**：tt 必须逐位等于单点口径（三角没有偷偷改口径的唯一证据）
+    check("EC-Y02 保护性约束（tt == **未取整**单点口径）：T_ref %.9f vs %.9f · ideal %.9f vs "
+          "%.9f · wired %.9f vs %.9f（report 里 %.3f/%.3f 是 3 位取整，不比它）"
+          % (_cn_tt["t_ref_ps"], _cn_cl["clock_period_ps"],
+             _cn_tt["ideal_ps"], _cn_ideal, _cn_tt["wired_ps"], _cn_wired,
+             _tb_t["comb_delay_ideal_ps"], _tb_t["comb_delay_wired_ps"]),
+          abs(_cn_tt["t_ref_ps"] - _cn_cl["clock_period_ps"]) < 1e-12
+          and abs(_cn_tt["ideal_ps"] - _cn_ideal) < 1e-12
+          and abs(_cn_tt["wired_ps"] - _cn_wired) < 1e-12)
+
+    # EC-Y02r 反向：把 tt 的因子改成非 (1,1) ⇒ 它就不再等于单点口径
+    #   （证明 EC-Y02 成立是因为「因子恰为 1」，不是判据恒真）
+    _cn_bad = ST.signoff_corners(nl, wire_load_ff=_wl2, corners={"tt": (1.10, 1.05)})
+    check("EC-Y02r 反向探针：`tt` 因子改 (1.10, 1.05) ⇒ T_ref %.6f ≠ 单点 %.6f（差 %.6f ps）"
+          % (_cn_bad["corners"]["tt"]["t_ref_ps"], _cn_cl["clock_period_ps"],
+             _cn_bad["corners"]["tt"]["t_ref_ps"] - _cn_cl["clock_period_ps"]),
+          abs(_cn_bad["corners"]["tt"]["t_ref_ps"] - _cn_cl["clock_period_ps"]) > 1.0)
+
+    # EC-Y03 单调链：按 `r_on` 升序（ff<tt<ss）⇒ T_ref / wired 同序单调
+    _cn_seq = [(k, _cn["corners"][k]["t_ref_ps"], _cn["corners"][k]["wired_ps"])
+               for k in _cn["corners_order"]]
+    check("EC-Y03 单调链：%r ⇒ T_ref 与 wired 均随 r_on 单调增"
+          % ([(k, round(a, 3), round(b, 3)) for k, a, b in _cn_seq],),
+          _cn_seq[0][1] < _cn_seq[1][1] < _cn_seq[2][1]
+          and _cn_seq[0][2] < _cn_seq[1][2] < _cn_seq[2][2])
+
+    # EC-Y04 散布可算：`t_ref` 散布 > `wired` 散布（线载不随 corner 缩 ⇒ 部分抵消）
+    check("EC-Y04 三组散布：T_ref **%.3f%%** · ideal %.3f%% · wired **%.3f%%** —— "
+          "`wired` < `t_ref`（线载不随 corner 缩放 ⇒ 部分抵消）"
+          % (_cn["spread_pct"]["t_ref_ps"], _cn["spread_pct"]["ideal_ps"],
+             _cn["spread_pct"]["wired_ps"]),
+          _cn["spread_pct"]["t_ref_ps"] > _cn["spread_pct"]["wired_ps"] > 0
+          and abs(_cn["spread_pct"]["t_ref_ps"] - 44.427) < 0.01)
+
+    # EC-Y05 🔴🔴 **结构性发现**：三个角 slack(wired) 全为负，且 span 只有 ~3 ps
+    #   而 T_ref 散布 44.4% ⇒ **违例的根因不是 corner**，是 FO_target=3 的负载假设。
+    #   机制：`T_ref` 与 `delay` **同源**（都来自 Tech）⇒ 同套 (kr,kc) 缩放时部分抵消。
+    check("EC-Y05 🔴 三角落**全违例**（含 ff）：%r · span **%.6f ps** 而 T_ref 散布 %.1f%% "
+          "⇒ 违例根因不是 corner（`T_ref` 与 `delay` 同源 ⇒ 部分抵消）"
+          % ({k: round(_cn["corners"][k]["slack_wired_ps"], 4) for k in _cn["corners_order"]},
+             _cn["slack_wired"]["span_ps"], _cn["spread_pct"]["t_ref_ps"]),
+          _cn["slack_wired"]["all_negative"] is True
+          and _cn["slack_wired"]["n_negative"] == _cn["slack_wired"]["n_corners"] == 3
+          and _cn["slack_wired"]["span_ps"] < 5.0
+          and _cn["spread_pct"]["t_ref_ps"] > 40.0)
+
+    # EC-Y06 反例实证：网级 RC 合计只占总延时的 0.035% ⇒ **「对线做 corner」等于没做**
+    #   （这是「为什么必须对门级 `Tech` 做三角」的定量理由，不是偏好）
+    _cn_rc_sum = 0.0
+    for _cn_n in sorted({_sh.net for _sh in _sh2 if _sh.net}):
+        _cn_rc = DS.net_rc(_sh2, lambda L: {DET.L_M3: "M3", DET.L_M4: "M4"}.get(L, "?"),
+                           _cn_n)
+        if _cn_rc["n_seg"]:
+            _cn_rc_sum += DS.corner_table(_cn_rc)["delay_fs"]["tt"]
+    _cn_rc_ps = _cn_rc_sum / 1000.0
+    check("EC-Y06 量纲对照：网级 Elmore RC 合计 **%.6f ps** vs 门级 wired %.3f ps "
+          "⇒ 仅占 **%.4f%%** ⇒ 「对线做 corner」等于没做（故本批对门级 `Tech` 做）"
+          % (_cn_rc_ps, _tb_t["comb_delay_wired_ps"],
+             _cn_rc_ps / _tb_t["comb_delay_wired_ps"] * 100.0),
+          _cn_rc_ps > 0
+          and _cn_rc_ps / _tb_t["comb_delay_wired_ps"] < 0.001)
+
+    # EC-Y07 段形态：诊断段纪律（不进 blocking · 无 n_fail/ok/pass · 显式 not_included）
+    _cn_flat = {k for k in _cn}
+    check("EC-Y07 段形态：`in_blocking=False` ∧ `scope=DIAGNOSTIC_ONLY` ∧ 顶层无 "
+          "`n_fail`/`ok`/`pass` ∧ `not_included` 非空（含「不是 PVT 签核」）",
+          _cn["in_blocking"] is False and _cn["scope"] == "DIAGNOSTIC_ONLY"
+          and not ({"n_fail", "ok", "pass"} & _cn_flat)
+          and "不是 PVT 签核" in _cn["not_included"])
+
+    print("  [T4b] 三角签核：ff/tt/ss = %.3f / %.3f / %.3f ps（wired）· T_ref 散布 %.1f%% · "
+          "**三个角 slack 全负**（span 仅 %.3f ps）"
+          % (_cn["corners"]["ff"]["wired_ps"], _cn["corners"]["tt"]["wired_ps"],
+             _cn["corners"]["ss"]["wired_ps"], _cn["spread_pct"]["t_ref_ps"],
+             _cn["slack_wired"]["span_ps"]))
+    print("  [T4b 结构性局限] %s ⇒ 要真抓 corner 风险，`T_ref` 必须来自外部时钟 spec（T5 前提）"
+          % _cn["structural_limit"][:78])
+    print("  [T4b 边界] 三角只缩放 `r_on`/`cin_ff` 两个量：不含温度对迁移率/阈值、不含电压对延时、"
+          "不含 OCV/AOCV —— 是「两参数散布」，不是 PVT 签核")
+
     print("  [T4] 库接线（数据契约）：`SAMPLE_LIBERTY_L2` 2 cell（INV/NAND2 · 与 dcells 同名）"
           "· load 轴 0–8 fF · **与闭式逐位相同**（线性函数两点插值精确）")
     print("  [T4] 库级默认 **只报不接**：vdd %.2f V · %.0f °C · cin %.1f fF —— "

@@ -154,10 +154,20 @@ def tracks_in_channel(ch_um: float = None) -> int:
 # ═══════════════════════════════════════════════════════════════════════════
 # ① 布局（用 B1 的真实单元宽度，不用面积模型反推）
 # ═══════════════════════════════════════════════════════════════════════════
-def place_real(nl, max_cells: int = 32, cols: int = None, cell_gap: float = None) -> dict:
+def place_real(nl, max_cells: int = 32, cols: int = None, cell_gap: float = None,
+               truncate_ok: bool = False) -> dict:
     """行式布局：单元按 `dcells` 真实宽度排进行，行高 = 1.50µm。
 
     只用 `dcells` 里有的单元类型；遇到未建模类型（如 DFF）**跳过并计数**（披露 ①）。
+
+    🔴 **`max_cells` 不再静默截断**（T5/S3，规划 P7）：
+    超限时**默认抛 `ValueError`**，消息里带「总门数 / 上限 / 未建模类型明细」。
+    要截断（规模阶梯实验）必须**显式**传 `truncate_ok=True`，返回值会带
+    `truncated / n_truncated / n_gates_total` 三个字段。
+
+    为什么必须改：旧代码 `break` 一下就把剩下的门**丢掉**，返回的 `n_picked` 看起来
+    是"布了这么多"，而实际网表有更多门 ⇒ 规模实验会得到**假绿灯**（布通率分子分母
+    一起缩，看起来正常）。这是本仓反复出现的同型缺陷：「静默降级冒充成功」。
     """
     gap = CELL_GAP_UM if cell_gap is None else float(cell_gap)
     h_row = row_height_um()
@@ -167,14 +177,23 @@ def place_real(nl, max_cells: int = 32, cols: int = None, cell_gap: float = None
     #: 要穿过倒数第二行的单元，两行的列 y 区间被迫重叠 ⇒ 同列冲突、跳线变长。
     picked = []
     skipped = defaultdict(int)
+    truncated = 0
     for g in nl.gates:
         kind = CELL_MAP.get(g.cell)
         if kind is None or kind not in CL.CELLS:
             skipped[g.cell] += 1
             continue
         if len(picked) >= max_cells:
-            break
+            # 🔴 不用 `break`：要继续数清**被截了多少**，否则报错信息里没有量
+            truncated += 1
+            continue
         picked.append((g, kind))
+    if truncated and not truncate_ok:
+        raise ValueError(
+            "place_real 拒绝静默截断：网表 %d 门 > max_cells=%d（会被截掉 %d 门）"
+            "· 未建模类型=%r。要截断请显式传 truncate_ok=True（规模实验），"
+            "否则得到的布通率是「分子分母一起缩」的假绿灯。"
+            % (len(nl.gates), max_cells, truncated, dict(skipped)))
     if not picked:
         raise ValueError("没有可布局的单元（dcells 未建模任何出现的类型）")
 
@@ -197,7 +216,9 @@ def place_real(nl, max_cells: int = 32, cols: int = None, cell_gap: float = None
             "die_h_um": die_h, "h_row_um": h_row, "row_pitch_um": row_pitch,
             "ch_um": CH_UM, "t_tracks": tracks_in_channel(CH_UM),
             "skipped_cells": dict(skipped), "n_picked": len(picked),
-            "n_gates_total": len(nl.gates)}
+            "n_gates_total": len(nl.gates),
+            # 🔴 T5/S3：截断必须**出现在返回值里**，不能只在日志里
+            "truncated": bool(truncated), "n_truncated": int(truncated)}
 
 
 def channel_y(pl: dict, r: int) -> float:

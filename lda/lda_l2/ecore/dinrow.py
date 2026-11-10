@@ -120,7 +120,7 @@ def in_row_probe(nl=None, cells: int = CASE_CELLS, cols: int = 24,
 
     def run(flag):
         def _f():
-            pl = PN.place_real(nl, max_cells=cells, cols=cols)
+            pl = PN.place_real(nl, max_cells=cells, cols=cols, truncate_ok=True)
             rt = PN.route_block(nl, pl, in_row=flag)
             vr = DL.run_drc(PN.all_routing(rt))["violations"]
             n_int = len(rt["routed"]) + len(rt["unrouted"])
@@ -145,7 +145,7 @@ def col_iter_probe(nl=None, cells: int = CASE_CELLS, cols: int = 24,
     out = []
     for it in iters:
         def _f():
-            pl = PN.place_real(nl, max_cells=cells, cols=cols)
+            pl = PN.place_real(nl, max_cells=cells, cols=cols, truncate_ok=True)
             rt = PN.route_block(nl, pl, col_iters=it)
             return {"iters": int(it), "n_routed": len(rt["routed"]),
                     "n_no_column": rt["n_col_fail_no_column"],
@@ -162,7 +162,7 @@ def channel_saturation(nl=None, cells: int = CASE_CELLS, cols: int = 24,
     out = []
     for ch in ch_grid:
         def _f():
-            pl = PN.place_real(nl, max_cells=cells, cols=cols)
+            pl = PN.place_real(nl, max_cells=cells, cols=cols, truncate_ok=True)
             rt = PN.route_block(nl, pl)
             n_int = len(rt["routed"]) + len(rt["unrouted"])
             ch_full = sum(1 for v in rt["ch_info"].values() if not v["routable"])
@@ -183,7 +183,7 @@ def supply_demand(nl=None, cells: int = CASE_CELLS, ch_um: float = 3.40,
     out = []
     for cols in cols_grid:
         def _f():
-            pl = PN.place_real(nl, max_cells=cells, cols=cols)
+            pl = PN.place_real(nl, max_cells=cells, cols=cols, truncate_ok=True)
             rt = PN.route_block(nl, pl)
             ncol = int((pl["die_w_um"] - PN.W) // PN.PITCH) + 1
             allp = [(x, y) for pts in rt["pins"].values() for (_i, _p, x, y) in pts]

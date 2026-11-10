@@ -188,7 +188,7 @@ def c_probes():
 # ---------------------------------------------------------------------------
 def d_netlist():
     nl = CT.build()["netlist"]
-    pl = PN.place_real(nl, max_cells=8)
+    pl = PN.place_real(nl, max_cells=8, truncate_ok=True)
 
     tiles_pre, _ = NT.place_tiles(pl)                     # 无网表：每实例前缀
     jp = NT.joint_drc(tiles_pre, rules=CL.RULES)
@@ -213,7 +213,7 @@ def d_netlist():
 # ---------------------------------------------------------------------------
 def e_route():
     nl = CT.build()["netlist"]
-    pl = PN.place_real(nl, max_cells=8)
+    pl = PN.place_real(nl, max_cells=8, truncate_ok=True)
     res = PN.route_block(nl, pl)
     tiles, _ = NT.place_tiles(pl, netlist=nl)
     j = NT.joint_drc(tiles, route=res["shapes"], rules=CL.RULES,

@@ -32,6 +32,15 @@ ECORE_EXCLUDE_MODULES = {"__init__", "capability_manifest"}
 # ---------------------------------------------------------------------------
 ECORE_CAPABILITY_MANIFEST = [
     {
+        "capability": "单元几何的**可造性判定**（给定缩放比例 ⇒ DRC/LVS 是否仍干净）"
+                      "与**宽度硬下限**（引脚 pad + 接入间距 ⇒ 面积收益天花板）",
+        "module": "lda_l2.ecore.dnodefit",
+        "symbols": ["scale_rules", "metal_rules_unscaled", "scale_cell",
+                    "feasibility", "scan", "max_feasible_scale",
+                    "width_floor_nm", "width_headroom", "self_check"],
+        "introduced_by": "T5/Q4 (v0.9.400)", "guard": "run_ecore_s13_smoke.py",
+    },
+    {
         "capability": "出处判决（可重算三表 + 数值安全量分类）与**支配约束报表**（五态："
                       "PASS / FAIL / UNCONSTRAINED / REGISTERED_ONLY / UNDECIDABLE）",
         "module": "lda_l2.ecore.dprovenance",

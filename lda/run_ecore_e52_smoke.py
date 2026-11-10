@@ -93,7 +93,7 @@ def main() -> int:
     print("-" * 78)
 
     nl = CT.build()["netlist"]
-    pl = PN.place_real(nl, max_cells=CASE_CELLS, cols=CASE_COLS)
+    pl = PN.place_real(nl, max_cells=CASE_CELLS, cols=CASE_COLS, truncate_ok=True)
     pins = PN.net_pins(pl)
     sv = DI.net_row_span(pl, pins)
     allp = [(x, y) for pts in pins.values() for (_i, _p, x, y) in pts]
@@ -176,7 +176,7 @@ def main() -> int:
     #   真实工艺 M2 是竖直层；本仓把 M2 让给了 pin access（pad + 逃逸条），
     #   直接拿它当竖直布线层会在同层撞上那些 pad。这条判据把「实测」而不只是「推断」钉住。
     from lda_l2.ecore import ddrc_lvs as _DL
-    pl_v = PN.place_real(nl, max_cells=CASE_CELLS, cols=16)
+    pl_v = PN.place_real(nl, max_cells=CASE_CELLS, cols=16, truncate_ok=True)
     pl_v.__setitem__("ch_um", 3.40)
     d_m4 = len(_DL.run_drc(PN.all_routing(PN.route_block(nl, pl_v, vert_layer="M4")))["violations"])
     d_m2 = len(_DL.run_drc(PN.all_routing(PN.route_block(nl, pl_v, vert_layer="M2")))["violations"])

@@ -114,7 +114,9 @@ R3_DEBT = {}
 #: 新模块（R3 检查面）：本阶段新增的 ecore 模块必须在这里 —— 不在 = 逃过「出生即有下游」的检查。
 #: v0.9.397（T3）追加 `dprovenance`：它的非门禁下游 = `dsignoff.signoff_ledger`（签核台账）。
 NEW_MODULES = ("dliberty", "dlef", "dverilog", "ddef", "db3_trunk", "dxcheck",
-               "dprovenance")
+               "dprovenance",
+               #: v0.9.400（T5/Q4）：非门禁下游 = `dnode.compare(..., with_capacity=True)`（节点视图的单元容量）
+               "dnodefit")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

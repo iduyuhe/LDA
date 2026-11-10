@@ -101,7 +101,7 @@ def main():
     print("=" * 78)
 
     nl = CT.build()["netlist"]
-    pl = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS)
+    pl = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS, truncate_ok=True)
 
     # ── A1 单元几何保真（重画引脚后 DRC/LVS 仍 0）─────────────────────
     cl = PN.cell_drc_lvs(pl)

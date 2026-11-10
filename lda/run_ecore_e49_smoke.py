@@ -119,7 +119,7 @@ def main() -> int:
 
     # ── A2 12 单元基线回归（E45/E48 的结论在基线块上仍成立）──────────
     base = rows[0]
-    pl0 = PN.place_real(nl, max_cells=LADDER[0], cols=COLS)
+    pl0 = PN.place_real(nl, max_cells=LADDER[0], cols=COLS, truncate_ok=True)
     rt0 = PN.route_block(nl, pl0)
     n_int0 = len(rt0["routed"]) + len(rt0["unrouted"])
     check("A2 12 单元基线回归：内部网 %d/%d 布通 ∧ DRC 0 ∧ M3 跳线 0（收紧约束不许牺牲这条）"
@@ -153,7 +153,7 @@ def main() -> int:
           "drc %.1fms / total %.1fms" % (rows[-1]["t_drc_ms"], rows[-1]["t_total_ms"]))
 
     # ── C1 反向探针：关掉 M2 逃逸 ⇒ 必出违例且布通更少 ────────────
-    pl_o = PN.place_real(nl, max_cells=64, cols=COLS)
+    pl_o = PN.place_real(nl, max_cells=64, cols=COLS, truncate_ok=True)
     rt_on = PN.route_block(nl, pl_o, m2_jog=True)
     rt_off = PN.route_block(nl, pl_o, m2_jog=False)
     d_on = len(DL.run_drc(PN.all_routing(rt_on))["violations"])

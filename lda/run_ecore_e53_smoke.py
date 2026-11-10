@@ -45,7 +45,7 @@ _LADDER = (12, 64, 128, 256)
 
 
 def _route(nl, in_row, check_on=True):
-    pl = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS)
+    pl = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS, truncate_ok=True)
     rt = PN.route_block(nl, pl, in_row_m3=in_row, in_row_check=check_on)
     va = DL.run_drc(PN.all_routing(rt))["violations"]
     n_int = len(rt["routed"]) + len(rt["unrouted"])
@@ -120,7 +120,7 @@ def main() -> int:
           "内值 %s · 退出差异 %s" % (tuple(inside), resid or "无"))
 
     # ── H6 DEMO45 行内**本来就没有空隙**（这就是「必须换库」的机核）────
-    pl_o = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS)
+    pl_o = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS, truncate_ok=True)
     rb_o = PN.row_bands(pl_o, PN.net_pins(pl_o))
     inner_o = [g["y1"] - g["y0"] for info in rb_o.values()
                for g in info["gaps"] if 0 < g["i"] < len(info["gaps"]) - 1]
@@ -148,7 +148,7 @@ def main() -> int:
     ladder = []
     with PR.use("DEMO28", lib=HD):
         for n_cells in _LADDER:
-            pl = PN.place_real(nl, max_cells=n_cells, cols=CASE_COLS)
+            pl = PN.place_real(nl, max_cells=n_cells, cols=CASE_COLS, truncate_ok=True)
             rt = PN.route_block(nl, pl, in_row_m3=True)
             v = DL.run_drc(PN.all_routing(rt))["violations"]
             n_int = len(rt["routed"]) + len(rt["unrouted"])
@@ -179,7 +179,7 @@ def main() -> int:
     with PR.use("DEMO28", lib=HD):
         sig = []
         for _ in range(2):
-            pl = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS)
+            pl = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS, truncate_ok=True)
             rt = PN.route_block(nl, pl, in_row_m3=True)
             v = DL.run_drc(PN.all_routing(rt))["violations"]
             sig.append((len(PN.all_routing(rt)), len(rt["routed"]), len(v),

@@ -81,7 +81,7 @@ check = make_check(globals(), ok_key="PASS", bad_key="FAIL", indent="",
 
 def _route(nl, gap, m2_jog=True, max_cells=None, cols=None):
     pl = PN.place_real(nl, max_cells=(CASE_N if max_cells is None else max_cells),
-                       cols=(CASE_COLS if cols is None else cols), cell_gap=gap)
+                       cols=(CASE_COLS if cols is None else cols), cell_gap=gap, truncate_ok=True)
     rt = PN.route_block(nl, pl, m2_jog=m2_jog)
     vr = DL.run_drc(PN.routing_only(rt))["violations"]
     va = DL.run_drc(PN.all_routing(rt))["violations"]

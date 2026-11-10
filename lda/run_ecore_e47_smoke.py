@@ -77,7 +77,7 @@ check = make_check(globals(), ok_key="PASS", bad_key="FAIL", indent="",
 def build_block():
     """跑一遍主链（布局 → 路由 → 提取），拿到 E45 那条链的真实网络。"""
     nl = CT.build()["netlist"]
-    pl = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS)
+    pl = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS, truncate_ok=True)
     rt = PN.route_block(nl, pl)
     nw = SP.extract_network([s for s in rt["shapes_route"] if s.net],
                             design="LDA_PVT_BLOCK", seg_um=0.5, with_coupling=False)

@@ -65,7 +65,7 @@ def probe_config(nl, cells: int, cols: int, ch_um: float) -> dict:
     old = PN.CH_UM
     try:
         PN.CH_UM = float(ch_um)
-        pl = PN.place_real(nl, max_cells=cells, cols=cols)
+        pl = PN.place_real(nl, max_cells=cells, cols=cols, truncate_ok=True)
         rt = PN.route_block(nl, pl)
         vr = DL.run_drc(PN.all_routing(rt))["violations"]
     finally:
@@ -164,7 +164,7 @@ def jog_probe(nl=None, cells: int = CASE_CELLS, cols: int = 24,
         PN.CH_UM = float(ch_um)
         for jog in jog_list:
             PN.M2_JOG_MAX = float(jog)
-            pl = PN.place_real(nl, max_cells=cells, cols=cols)
+            pl = PN.place_real(nl, max_cells=cells, cols=cols, truncate_ok=True)
             rt = PN.route_block(nl, pl)
             out.append({"jog_um": float(jog),
                         "n_cand": 2 * int(jog // PN.PITCH) + 1,

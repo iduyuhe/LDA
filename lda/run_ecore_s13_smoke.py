@@ -71,9 +71,11 @@ from lda_harness.smoke_kit import make_check  # noqa: E402
 
 from lda_l2.ecore import db3_trunk as B3        # noqa: E402
 from lda_l2.ecore import dcell as DC           # noqa: E402
+from lda_l2.ecore import dcells as CL         # noqa: E402
 from lda_l2.ecore import ddef as DF            # noqa: E402
 from lda_l2.ecore import ddetail as DET        # noqa: E402
 from lda_l2.ecore import dliberty as LB         # noqa: E402
+from lda_l2.ecore import dnodefit as NF        # noqa: E402
 from lda_l2.ecore import ddrc_lvs as DL        # noqa: E402
 from lda_l2.ecore import dpnr as P             # noqa: E402
 from lda_l2.ecore import dplac as DPL          # noqa: E402
@@ -2486,6 +2488,139 @@ def main() -> int:
           % _cn["structural_limit"][:78])
     print("  [T4b 边界] 三角只缩放 `r_on`/`cin_ff` 两个量：不含温度对迁移率/阈值、不含电压对延时、"
           "不含 OCV/AOCV —— 是「两参数散布」，不是 PVT 签核")
+
+    # ── T5 / Q4：单元几何的**可造性判定**（本批把"能缩多少"变成可机核的量）────────
+    #   🔴 立项前测算推翻了规划前提：规划写「Q4 = device_scale 接线 ⇒ 几何参数化」，
+    #   实测**除 s=1.0 外每一步都出 DRC 或 LVS 违例**（连 0.98 都红）⇒ 「接线」不是
+    #   把因子乘进去，而是**必须按规则重推布局**（= P5 模板化）。本批先把这条边界钉死。
+    _nf_sc = NF.self_check()
+    _nf_inv = CL.CELLS["INV_X1"]()
+    _nf_nand = CL.CELLS["NAND2_X1"]()
+    _nf_scan_inv = NF.scan(_nf_inv)
+    _nf_scan_nand = NF.scan(_nf_nand)
+    _nf_bad = [r for r in _nf_scan_inv + _nf_scan_nand
+               if r["scale"] != 1.0 and r["feasible"]]
+    _nf_head_inv = NF.width_headroom(_nf_inv)
+    _nf_head_nand = NF.width_headroom(_nf_nand)
+
+    check("EC-Z01 判定器自检（含 5 条反向构造）=%s · 宽度硬下限 %d nm（pad %d + 接入间距 %d）"
+          % (_nf_sc["ok"], _nf_sc["width_floor_nm"], NF.PAD_NM, NF.ACCESS_GAP_NM),
+          _nf_sc["ok"] and _nf_sc["problems"] == []
+          and _nf_sc["width_floor_nm"] == 582
+          and NF.width_floor_nm(pad_nm=100) == 100 + NF.ACCESS_GAP_NM)
+
+    # EC-Z02 🔴 **保护性约束**：s=1.0 必须与产品几何**逐位相同**（含矩形/引脚/尺寸）
+    _nf_one = NF.scale_cell(_nf_inv, 1.0)
+    _nf_same = ([(r.layer, r.x0, r.y0, r.x1, r.y1) for r in _nf_one.rects]
+                == [(r.layer, r.x0, r.y0, r.x1, r.y1) for r in _nf_inv.rects]
+                and all(_nf_one.pins[k].x0 == _nf_inv.pins[k].x0
+                        and _nf_one.pins[k].y1 == _nf_inv.pins[k].y1
+                        for k in _nf_inv.pins)
+                and (_nf_one.w, _nf_one.h) == (_nf_inv.w, _nf_inv.h))
+    check("EC-Z02 保护性约束（s=1.0）：%dx%d nm · %d 矩形 · %d 引脚 **逐位相同** ∧ 基线可造=%s"
+          % (_nf_one.w, _nf_one.h, len(_nf_one.rects), len(_nf_one.pins),
+             _nf_scan_inv[0]["feasible"]),
+          _nf_same and _nf_scan_inv[0]["feasible"] and _nf_scan_nand[0]["feasible"])
+
+    # EC-Z03 🔴🔴 **本批核心定论**：按比例缩放在物理上不成立 —— 除 1.0 外**全部**违例
+    check("EC-Z03 🔴 按比例缩放**不成立**：%d 个比例点（%r）里可造的有 **%d** 个 · "
+          "s=0.98 即红（DRC %d / LVS %d）⇒ 缩放不是连续操作，`scale` 不能当旋钮"
+          % (len(_nf_scan_inv) - 1, list(NF.SCALE_GRID), len(_nf_bad),
+             _nf_scan_inv[1]["drc"], _nf_scan_inv[1]["lvs"]),
+          len(_nf_bad) == 0
+          and _nf_scan_inv[1]["scale"] == 0.98
+          and (_nf_scan_inv[1]["drc"] > 0 or _nf_scan_inv[1]["lvs"] > 0)
+          and NF.max_feasible_scale(_nf_inv) == 1.0
+          and NF.max_feasible_scale(_nf_nand) == 1.0)
+
+    # EC-Z04 面积收益的天花板：引脚 pad 不随器件缩 ⇒ **宽度有硬下限**
+    check("EC-Z04 宽度下限 %d nm ⇒ INV 只余 **%d nm（%.2f%%）** · NAND2 余 %d nm（%.2f%%）"
+          " ⇒ 即使将来重画，`device_scale=0.6` 也拿不到名义 ×0.36"
+          % (_nf_head_inv["w_floor_nm"], _nf_head_inv["headroom_nm"],
+             _nf_head_inv["max_width_saving_pct"], _nf_head_nand["headroom_nm"],
+             _nf_head_nand["max_width_saving_pct"]),
+          _nf_head_inv["w_floor_nm"] == _nf_head_nand["w_floor_nm"] == 582
+          and _nf_head_inv["headroom_nm"] == 38
+          and abs(_nf_head_inv["max_width_saving_pct"] - 6.129) < 0.01
+          and _nf_head_nand["headroom_nm"] == 398)
+
+    # EC-Z05 两套规则必须分开：金属**不缩** ∧ 器件**确实缩**（否则是「没缩」冒充「只缩器件」）
+    _nf_r06 = NF.scale_rules(0.6)
+    check("EC-Z05 规则分层：金属 %r 在 s=0.6 下不变（%s）· 器件 `poly_w` %d→%d 确实缩了"
+          % (list(NF.METAL_RULES), NF.metal_rules_unscaled(0.6),
+             CL.RULES["poly_w"], _nf_r06["poly_w"]),
+          NF.metal_rules_unscaled(0.6)
+          and _nf_r06["poly_w"] == 30
+          and _nf_r06["cont_w"] == 27
+          and _nf_r06["m1_w"] == CL.RULES["m1_w"])
+
+    # EC-Z06 反向探针：判定器**不是恒说"不可缩"** —— 给一颗本身可缩的单元必须给 <1
+    #   （否则 EC-Z03 的"全红"可能只是判定器写死了 False）
+    _nf_tiny = CL.Cell("TINY", 600, 600,
+                       [CL.R(CL.L_M1, 0, 0, 600, 600, role="pin")],
+                       {"A": CL.R(CL.L_M1, 0, 0, 600, 600, net="A")}, [])
+    _nf_tiny_s = NF.max_feasible_scale(_nf_tiny, (0.6,))
+    check("EC-Z06 反向探针：构造一颗**无器件**的空壳单元 ⇒ `max_feasible_scale` = %.2f（<1）"
+          " ⇒ EC-Z03 的「全红」是真判定，不是判定器写死" % _nf_tiny_s,
+          _nf_tiny_s == 0.6)
+
+    # EC-Z07 / S3：`max_cells` **不许静默截断**（旧代码 `break` ⇒ 分子分母一起缩的假绿灯）
+    _s3_raised, _s3_msg = False, ""
+    try:
+        P.place_real(nl, max_cells=3)
+    except ValueError as _exc:
+        _s3_raised, _s3_msg = True, str(_exc)
+    #   🔴 `truncate_ok=True` 这一支也要**受控**：若有人把它写成反向逻辑（默认截断、
+    #   显式反而抛），这里会崩而不是报红 ⇒ 违反「判据不可定位 = 不可修」。故捕获。
+    _s3_err = ""
+    try:
+        _s3_ok = P.place_real(nl, max_cells=3, truncate_ok=True)
+    except Exception as _exc2:              # noqa: BLE001 — 破坏后要能**报红**，不能崩
+        _s3_ok = {"n_picked": -1, "truncated": None, "n_truncated": -1,
+                  "n_gates_total": -1}
+        _s3_err = "%s: %s" % (type(_exc2).__name__, str(_exc2)[:80])
+    check("EC-Z07 `max_cells` 显式拒绝：默认**抛错**=%s（消息含门数与截断数=%s）· "
+          "显式 `truncate_ok` 才截断：n_picked=%d · truncated=%s · n_truncated=%d"
+          % (_s3_raised, ("拒绝静默截断" in _s3_msg), _s3_ok["n_picked"],
+             _s3_ok["truncated"], _s3_ok["n_truncated"]) + ("  err=%s" % _s3_err if _s3_err else ""),
+          _s3_raised and "拒绝静默截断" in _s3_msg
+          and _s3_err == ""
+          and _s3_ok["truncated"] is True and _s3_ok["n_truncated"] == 3
+          and _s3_ok["n_picked"] == 3
+          and _s3_ok["n_gates_total"] == len(nl.gates))
+
+    # EC-Z08 主链 9 数一位未改（严格化与判定器**零副作用**）
+    #   🔴 `truncated` **不进** `place` 段：加对外字段要连带过 6 道「反向完备」判据，
+    #   本批不改对外形状 ⇒ 这里**现算一遍**（c17 只有 6 门，成本可忽略）。
+    _s3_main = P.place_real(nl)
+    check("EC-Z08 零副作用：主链 %.3f µm² · %d/11 · DRC %d · LVS %d · %.3f/%.3f ps · "
+          "DEF %d B · claimable=%s · m1=%s · c17 布通 truncated=%s"
+          % (_tb_s["place"]["die_area_um2"], _tb_s["route"]["nets_with_segments"],
+             _tb_s["drc_lvs"]["drc_violations"], _tb_s["drc_lvs"]["lvs_problems"],
+             _tb_t["comb_delay_ideal_ps"], _tb_t["comb_delay_wired_ps"],
+             _tb_s["def_write"]["bytes"], _tb["claimability"]["claimable"],
+             _tb_s["m1_exit"]["ok"], _s3_main["truncated"]),
+          _tb_s["place"]["die_area_um2"] == 52.371
+          and _tb_s["route"]["nets_with_segments"] == 10
+          and _tb_s["drc_lvs"]["drc_violations"] == 0
+          and _tb_s["drc_lvs"]["lvs_problems"] == 0
+          and _tb_t["comb_delay_ideal_ps"] == 37.192
+          and _tb_t["comb_delay_wired_ps"] == 74.99
+          and _tb_s["def_write"]["bytes"] == 575
+          and _tb["claimability"]["claimable"] is False
+          and _tb_s["m1_exit"]["ok"] is True
+          and _s3_main["truncated"] is False
+          and _s3_main["n_picked"] == _s3_main["n_gates_total"])
+
+    print("  [T5/Q4] 可造性判定：宽度下限 **%d nm**（pad %d + 接入 %d）⇒ INV 余 %d nm（%.1f%%）· "
+          "NAND2 余 %d nm（%.1f%%）"
+          % (_nf_sc["width_floor_nm"], NF.PAD_NM, NF.ACCESS_GAP_NM,
+             _nf_head_inv["headroom_nm"], _nf_head_inv["max_width_saving_pct"],
+             _nf_head_nand["headroom_nm"], _nf_head_nand["max_width_saving_pct"]))
+    print("  [T5/Q4 定论] **按比例缩放不成立**：%d 个比例点全部 DRC/LVS 违例（s=0.98 即红）"
+          "⇒ 真缩必须按规则重推布局（= P5），`device_scale` 不是旋钮"
+          % (len(_nf_scan_inv) - 1))
+    print("  [T5/S3] `max_cells` 静默截断已改为**默认拒绝**（规模实验须显式 `truncate_ok=True`）")
 
     print("  [T4] 库接线（数据契约）：`SAMPLE_LIBERTY_L2` 2 cell（INV/NAND2 · 与 dcells 同名）"
           "· load 轴 0–8 fF · **与闭式逐位相同**（线性函数两点插值精确）")

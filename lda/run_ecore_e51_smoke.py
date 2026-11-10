@@ -108,7 +108,7 @@ def main() -> int:
     # ── R7 动机：同行网比例（先确认「有东西可优化」）────────────
     spans = []
     for cols in (8, 24):
-        pl = PN.place_real(nl, max_cells=DI.CASE_CELLS, cols=cols)
+        pl = PN.place_real(nl, max_cells=DI.CASE_CELLS, cols=cols, truncate_ok=True)
         sv = DI.net_row_span(pl, PN.net_pins(pl))
         spans.append((cols, sv))
         print("  cols=%2d | 内部网 %d · 全引脚同行 **%d (%.0f%%)** · 跨行分布 %s"
@@ -204,7 +204,7 @@ def main() -> int:
     # ── R8 关掉行内互联时全档 DRC 仍为零 ──────────────────────
     bad = [(x["cols"], x["n_drc"]) for x in
            [dict(cols=x["cols"], n_drc=len(DL.run_drc(PN.all_routing(
-               PN.route_block(nl, PN.place_real(nl, max_cells=DI.CASE_CELLS, cols=x["cols"]))))["violations"]))
+               PN.route_block(nl, PN.place_real(nl, max_cells=DI.CASE_CELLS, cols=x["cols"], truncate_ok=True))))["violations"]))
             for x in sd] if x["n_drc"] != 0]
     check("R8 全档 DRC 仍为零：%d 个 cols 档（关闭行内互联）路由+全量 DRC 全 == 0（不许退化）"
           % len(sd), not bad, "非零档 %s" % (bad if bad else "无"))

@@ -137,20 +137,34 @@ def get(name) -> Node:
     return NODES[name]
 
 
-def compare(nodes=("DEMO45", "DEMO28")) -> list:
+def compare(nodes=("DEMO45", "DEMO28"), with_capacity: bool = False) -> list:
     """节点对比表：核心是「行内可用轨道数」这一条。
 
     引脚 y 取自**真实单元库**（按节点的 `device_scale` 缩放），不是估的。
+
+    `with_capacity=True` 时每行多一个 `cell_capacity` —— **该节点下单元几何能造到什么程度**
+    （宽度余量的**理论上限** ∧ `max_feasible_scale` 的**实测**）。默认关：这两件事要跑
+    DRC/LVS，属诊断计算，不该拖慢默认对比。
+
+    🔴 两个数必须一起读（见 `dnodefit.width_headroom` 的 docstring）：
+    「按该节点规则重画有余量」**不等于**「现有几何能缩」——实测后者恒为 `1.0`（不可缩）。
     """
     out = []
     for nm in nodes:
         nd = get(nm)
         tr = inner_tracks_for(nd)
-        out.append({"node": nd.name, "pad_nm": nd.pad, "pitch_nm": nd.pitch,
-                    "h_row_nm": nd.h_row, "device_scale": nd.device_scale,
-                    "n_inner_tracks": len(tr), "tracks_nm": tr,
-                    "in_row_feasible": len(tr) >= 1,
-                    "note": nd.note})
+        row = {"node": nd.name, "pad_nm": nd.pad, "pitch_nm": nd.pitch,
+               "h_row_nm": nd.h_row, "device_scale": nd.device_scale,
+               "n_inner_tracks": len(tr), "tracks_nm": tr,
+               "in_row_feasible": len(tr) >= 1,
+               "note": nd.note}
+        if with_capacity:
+            from . import dnodefit as NF      # 延迟导入：避免与 dcells 的初始化顺序耦合
+            row["cell_capacity"] = {
+                name: dict(NF.width_headroom(fn(), node=nd),
+                           max_feasible_scale=NF.max_feasible_scale(fn()))
+                for name, fn in sorted(NF.CL.CELLS.items())}
+        out.append(row)
     return out
 
 

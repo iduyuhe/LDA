@@ -157,7 +157,7 @@ def main() -> int:
 
     # ── M9 布局适配（实例/线网）──────────────────────────────────────
     netlist = CT.build()["netlist"]
-    pl = PN.place_real(netlist, max_cells=8)
+    pl = PN.place_real(netlist, max_cells=8, truncate_ok=True)
     lay = MD.layout_from_place(pl, netlist)
     ok_lay = (len(lay.instances) == len(pl["insts"])
               and len(lay.nets) > 0

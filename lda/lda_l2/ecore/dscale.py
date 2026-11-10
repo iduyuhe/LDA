@@ -58,7 +58,8 @@ def _ms(t0: float) -> float:
 def probe(nl, max_cells: int, cols: int = COLS, cell_gap: float = None) -> dict:
     """跑一档规模，返回**分段计时 + 结果统计**（不改任何全局状态）。"""
     t0 = time.perf_counter()
-    pl = PN.place_real(nl, max_cells=max_cells, cols=cols, cell_gap=cell_gap)
+    pl = PN.place_real(nl, max_cells=max_cells, cols=cols, cell_gap=cell_gap,
+                       truncate_ok=True)   # 规模阶梯：就是要截断
     t_place = _ms(t0)
 
     t0 = time.perf_counter()

@@ -1633,8 +1633,10 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             # 🔴 v0.9.397（T3）：`dprovenance` 一进包就同时顶了**两个**数 ——
             #   模块数 78→79、能力条目数 80→81。B6c 与文件系统对拍，忘了改这里就红
             #   （「加模块却忘了改卡片」正是那条判据存在的理由）。
-            "modules": 79,               # ecore 包内模块数（不含 __init__.py；T3 新增 dprovenance）
-            "capability_modules": 81,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力条目数
+            # 🔴 v0.9.400（T5/Q4）：`dnodefit` 进包 ⇒ 模块数 79→80、能力条目 81→82。
+            #   加 ecore 模块的连带里，这两个计数与 manifest 是**同一件事的两处落点**。
+            "modules": 80,               # ecore 包内模块数（不含 __init__.py；T5 新增 dnodefit）
+            "capability_modules": 82,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力条目数
             "entrypoints": 75,           # 常驻门禁数（lda/run_ecore_*_smoke.py，含 S2–S13 + 复用度量）
                                          # 🔴 这三个数由 `run_ecore_case_smoke` B6c 与
                                          #   **文件系统 + manifest 独立对拍**（此前是硬编码对硬编码）。

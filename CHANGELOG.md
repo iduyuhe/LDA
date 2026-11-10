@@ -69,6 +69,7 @@ cont 左移 → enc 不足。**这些不是 bug，是手写布局在同一组约
 | 命名空间事故 | 初版用 `EC-P501` ⇒ `EC-P01`「EC-Pxx 各出现一次」当场红 ⇒ 换 `EC-L`（P/Q/R/T/U/V/W/X/Y/Z 全占）|
 | 主链 9 数 | **一位未改**（52.371 · 10/11 · 37.192/74.990 · DRC 0 · LVS 0 · DEF 575 B · claimable=False · m1=True） |
 | 对外形状 | **未扩**：`stages` 11 段；台账 `rows` 仍 **12 行**（`EC-W01` 锁 12 个 verdict 叶子），覆盖率只进**顶层键** |
+| 回归 | `core-fast` **351 PASS / 0 SKIP / 0 FAIL**（845.91 s）· **全量 `--tag core` 406 PASS / 0 SKIP / 0 FAIL**（**11245.75 s = 3.12 h**，`n_reused=0`，`git_head=1f70713`）⇒ 凭证 green，`F4` 转绿（陈旧 0.05 h）。**连续四批首跑即全绿** |
 
 ### 🔴 诚实边界
 

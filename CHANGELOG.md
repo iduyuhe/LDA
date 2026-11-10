@@ -86,6 +86,16 @@
 | 新增判据 | `EC-X01`..`EC-X08`（含 2 条反向探针 `X06`/`X07` + 1 条 `Tech` 差分 `X05`） |
 | 保护性约束 | `lib=None` ⇒ 主链 9 数逐位不变（`EC-X02`）；`lib=L2` ⇒ 也逐位相同，仅 `lib_chain` 变（`EC-X03`） |
 | 插值精确性 | 非网格 load（0.5/1.5/3/6/7.25 fF）与闭式差 ≤ **8.9e-16 ps**（闭式对 load 线性 ⇒ 两点插值精确，`EC-X04`） |
+| 回归 | `core-fast` **351 PASS / 0 SKIP / 0 FAIL**（842.39 s）· **全量 `--tag core` 406 PASS / 0 SKIP / 0 FAIL**（**11399.58 s = 3.17 h**，`n_reused=0`，`git_head=24bb9ca`）⇒ 凭证 green，`F4` 转绿（陈旧 0.01 h）。**本批首跑即全绿**（T2/T3 都曾首跑 1 红）|
+
+### 🔴 两条路径 9 数并排（本批最直接的证据）
+
+| 口径 | 面积 | 布通 | DRC | LVS | ideal/wired | DEF | EM | claimable | m1 | `lib_chain` |
+|---|---|---|---|---|---|---|---|---|---|
+| `lib=None` | 52.371 | 10/11 | 0 | 0 | 37.192/74.990 | 575 | 133.665×@n16 | False | True | `closed` |
+| `lib=L2` | 52.371 | 10/11 | 0 | 0 | 37.192/74.990 | 575 | 133.665×@n16 | False | True | `liberty:SAMPLE_PDK_L2` |
+
+**唯一差异是出处那一列。** `max_transition` 亦同：50.0 → 50.0 ps，但 `is_assumption` True→False、`source` `_DEFAULT_SLEW_PS` → `Liberty.default_max_transition`。
 
 ### 🔴 诚实边界
 

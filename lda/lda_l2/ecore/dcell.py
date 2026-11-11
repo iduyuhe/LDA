@@ -536,13 +536,22 @@ def library_self_check(tech: Tech | None = None) -> dict:
     _ti_inv = t_intr_ps_for("INV", tech)
     if abs(_ti_inv - tech.t_intr_ps) > 1e-12:
         problems.append(("t_intr_anchor", _ti_inv, tech.t_intr_ps))
+    def _has_wl(c):
+        return bool(c.w_n_nm and c.w_p_nm and c.l_nm)
+
+    # 🔴 数据缺失**不是 ⑨ 的事**（⑦ 已负责报）。⑨ 若在这里抛错，会把
+    #   「e34 的 C1 探针（改 n_tr 必须打红）」从**受控红**变成**崩溃** ——
+    #   那正是本仓红线「判据不可定位 = 不可修」说的情形。
     for _n in ("NAND2", "NAND3", "NOR2", "XOR2"):
+        if _n not in CELLS or not _has_wl(CELLS[_n]):
+            continue
         _want = tech.t_intr_ps * (cell_r_ohm(_n, tech) / cell_r_ohm("INV", tech))
         if abs(t_intr_ps_for(_n, tech) - _want) > 1e-9:
             problems.append(("t_intr_not_prop_to_R", _n,
                              t_intr_ps_for(_n, tech), _want))
-    if all(abs(t_intr_ps_for(_n, tech) - tech.t_intr_ps) <= 1e-12
-           for _n in CELLS):
+    _with_wl = [c for c in CELLS.values() if _has_wl(c)]
+    if _with_wl and all(abs(t_intr_ps_for(c.name, tech) - tech.t_intr_ps) <= 1e-12
+                        for c in _with_wl):
         problems.append(("t_intr_not_per_cell", "全部单元都等于锚 ⇒ 又退回常数"))
 
     # ⑧ W/L 的**内部一致性**：同一 family 内 p/n 宽度比必须一致

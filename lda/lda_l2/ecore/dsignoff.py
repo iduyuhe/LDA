@@ -444,6 +444,45 @@ def signoff_ledger(report, netlist=None):
         }
     except Exception as exc:                       # noqa: BLE001
         out["drive_geometry"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
+
+    # 🔴 v0.9.407：pMOS 平衡**买到了多少延时** —— 只加顶层键、不动 `rows`。
+    #   为什么必须给：v0.9.404 的 README 曾把「单元级 2.50×」写得像链级收益，
+    #   而 c17 实测只有 1.50×（拓扑路径）/ 1.25×（延迟关键路径）。
+    #   这两个数必须**同时**出现在签核台账里，否则「加宽 pMOS」看起来像白拿 2.5×。
+    try:
+        from . import dsta as _ST          # 同包内相对导入（ 在 cwd 下解析不到）
+        _path = [g.cell for g in _ST.longest_path_gates(netlist)]
+        _rep = _ST.sizing_gain_chain(_path)
+        _gains = {n: DC.pmos_sizing_gain(c) for n, c in DC.CELLS.items() if c.w_n_nm}
+        _dom = {}
+        for n, c in DC.CELLS.items():
+            if c.w_n_nm:
+                _dom.setdefault(DC.sizing_dominance(c), []).append(n)
+        out["pmos_sizing"] = {
+            "scope": "DIAGNOSTIC_ONLY",
+            "in_blocking": False,
+            "cell_gain": _gains,
+            "by_dominance": {k: sorted(v) for k, v in _dom.items()},
+            "path_cells": _path,
+            "path_gain": _rep["gain"],
+            "path_uniform_load": _rep["uniform_load"],
+            "path_delay_ps": [_rep["delay_bal_ps"], _rep["delay_1to1_ps"]],
+            "unit_gain_max": max(_gains.values()) if _gains else None,
+            "why_path_lt_unit": (
+                "链级收益 = Σ R(1:1)·w / Σ R(平衡)·w（w=ln2·(C_self+C_load)）；"
+                "负载均匀时 w 可约 ⇒ = ΣR 比（纯几何，与 FO 无关）。"
+                "c17 拓扑路径 = %r，逐级 %r ⇒ %.4f×，**不是**单元级的 %.2f×："
+                "下拉主导的单元在 1:1 下本来就是下拉限制，加宽 p 侧救不了它"
+                % (_path, [round(r["cell_gain"], 4) for r in _rep["cells"]],
+                   _rep["gain"], max(_gains.values()) if _gains else 0.0)),
+            "not_claimed": (
+                "① 只看延时，不含面积代价（面积已在 v0.9.404 计入 +13.0%）；"
+                "② 「延迟关键路径」与「拓扑路径」组成不同，两者的收益不同（c17: 1.25× vs 1.50×）；"
+                "③ 上拉主导的 testcase 只到**时序级**（`PHYSICALLY_MODELED` 仍只有 INV/NAND2，"
+                "建不出 NOR 版图）；④ 绝对延时仍 `claimable=False`"),
+        }
+    except Exception as exc:                       # noqa: BLE001
+        out["pmos_sizing"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
     return out
 
 

@@ -611,6 +611,75 @@ def chain_golden_from_loads(cell: str, loads, tech=None) -> float:
     return sum(DC.cell_delay_ps(cell, l, tech) for l in loads)
 
 
+def sizing_gain_chain(cells, load_ff=None, tech=None) -> dict:
+    """**链级 pMOS 收益**：把 p 侧全部退回 1:1 后，这条链的延时变成当前的几倍。
+
+    `cells` 是单元名序列（可**逐级不同负载**：给 `(name, load)` 对）。
+
+    🔴 **结构性结论（本函数的全部意义）**：
+
+        t_pd = ln2 · R · (C_self + C_load)        ← 两项都 ∝ R
+        收益 = Σ R_i(1:1)·w_i / Σ R_i(平衡)·w_i    ← w_i = ln2·(C_self + C_load_i)
+
+    ⇒ 当**所有级的负载相同**时，`w` 是公因子、直接约掉：
+
+        **收益 = Σ R(1:1) / Σ R(平衡)** —— 一个**纯几何量**，与负载、`FO_target`、
+        `cin_ff`、`C_self` **全都无关**。
+
+    这不是近似：`v0.9.407` 在 FO=1..8 上实测同一条路径给出**同一个** 1.500000000×。
+
+    ⚠️ 逐级负载**不同**时权重不能约，必须逐级加权 —— 所以本函数不返回
+    「ΣR 比」而是逐级加权，两者在该退化的地方必须**逐位**相等（门禁侧有断言）。
+    """
+    tech = tech or DC.DEFAULT_TECH
+    seq = []
+    for item in cells:
+        if isinstance(item, (tuple, list)):
+            seq.append((item[0], (float(item[1]) if item[1] is not None
+                                 else self_load_default(load_ff, tech))))
+        else:
+            seq.append((item, self_load_default(load_ff, tech)))
+
+    cs = DC.c_self_ff(tech)
+    rows = []
+    num = den = 0.0
+    sr_bal = sr_11 = 0.0          # 纯 ΣR（不经权重）—— 用来验证「均匀时可约」
+    for name, lf in seq:
+        c = DC.CELLS[name]
+        r_bal = DC.cell_r_ohm(name, tech)
+        r_11 = DC.cell_r_ohm(name, tech, w_p_nm=c.w_n_nm)
+        w = DC.LN2 * (cs + lf) * DC.OHM_FF_TO_PS
+        num += r_11 * w
+        den += r_bal * w
+        sr_bal += r_bal
+        sr_11 += r_11
+        rows.append({"cell": name, "load_ff": lf, "r_bal": r_bal, "r_1to1": r_11,
+                     "cell_gain": r_11 / r_bal,
+                     "delay_bal_ps": r_bal * w, "delay_1to1_ps": r_11 * w,
+                     "dominance": DC.sizing_dominance(c, tech)})
+    if not rows or den <= 0.0:
+        raise ValueError("空路径或零电阻，算不出链级收益")
+    return {
+        "gain": num / den,
+        "n_gates": len(rows),
+        "sum_r_bal": sr_bal,
+        "sum_r_1to1": sr_11,
+        "gain_by_sum_r": sr_11 / sr_bal,
+        "uniform_load": len({round(r["load_ff"], 12) for r in rows}) == 1,
+        "delay_bal_ps": den, "delay_1to1_ps": num,
+        "by_dominance": {d: sum(1 for r in rows if r["dominance"] == d)
+                         for d in (DC.DOMINANCE_PULLUP, DC.DOMINANCE_PULLDOWN,
+                                   DC.DOMINANCE_BALANCED)},
+        "cells": rows,
+    }
+
+
+def self_load_default(load_ff, tech=None):
+    """缺省每级负载 = `FO_TARGET · cin_ff`（与 `constraint_layer` 同源）。"""
+    tech = tech or DC.DEFAULT_TECH
+    return (FO_TARGET * tech.cin_ff) if load_ff is None else float(load_ff)
+
+
 def build_chain_nl(cell: str, n_stage: int, load_ff: float, name="chain"):
     """造一条 N 级同构串联链的门级网表（用于金标对拍）。"""
     from .dsynth import Gate, Netlist

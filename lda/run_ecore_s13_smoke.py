@@ -3039,6 +3039,119 @@ def main() -> int:
           abs((_c_loc["clock_period_ps"] - _ti_flat_ref) - _ti_gap_want) < 1e-9
           and _ti_gap_want > 1.0)
 
+    # ── v0.9.407：pMOS 平衡的**收益结构**（逐单元 → 链级）──────────────────────
+    #   🔴 为什么单独开一段：v0.9.404 把「单元级 2.50×」写进了 README，
+    #   而链级实测只有 1.50×（拓扑路径）/ 1.25×（延迟关键路径）。
+    #   这一段的全部作用是：**把 2.5× 关进它的适用范围里**。
+    # 🔴 循环变量**不许用 `_n`/`_c`**：`main()` 里已有 `_n()` 函数（端口名规范化），
+    #   一旦在本函数内给 `_n` 赋值，整个 `main` 的 `_n` 就变成 local ⇒ UnboundLocalError。
+    _sz_gain = {_sz_nm: DC.pmos_sizing_gain(_sz_cell)
+                for _sz_nm, _sz_cell in DC.CELLS.items() if _sz_cell.w_n_nm}
+    _sz_dom = {}
+    for _sz_nm, _sz_cell in DC.CELLS.items():
+        if _sz_cell.w_n_nm:
+            _sz_dom.setdefault(DC.sizing_dominance(_sz_cell), []).append(_sz_nm)
+    _sz_path = [g.cell for g in ST.longest_path_gates(nl)]
+    _sz_rep = ST.sizing_gain_chain(_sz_path)
+    _sz_nor = ST.sizing_gain_chain(["NOR2"] * 10, load_ff=3.0)
+
+    # EC-G12 **逐单元收益只有四档**，且闭式可解析：gain = max(s_n, ρ比·s_p)/max(s_n, s_p)
+    #   —— 与 W、L、r_on、t_intr、负载**全都无关**。门禁侧按闭式**独立复算**。
+    def _sz_closed(cell):
+        sn, sp = DC.series_counts(cell)
+        ratio = DC.DEFAULT_TECH.r_sheet_p_over_n
+        return max(sn, ratio * sp) / max(sn, sp)
+
+    _sz_tiers = sorted({round(v, 6) for v in _sz_gain.values()})
+    _sz_closed_dev = {_sz_nm: abs(_sz_gain[_sz_nm] - _sz_closed(DC.CELLS[_sz_nm]))
+                      for _sz_nm in _sz_gain}
+    check("EC-G12 逐单元收益**只有四档** %r（18 单元）· 闭式 `max(s_n, ρ比·s_p)/max(s_n, s_p)` "
+          "独立复算最大偏差 %.3e ⇒ 与 W/L/r_on/t_intr/负载**全都无关** · "
+          "主导侧 PULLUP %d / PULLDOWN %d / BALANCED %d"
+          % (_sz_tiers, max(_sz_closed_dev.values()),
+             len(_sz_dom.get(DC.DOMINANCE_PULLUP, [])),
+             len(_sz_dom.get(DC.DOMINANCE_PULLDOWN, [])),
+             len(_sz_dom.get(DC.DOMINANCE_BALANCED, []))),
+          _sz_tiers == [1.0, 1.25, 1.666667, 2.5]
+          and max(_sz_closed_dev.values()) < 1e-9
+          and len(_sz_gain) == 18
+          and sorted(_sz_dom.get(DC.DOMINANCE_PULLUP, [])) == ["NOR2", "NOR3", "OR2", "OR3"]
+          and sorted(_sz_dom.get(DC.DOMINANCE_PULLDOWN, [])) == [
+              "AND2", "AND3", "NAND2", "NAND3", "XNOR2", "XOR2"]
+          and all(abs(_sz_gain[_sz_nm] - 2.5) < 1e-12
+                  for _sz_nm in (_sz_dom.get(DC.DOMINANCE_PULLUP, [])
+                                 + _sz_dom.get(DC.DOMINANCE_BALANCED, []))))
+
+    # EC-G13 🔴 **上拉主导 testcase**：同构链的链级收益**逐位等于**单元级收益。
+    #   —— 因为 `t_pd = ln2·R·(C_self+C_load)` 两项都 ∝ R，公因子被约掉。
+    #   这也是「2.50× 可以兑现」的**唯一条件**：路径里全是能拿满的单元。
+    _sz_hom = {c: ST.sizing_gain_chain([c] * 10, load_ff=3.0) for c in
+               ("NOR2", "NOR3", "OR2", "AOI21", "INV", "NAND2", "NAND3", "XOR2")}
+    _sz_hom_dev = {c: abs(r["gain"] - _sz_gain[c]) for c, r in _sz_hom.items()}
+    check("EC-G13 ✅ 上拉主导 testcase（NOR2×10 @3fF）：链级 **%.15f×** = 单元级 %.15f× · "
+          "延时 %.4f → %.4f ps；8 种同构链与单元级逐位一致（最大偏差 %.3e）"
+          % (_sz_nor["gain"], _sz_gain["NOR2"], _sz_nor["delay_bal_ps"],
+             _sz_nor["delay_1to1_ps"], max(_sz_hom_dev.values())),
+          abs(_sz_nor["gain"] - 2.5) < 1e-12
+          and abs(_sz_nor["delay_1to1_ps"] / _sz_nor["delay_bal_ps"] - 2.5) < 1e-12
+          and _sz_nor["by_dominance"][DC.DOMINANCE_PULLUP] == 10
+          and max(_sz_hom_dev.values()) < 1e-12)
+
+    # EC-G14 🔴 **三条错法必须被挡在门外**（这是「2.5× 被误当链级收益」的三条真实路径）
+    #   ① 拿单颗最大收益当链级 ⇒ 高估 2.5/1.5-1 = 66.7%；
+    #   ② 逐级收益**算术平均** ⇒ (1.25+1.25+2.5)/3 = 1.667 ≠ 1.5（高估 11.1%）；
+    #   ③ 逐级负载不均匀时仍用 ΣR 比 ⇒ 与加权差 1.91%。
+    _sz_mean = sum(r["cell_gain"] for r in _sz_rep["cells"]) / _sz_rep["n_gates"]
+    _sz_uni = [r["gain"] for r in (ST.sizing_gain_chain(_sz_path, load_ff=float(fo))
+                                   for fo in (1, 2, 3, 5, 8))]
+    _sz_mix = ST.sizing_gain_chain([("NAND2", 0.5), ("NAND2", 2.0), ("INV", 1.0)])
+    check("EC-G14 三条错法被挡：① 拿单元级最大 %.2f× 当链级 ⇒ 高估 **%.2f%%**；"
+          "② 逐级收益算术平均 %.6f ≠ 链级 %.6f（高估 %.2f%%）；"
+          "③ 均匀负载下链级与 FO **无关**（FO=1..8 全为 %r），但非均匀时 ΣR 比 %.6f ≠ 加权 %.6f（差 %.2f%%）"
+          % (_sz_gain["NOR2"], (_sz_gain["NOR2"] / _sz_rep["gain"] - 1) * 100,
+             _sz_mean, _sz_rep["gain"], (_sz_mean / _sz_rep["gain"] - 1) * 100,
+             [round(v, 12) for v in _sz_uni[:1]], _sz_mix["gain_by_sum_r"], _sz_mix["gain"],
+             (_sz_mix["gain_by_sum_r"] / _sz_mix["gain"] - 1) * 100),
+          abs(_sz_rep["gain"] - 1.5) < 1e-12
+          and abs(_sz_gain["NOR2"] / _sz_rep["gain"] - 1 - 0.6666667) < 1e-6
+          and abs(_sz_mean - 1.6666666666666667) < 1e-12
+          and abs(_sz_mean / _sz_rep["gain"] - 1 - 0.1111111) < 1e-6
+          and len({round(v, 12) for v in _sz_uni}) == 1
+          and abs(_sz_uni[0] - 1.5) < 1e-12
+          and _sz_mix["uniform_load"] is False
+          and abs(_sz_mix["gain_by_sum_r"] - _sz_mix["gain"]) > 1e-6)
+
+    # EC-G15 🔴 **模型实测**（不是公式复述）：把 p 侧全部退回 1:1 重跑 `sta`，
+    #   看**延迟关键路径**的收益。它只有 1.25×，因为 `sta` 的关键路径是 3×NAND2，
+    #   而拓扑最长路径是 2×NAND2+1×INV（1.50×）—— **两条路径组成不同，收益就不同**。
+    #   ⚠️ 用 3 位取整的 report 值相除会得到 1.250016（差 1.6e-5 全是舍入）——
+    #   这是「表示差异 ≠ 真差异」在本仓的**第五次**。
+    _sz_pl = ST.FO_PORT * DC.DEFAULT_TECH.cin_ff
+    _sz_bal = ST.sta(nl, port_load_ff=_sz_pl, topo_sort=True).comb_delay_ps
+    _sz_saved = {_sz_nm: _sz_c for _sz_nm, _sz_c in DC.CELLS.items()}
+    _sz_err = ""
+    try:
+        for _sz_nm, _sz_c in list(_sz_saved.items()):
+            if _sz_c.w_n_nm and _sz_c.w_p_nm:
+                DC.CELLS[_sz_nm] = dataclasses.replace(_sz_c, w_p_nm=_sz_c.w_n_nm)
+        _sz_one = ST.sta(nl, port_load_ff=_sz_pl, topo_sort=True).comb_delay_ps
+    except Exception as _exc:                       # noqa: BLE001 — 破坏后要能报红，不能崩
+        _sz_one = -1.0
+        _sz_err = "%s: %s" % (type(_exc).__name__, str(_exc)[:60])
+    finally:
+        DC.CELLS.update(_sz_saved)
+    _sz_restored = (ST.sta(nl, port_load_ff=_sz_pl, topo_sort=True).comb_delay_ps == _sz_bal)
+    _sz_crit = (_sz_one / _sz_bal) if _sz_one > 0 else -1.0
+    check("EC-G15 模型实测：p 侧退回 1:1 ⇒ `ideal` %.12f → %.12f ps，**延迟关键路径收益 %.15f×**"
+          "（= 3×NAND2 的单元级收益）×；拓扑路径 %.4f× —— 两者不同是因为**路径组成不同**"
+          "（3 位取整相除会假得 1.250016）。还原逐位=%s%s"
+          % (_sz_bal, _sz_one, _sz_crit, _sz_rep["gain"], _sz_restored,
+             ("  err=" + _sz_err) if _sz_err else ""),
+          abs(_sz_crit - 1.25) < 1e-12
+          and abs(_sz_crit - _sz_gain["NAND2"]) < 1e-12
+          and abs(_sz_rep["gain"] - 1.5) < 1e-12
+          and _sz_restored is True)
+
     print("  [T5/Q4] 可造性判定：宽度下限 **%d nm**（pad %d + 接入 %d）⇒ INV 余 %d nm（%.1f%%）· "
           "NAND2 余 %d nm（%.1f%%）"
           % (_nf_sc["width_floor_nm"], NF.PAD_NM, NF.ACCESS_GAP_NM,

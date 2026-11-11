@@ -321,24 +321,68 @@ def r_sheet_ohm_sq(tech: Tech | None = None) -> tuple:
     return rho_n, rho_n * tech.r_sheet_p_over_n
 
 
-def r_side_ohm(c: "Cell", tech: Tech | None = None) -> tuple:
-    """(下拉电阻, 上拉电阻) —— `R = 串联数 · ρ · L/W`（Ω）。"""
+def r_side_ohm(c: "Cell", tech: Tech | None = None,
+               w_p_nm: float | None = None) -> tuple:
+    """(下拉电阻, 上拉电阻) —— `R = 串联数 · ρ · L/W`（Ω）。
+
+    `w_p_nm` 只用于**反事实**（把 p 侧退回某个宽度），默认取单元自己的 `w_p_nm`。
+    🔴 反事实必须走**同一个函数**：另写一份「1:1 版」的实现必然与主式漂。
+    """
     tech = tech or DEFAULT_TECH
-    if not (c.l_nm and c.w_n_nm and c.w_p_nm):
+    wp = c.w_p_nm if w_p_nm is None else float(w_p_nm)
+    if not (c.l_nm and c.w_n_nm and wp):
         raise ValueError("单元 %s 缺 W/L 数据（`wl_src`=%s）" % (c.name, c.wl_src))
     rho_n, rho_p = r_sheet_ohm_sq(tech)
     sn, sp = series_counts(c)
     return (sn * rho_n * c.l_nm / c.w_n_nm,
-            sp * rho_p * c.l_nm / c.w_p_nm)
+            sp * rho_p * c.l_nm / wp)
 
 
-def cell_r_ohm(name: str, tech: Tech | None = None) -> float:
+def cell_r_ohm(name: str, tech: Tech | None = None,
+               w_p_nm: float | None = None) -> float:
     """单元的**最坏路径等效导通电阻**（Ω）= `max(下拉, 上拉)`。
 
     🔴 这是 `k_drive` 被几何取代的落点：`k_drive ≡ R_cell / R_INV`，
     而 `R_INV` 在平衡版图下恰好等于 `Tech.r_on_ohm`（标定锚自洽）。
     """
-    return max(*r_side_ohm(CELLS[name], tech))
+    return max(*r_side_ohm(CELLS[name], tech, w_p_nm))
+
+
+# ---------------------------------------------------------------------------
+# pMOS 平衡的**收益结构**（v0.9.407）
+# ---------------------------------------------------------------------------
+#: 🔴 **pMOS 加宽只在「上拉侧是瓶颈」时才有用**。这个比例决定了收益上限。
+#: 平衡版图把 p 侧单位电阻做成 `ρ_p·L/W_p = r_on`（= n 侧单位），
+#: 1:1 版图则是 `ρ_p·L/W_n = r_on·(ρ比)`。两者之比就是**逐单元收益**。
+DOMINANCE_PULLUP = "PULLUP"
+DOMINANCE_PULLDOWN = "PULLDOWN"
+DOMINANCE_BALANCED = "BALANCED"
+
+
+def sizing_dominance(c: "Cell", tech: Tech | None = None) -> str:
+    """**哪一侧限制了这个单元**：`PULLUP` / `PULLDOWN` / `BALANCED`。
+
+    只看当前（平衡）版图：`R = max(R_pd, R_pu)`。
+    `PULLUP` 意味着「再宽一点还能快」，`PULLDOWN` 意味着「加宽 p 侧完全没用」。
+    """
+    rn, rp = r_side_ohm(c, tech)
+    if abs(rp - rn) <= 1e-9 * max(rn, rp):
+        return DOMINANCE_BALANCED
+    return DOMINANCE_PULLUP if rp > rn else DOMINANCE_PULLDOWN
+
+
+def pmos_sizing_gain(c: "Cell", tech: Tech | None = None) -> float:
+    """**逐单元收益**：把 p 侧退回 1:1（`w_p = w_n`）后 `R` 变成当前的几倍。
+
+    ⇒ 等于「平衡版图在这一颗单元上省下的电阻倍数」。
+    1.0 = 完全没用（下拉主导）；2.5 = 拿满（上拉主导且 p/n 比 = 2.5）。
+
+    🔴 与 `sizing_dominance` 配对看：`PULLDOWN` 但收益 > 1 是可能的 ——
+    因为 1:1 会把上拉侧**顶成**瓶颈（NAND2：1.25×）。这正是「平衡」的意义。
+    """
+    r_bal = cell_r_ohm(c.name, tech)
+    r_11 = cell_r_ohm(c.name, tech, w_p_nm=c.w_n_nm)
+    return r_11 / r_bal
 
 
 def c_self_ff(tech: Tech | None = None) -> float:

@@ -117,6 +117,7 @@
 | 主链 9 数 | **一位未改**（52.371 · 10/11 · 37.192/74.990 · DRC 0 · LVS 0 · DEF 575 B · claimable=False · m1=True） |
 | 对外形状 | **未扩**：`stages` 11 段；台账 `rows` 仍 **12 行**，W/L 与几何只进**顶层键** `drive_geometry` |
 | 模块/能力计数 | **不变**（82 / 84）—— 本批**没有新增 ecore 模块**（数据在 `dcell`、模型在 `dkdrive`） |
+| 回归 | `core-fast` **351 PASS / 0 SKIP / 0 FAIL**（846.42 s）· **全量 `--tag core` 406 PASS / 0 SKIP / 0 FAIL**（**11806.99 s = 3.28 h**，`n_reused=0`，`git_head=6576fae`）⇒ 凭证 green，`F4` 转绿（陈旧 0.05 h）。**连续六批首跑即全绿** |
 
 ### 🔴 诚实边界
 

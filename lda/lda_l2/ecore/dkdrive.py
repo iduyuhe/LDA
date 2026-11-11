@@ -245,3 +245,395 @@ def self_check() -> Dict[str, Any]:
         "shape_all_mono": sh["all_mono"],
         "verdict": P2_DISCLOSURE["verdict"],
     }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# W/L 数据层（v0.9.403 · 新开一批）—— **几何模型 + 上限定理**
+# ═══════════════════════════════════════════════════════════════════════════
+"""上一批（P2）的结论是「缺 W/L 与 μ ⇒ 绝对值不可算」。本批把 W/L 补上了，
+于是同一个问题可以问得更狠：**补了数据之后，手填值能被几何解释吗？**
+
+答案：**不能，而且可以证明**。
+
+    均匀 W（全库同一 w_n、w_p、L）⇒  k ≤ max(s_n, s_p)
+    —— 与 μ 无关、与 W 的绝对量无关。证明见 `CEILING_PROOF`。
+
+实测：`NOR2`(2.40>2) / `NOR3`(3.40>3) / `OAI21`(2.40>2) 三个值**超出上限** ⇒
+它们不可能来自任何均匀几何。要突破上限，只能**逐单元定制 W**（= 按版图/面积做 sizing），
+而本仓只有 2 个单元有版图（`INV_X1` / `NAND2_X1`）。
+
+⇒ 这条链的终点不是「k_drive 可算」，而是：**k_drive 要可算，得先有逐单元的 W 决策（版图）**。
+   「补数据」补掉的是**借口**，暴露出来的是**顺序问题**。
+"""
+
+#: 单级模型的适用域（**必须显式**，否则拿它套 2 级/传输门单元就是错用）
+#:   EXACT — 静态互补 CMOS、单级、串并联网络 ⇒ 模型精确
+#:   APPROX — 结构存在但被简化（XOR 双极性网络）
+#:   NA    — 模型不适用（多级 / 传输门 / 无驱动）
+SCOPE = {
+    "inv": "EXACT", "nand": "EXACT", "nor": "EXACT",
+    "aoi": "EXACT", "oai": "EXACT",
+    "xor": "APPROX",
+    "and": "NA", "or": "NA", "mux": "NA", "seq": "NA", "tie": "NA",
+}
+
+#: 逐单元的域覆盖（`BUF` 是两级反相，虽然 family 是 inv 但不能进单级模型）
+SCOPE_CELL = {"BUF": "NA"}
+
+#: 上限定理（代数证明写在这里，`ceiling_scan` 是它的机核版）
+CEILING_PROOF = {
+    "statement": "均匀 W（全库同一 w_n/w_p/L）⇒ k = max(s_n, m·s_p)/max(1, m) ≤ max(s_n, s_p)，其中 m = R_p/R_n。",
+    "steps": (
+        "① R_pd(cell) = s_n · (L/w_n)；R_pu(cell) = s_p · (L/w_p) · m。",
+        "② 归一化基准 INV（s_n=s_p=1）⇒ R_INV = max(L/w_n, m·L/w_p)。",
+        "③ k = max(s_n·L/w_n, m·s_p·L/w_p) / max(L/w_n, m·L/w_p)。",
+        "④ 分子 ≤ max(s_n,s_p) · max(L/w_n, m·L/w_p)（逐项取 max 放大）。",
+        "⑤ 约掉公共因子 ⇒ k ≤ max(s_n, s_p)。∎",
+    ),
+    "why_uniform_matters": ("均匀 W 时分子分母的 L/w 因子**同构**，才能约掉。"
+                            "一旦逐单元定制 W，分母（INV 的 W）与分子（该单元的 W）不再是同一个数，"
+                            "上限就打开 —— 这正是「要突破上限必须做 sizing」的代数原因。"),
+    "consequence": "3 个手填值超上限 ⇒ 不是「参数没调好」，是**手填表与均匀几何不相容**。",
+}
+
+#: 教科书 μ_p/μ_n（沿用 P2 的假设值，本仓仍无器件测量）
+WL_MU = MU_RATIO
+
+
+def _scope(cell) -> str:
+    return SCOPE_CELL.get(cell.name, SCOPE.get(cell.family, "NA"))
+
+
+def _series(cell) -> Tuple[float, float]:
+    """(s_n, s_p) —— **最坏路径的串联级数**。
+
+    🔴 并联**不折减**：最坏情况下并联支路只有一路导通（其余关断），
+    把并联当受益是取「典型值」冒充「最坏值」。P2 的 `k_shape` 用的是受益口径，
+    两者不可混用（`k_shape` 负责形状，本函数负责量级）。
+    """
+    s = STRUCT[cell.family]
+    pd, pu = s["pd"], s["pu"]
+    sn = float(cell.n_in) if pd == "n" else float(pd[0] if pd[0] != "n" else cell.n_in)
+    sp = float(cell.n_in) if pu == "n" else float(pu[0] if pu[0] != "n" else cell.n_in)
+    return sn, sp
+
+
+def _r_side(cell, mu: float) -> Tuple[float, float]:
+    """(下拉电阻, 上拉电阻) —— 以 `L/w` 的方块数计，ρ_n 归一为 1。"""
+    sn, sp = _series(cell)
+    l, wn, wp = cell.l_nm, cell.w_n_nm, cell.w_p_nm
+    if not (l and wn and wp):
+        raise ValueError("单元 %s 缺 W/L 数据（`wl_src`=%s）" % (cell.name, cell.wl_src))
+    return sn * l / wn, sp * l / wp / mu
+
+
+def k_geometry(cell, mu: float = WL_MU) -> float:
+    """几何派生的 `k_drive`（相对 INV）。**只看 W/L 与拓扑，不看手填值。**
+
+    🔴 域限制：`_scope(cell) == "NA"` 时抛 `ValueError` —— 用单级模型套 2 级单元
+    会得到「看起来合理」的错数，比报错更危险。
+    """
+    if _scope(cell) == "NA":
+        raise ValueError("单元 %s 不在单级串并联模型适用域（2 级/传输门）" % cell.name)
+    rn, rp = _r_side(cell, mu)
+    inv_rn, inv_rp = _r_side(DC.CELLS["INV"], mu)
+    return max(rn, rp) / max(inv_rn, inv_rp)
+
+
+def ceiling(cell) -> float:
+    """均匀 W 下的**代数上限** `max(s_n, s_p)`（见 `CEILING_PROOF`）。"""
+    sn, sp = _series(cell)
+    return max(sn, sp)
+
+
+def ceiling_scan(cell, lo: float = 0.05, hi: float = 4.0, n: int = 396) -> Dict[str, Any]:
+    """在 μ 上扫一遍，取 `k_geometry` 的最大值 ⇒ 与代数上限对比。
+
+    这是**机核版证明**：如果扫描最大值超过 `ceiling(cell)`，说明定理写错了。
+    """
+    best, best_mu = -1.0, None
+    for i in range(n):
+        mu = lo + (hi - lo) * i / (n - 1)
+        v = k_geometry(cell, mu)
+        if v > best:
+            best, best_mu = v, mu
+    cap = ceiling(cell)
+    return {"cell": cell.name, "family": cell.family, "ceiling": cap,
+            "scan_max": best, "scan_argmax_mu": best_mu,
+            "hand": cell.k_drive,
+            "over_ceiling": cell.k_drive > cap + 1e-9,
+            "scan_within_ceiling": best <= cap + 1e-9,
+            "over_pct": (cell.k_drive / cap - 1.0) * 100.0 if cap else 0.0}
+
+
+def ceiling_report(mu: float = WL_MU) -> Dict[str, Any]:
+    """逐单元：手填值 vs 上限。**违反项与 μ 无关**，这是本批最硬的结论。"""
+    rows, viol = {}, []
+    for name, c in DC.CELLS.items():
+        if _scope(c) == "NA":
+            continue
+        cap = ceiling(c)
+        kat = k_geometry(c, mu)
+        over = c.k_drive > cap + 1e-9
+        rows[name] = {
+            "cell": c.name, "family": c.family, "ceiling": cap,
+            "hand": c.k_drive, "k_at_mu": kat,
+            "dev_at_mu": kat / c.k_drive - 1.0,
+            "over_ceiling": over,
+            "over_pct": (c.k_drive / cap - 1.0) * 100.0 if cap else 0.0,
+        }
+        if over:
+            viol.append(name)
+    return {
+        "mu": mu,
+        "n_in_scope": len(rows),
+        "n_violations": len(viol),
+        "violations": sorted(viol),
+        "cells": rows,
+        "verdict": ("**%d 个手填值超代数上限**（%s）⇒ 它们不可能来自任何均匀 W 的几何，"
+                    "与 μ 取什么值无关" % (len(viol), " / ".join(sorted(viol)))),
+        "hand_table_fits_2params": {
+            "note": ("手填表本身是「每 family 两个参数 (a, b)：k = a + b·(n_series−1)」，"
+                     "15 个自由参数对 18 个单元 —— 拟合残差恒为 0。"
+                     "参数比数据少一半 ⇒ 它本来就不是几何，是**分段线性插值**。"),
+            "free_params": 15, "n_cells": 18,
+        },
+    }
+
+
+def ceiling_bound_check(lo: float = 0.05, hi: float = 4.0, n_mu: int = 60,
+                        n_wp: int = 40) -> Dict[str, Any]:
+    """**定理的机核**：扫 (μ, W_p/W_n) 二维网格，检查 `k / ceiling ≤ 1` 对所有单元成立。
+
+    这是「最强判据 = 通式必须退化为特例」的直接用法：把 W 当自由变量扫，
+    若界被打破，说明证明里那步「约掉公共因子」错了。
+    """
+    worst, worst_cell = 0.0, None
+    for i in range(n_mu):
+        mu = lo + (hi - lo) * i / (n_mu - 1)
+        for j in range(n_wp):
+            wf = 0.2 + (6.0 - 0.2) * j / (n_wp - 1)
+            for name, c in DC.CELLS.items():
+                if _scope(c) == "NA":
+                    continue
+                c2 = DC.Cell(name=c.name, n_in=c.n_in, n_tr=c.n_tr, table=c.table,
+                             n_series=c.n_series, k_drive=c.k_drive, is_seq=c.is_seq,
+                             pins=c.pins, family=c.family,
+                             w_n_nm=c.w_n_nm, w_p_nm=c.w_p_nm * wf, l_nm=c.l_nm,
+                             wl_src=c.wl_src)
+                inv2 = DC.Cell(name="INV", n_in=1, n_tr=2, table=(1, 0), n_series=1,
+                               k_drive=1.0, pins=("a",), family="inv",
+                               w_n_nm=c.w_n_nm, w_p_nm=c.w_n_nm * wf, l_nm=c.l_nm,
+                               wl_src=c.wl_src)
+                rn, rp = _r_side(c2, mu)
+                irn, irp = _r_side(inv2, mu)
+                k = max(rn, rp) / max(irn, irp)
+                ratio = k / ceiling(c)
+                if ratio > worst:
+                    worst, worst_cell = ratio, c.name
+    return {"grids": n_mu * n_wp, "max_ratio_to_ceiling": worst,
+            "worst_cell": worst_cell, "bound_holds": worst <= 1.0 + 1e-9}
+
+
+def implied_mu(cell, lo: float = 0.01, hi: float = 20.0, n: int = 20000) -> Dict[str, Any]:
+    """反解：要让几何模型等于手填值，μ 得取多少？**可解性本身就是判据**。
+
+    三种结局必须分开（混起来就会拿「无解」当「可解」）：
+      · `REACHABLE_MU`   — 能对上，且 μ 被唯一确定（该单元能提供 μ 信息）
+      · `REACHABLE_FREE` — 能对上，但 μ 怎么取都一样（该单元**不能**提供 μ 信息）
+      · `UNREACHABLE`    — 怎么取都对不上（超出可达域）
+    """
+    if _scope(cell) == "NA":
+        return {"cell": cell.name, "status": "OUT_OF_SCOPE", "mu": None,
+                "residual": None, "k_at_mu": None}
+    best = None
+    for i in range(n):
+        mu = lo + (hi - lo) * i / (n - 1)
+        d = abs(k_geometry(cell, mu) - cell.k_drive)
+        if best is None or d < best[0]:
+            best = (d, mu)
+    resid, mu = best
+    lo_v, hi_v = k_geometry(cell, lo), k_geometry(cell, hi)
+    mu_free = abs(hi_v - lo_v) < 1e-9
+    reachable = resid <= 0.01
+    status = ("UNREACHABLE" if not reachable
+              else "REACHABLE_FREE" if mu_free else "REACHABLE_MU")
+    return {"cell": cell.name, "family": cell.family, "hand": cell.k_drive,
+            "mu": (mu if status == "REACHABLE_MU" else None),
+            "residual": resid, "mu_insensitive": mu_free,
+            "status": status, "k_at_mu": k_geometry(cell, mu)}
+
+
+def implied_mu_report() -> Dict[str, Any]:
+    """全库反解：**能解的给出同一个 μ 吗？解不了的差多少？**（三分类互斥）"""
+    rows = {n: implied_mu(c) for n, c in DC.CELLS.items() if _scope(c) != "NA"}
+    by = {}
+    for n, r in rows.items():
+        by.setdefault(r["status"], []).append(n)
+    for k in by:
+        by[k].sort()
+    mus = sorted(r["mu"] for r in rows.values() if r["status"] == "REACHABLE_MU")
+    return {
+        "cells": rows,
+        "by_status": by,
+        "n_in_scope": len(rows),
+        "n_reachable_mu": len(by.get("REACHABLE_MU", [])),
+        "n_reachable_free": len(by.get("REACHABLE_FREE", [])),
+        "n_unreachable": len(by.get("UNREACHABLE", [])),
+        "mu_range": [mus[0], mus[-1]] if mus else None,
+        "mu_spread": (mus[-1] - mus[0]) if mus else None,
+        "textbook_mu": WL_MU,
+        "verdict": ("%d 个可解且**互不相同地**给出 μ ∈ %s（散布 %.2f）；"
+                    "%d 个 μ 无感（不能提供 μ 信息）；%d 个**怎么取都对不上**（%s）"
+                    % (len(mus),
+                       ("[%.3f, %.3f]" % (mus[0], mus[-1])) if mus else "—",
+                       (mus[-1] - mus[0]) if mus else 0.0,
+                       len(by.get("REACHABLE_FREE", [])),
+                       len(by.get("UNREACHABLE", [])),
+                       " / ".join(by.get("UNREACHABLE", [])) or "—")),
+        "implication": ("可解的那组 μ≈0.87~1.00 ⇒ 手填表隐含 **μ_n ≈ μ_p**，"
+                        "而硅里 μ_n/μ_p ≈ 2~3（教科书 μ=%.2f）⇒ 手填表不是从迁移率算出来的；"
+                        "本仓版图 p/n=1:1 也只在 μ≈1 时才算「平衡」—— "
+                        "两件自产的东西在同一个**物理上错的**假设下才自洽。" % WL_MU),
+    }
+
+
+def geometry_report(mu: float = WL_MU) -> Dict[str, Any]:
+    """逐单元：手填 vs 几何（给定 μ）+ 偏差分类。"""
+    rows, devs = {}, []
+    for name, c in DC.CELLS.items():
+        sc = _scope(c)
+        if sc == "NA":
+            rows[name] = {"scope": sc, "hand": c.k_drive, "model": None,
+                          "dev": None, "cls": "OUT_OF_SCOPE"}
+            continue
+        v = k_geometry(c, mu)
+        d = v / c.k_drive - 1.0
+        devs.append(abs(d))
+        rows[name] = {"scope": sc, "hand": c.k_drive, "model": v, "dev": d,
+                      "cls": ("WITHIN_5PCT" if abs(d) <= 0.05 else
+                              "WITHIN_20PCT" if abs(d) <= 0.20 else "STRUCTURAL")}
+    devs.sort()
+    return {
+        "mu": mu, "n_cells": len(rows), "n_in_scope": len(devs),
+        "median_abs_dev": devs[len(devs) // 2] if devs else 0.0,
+        "max_abs_dev": devs[-1] if devs else 0.0,
+        "by_class": {k: sum(1 for r in rows.values() if r["cls"] == k)
+                     for k in ("WITHIN_5PCT", "WITHIN_20PCT", "STRUCTURAL",
+                               "OUT_OF_SCOPE")},
+        "cells": rows,
+    }
+
+
+def balance_report(mu: float = WL_MU) -> Dict[str, Any]:
+    """**版图的 PMOS 加宽了吗？** —— 这是数据层暴露出的第二个问题。
+
+    平衡反相器要求 `R_pu = R_pd`，即 `L/w_p · (1/μ) = L/w_n` ⇒ `w_p/w_n = 1/μ`。
+    本仓版图是 **1:1**（实测 DIFF 高度都是 300nm）。
+    """
+    inv = DC.CELLS["INV"]
+    got = inv.w_p_nm / inv.w_n_nm
+    need = 1.0 / mu
+    rp_over_rn = (inv.w_n_nm / inv.w_p_nm) / mu      # INV 的上拉/下拉电阻比
+    return {
+        "cell": "INV", "w_n_nm": inv.w_n_nm, "w_p_nm": inv.w_p_nm,
+        "pn_ratio": got, "required_for_balanced": need, "mu": mu,
+        "pullup_over_pulldown": rp_over_rn,
+        "balanced": abs(rp_over_rn - 1.0) <= 0.02,
+        "verdict": ("版图实测 p/n = %.2f，而平衡要求 %.2f（μ=%.2f）⇒ **PMOS 未加宽**，"
+                    "上拉电阻是下拉的 **%.2f×** ⇒ 每个单元的驱动都被上拉侧限制，"
+                    "且 NOR/OAI 这类上拉串联的单元受害加倍"
+                    % (got, need, mu, rp_over_rn)),
+        "caveat": ("🔴 只有当 μ 取教科书值 %.2f 时这句话才成立。手填 k 表反解出的 μ≈1 "
+                   "会让 1:1 恰好「平衡」—— 两件本仓自产的东西只在物理上错的假设下自洽，"
+                   "这本身就是「其中至少一个错了」的证据。" % mu),
+    }
+
+
+WL_DISCLOSURE = {
+    "claimable": False,
+    "scope": "DIAGNOSTIC_ONLY",
+    "in_blocking": False,
+    "what": ("补上 W/L 数据（`dcell.Cell.w_n_nm/w_p_nm/l_nm/wl_src`）并给出几何模型、"
+             "代数上限定理、逐单元反解 μ"),
+    "verdict": ("**数据补上了，结论反而更硬**：均匀 W 下 k ≤ max(s_n,s_p)（与 μ 无关），"
+                "3 个手填值超上限 ⇒ 手填表不可能来自任何均匀几何"),
+    "not_claimed": (
+        "① 不改 `k_drive`、不改 `t_intr`、不动主链 9 数（预注册而非实施）"
+        "；② 16/18 个单元的 W 是**规则外推**不是实测"
+        "；③ 不宣称几何模型「更准」—— 它只有 1 个自由参数（μ），却是可证伪的"
+        "；④ `k_drive` 仍在 `unattr` 表"),
+}
+
+#: 若把 `k_drive` 换成几何值（c17 只用 INV + NAND2 ⇒ 只有 NAND2 变）—— **只登记、不实施**
+PREREG["k_drive_geometry"] = {
+    "current": {"INV": 1.00, "NAND2": 1.80},
+    "candidates": {"NAND2@μ=0.40": 1.000, "NAND2@μ=0.80": 1.600, "NAND2@μ=0.95": 1.900},
+    "main_chain_ideal_ps": {"current": 37.192, "μ=0.40": 23.329,
+                            "μ=0.80": 33.726, "μ=0.95": 38.924},
+    "main_chain_delta_pct": {"μ=0.40": -37.3, "μ=0.80": -9.3, "μ=0.95": 4.7},
+    "why_not": ("① `k_drive` 一改，21 条主链锁定判据同时红（`EC-K04` 已实测）；"
+                "② 更根本的是：改 k 的**同时必须改版图**（PMOS 加宽到 1/μ），"
+                "否则归一化基准 INV 自己就是未平衡的 —— 只改数字等于用一个错锚去校另一个数"),
+    "ordering": "先修版图（pMOS sizing）→ 再让 k 由几何派生 → 再预注册主链改口",
+}
+
+
+def wl_self_check() -> Dict[str, Any]:
+    """W/L 层自检：正向 + 反向（每条都要能改坏必报）。"""
+    problems: List[str] = []
+    wl = DC.wl_provenance_summary()
+
+    # ① 数据完整：18 个单元全部有 W/L 出处
+    if wl["n_cells"] != len(DC.CELLS):
+        problems.append("wl_cells_%d_ne_%d" % (wl["n_cells"], len(DC.CELLS)))
+    if wl["n_measured"] != 2:
+        problems.append("measured_%d_ne_2" % wl["n_measured"])
+
+    # ② 上限定理**机核**（二维扫描不得越界）
+    bc = ceiling_bound_check(n_mu=25, n_wp=18)
+    if not bc["bound_holds"]:
+        problems.append("ceiling_broken:%r@%s" % (bc["max_ratio_to_ceiling"], bc["worst_cell"]))
+
+    # ③ 违反项必须**恰好**是那 3 个（多了说明模型错，少了说明判据瞎）
+    cr = ceiling_report()
+    if cr["violations"] != ["NOR2", "NOR3", "OAI21"]:
+        problems.append("violations_%r" % (cr["violations"],))
+
+    # ④ 反向：把 INV 的 PMOS 加宽 2× ⇒ NAND2 的 k 必须变（证明 W 真进了模型）
+    inv = DC.CELLS["INV"]
+    c2 = DC.Cell(name="INV", n_in=1, n_tr=2, table=(1, 0), n_series=1, k_drive=1.0,
+                 pins=("a",), family="inv", w_n_nm=inv.w_n_nm,
+                 w_p_nm=inv.w_p_nm * 2.0, l_nm=inv.l_nm, wl_src=inv.wl_src)
+    rn, rp = _r_side(DC.CELLS["NAND2"], WL_MU)
+    irn, irp = _r_side(c2, WL_MU)
+    widened = max(rn, rp) / max(irn, irp)
+    if abs(widened - k_geometry(DC.CELLS["NAND2"], WL_MU)) < 1e-9:
+        problems.append("w_not_effective")
+
+    # ⑤ 反向：均匀 W 的不变性 —— 两侧同乘一个因子，k 必须**不变**
+    a = k_geometry(DC.CELLS["NAND2"], WL_MU)
+    sc = DC.Cell(name="NAND2", n_in=2, n_tr=4, table=(1, 1, 1, 0), n_series=2,
+                 k_drive=1.8, pins=("a", "b"), family="nand",
+                 w_n_nm=600.0, w_p_nm=600.0, l_nm=50.0, wl_src="RULE_CONSTANT")
+    b = max(*_r_side(sc, WL_MU)) / max(*_r_side(c2.__class__(
+        name="INV", n_in=1, n_tr=2, table=(1, 0), n_series=1, k_drive=1.0,
+        pins=("a",), family="inv", w_n_nm=600.0, w_p_nm=600.0, l_nm=50.0,
+        wl_src="RULE_CONSTANT"), WL_MU))
+    if abs(a - b) > 1e-12:
+        problems.append("uniform_scale_not_invariant:%.6f_vs_%.6f" % (a, b))
+
+    # ⑥ 域保护：`NA` 单元必须抛错（而不是悄悄给个数）
+    try:
+        k_geometry(DC.CELLS["AND2"], WL_MU)
+        problems.append("na_scope_not_guarded")
+    except ValueError:
+        pass
+
+    return {
+        "ok": not problems, "problems": problems,
+        "n_cells": wl["n_cells"], "n_measured": wl["n_measured"],
+        "ceiling_bound": bc["bound_holds"],
+        "violations": cr["violations"],
+        "verdict": WL_DISCLOSURE["verdict"],
+    }

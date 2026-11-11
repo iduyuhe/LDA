@@ -2747,6 +2747,128 @@ def main() -> int:
           " ⇒ μ 真进了模型（不是摆设）" % (_kd_b1, _kd_b2),
           abs(_kd_b1 - _kd_b2) > 0.1)
 
+    # ── W/L 数据层：几何模型 + 代数上限定理（v0.9.403）────────────────────────
+    #   🔴 上一批（P2）说「缺 W/L 与 μ ⇒ 绝对值不可算」。本批把 W/L 补上了，
+    #   于是可以问更狠的问题：**补了数据，手填值能被几何解释吗？** 答案：不能，且可证。
+    _wl_sum = DC.wl_provenance_summary()
+    _wl_sc = DC.library_self_check()
+    _wl_tab = DC.wl_table()
+    _g_cr = KD.ceiling_report()
+    _g_ir = KD.implied_mu_report()
+    _g_bl = KD.balance_report()
+    _g_wsc = KD.wl_self_check()
+
+    # EC-G01 数据层完整 + **出处必须分级**（不许拿「推导的」冒充实测）
+    check("EC-G01 W/L 数据层：%d/%d 有数据（LAYOUT %d · RULE_CONSTANT %d · UNKNOWN %d）· "
+          "自检 %s · `LAYOUT` 名单 %r"
+          % (_wl_sum["n_cells"], len(DC.CELLS), _wl_sum["by_src"].get("LAYOUT", 0),
+             _wl_sum["by_src"].get("RULE_CONSTANT", 0), _wl_sum["by_src"].get("UNKNOWN", 0),
+             _wl_sc["ok"], _wl_sum["measured_cells"]),
+          _wl_sc["ok"] and _wl_sc["problems"] == []
+          and _wl_sum["n_cells"] == len(DC.CELLS) == 18
+          and _wl_sum["by_src"] == {"LAYOUT": 2, "RULE_CONSTANT": 16}
+          and _wl_sum["measured_cells"] == ["INV", "NAND2"]
+          and all(_wl_tab[n]["w_n_nm"] == 300.0 and _wl_tab[n]["l_nm"] == 50.0
+                  for n in _wl_tab))
+
+    # EC-G02 🔴 **两个真源对拍**：数据层的 W/L 必须等于版图实测的 DIFF 高度 / poly 宽
+    #   （数据层若写成「从哪抄来的常量」，这里立刻红 —— 这是唯一能证明 W 是实测的判据）
+    _g_inv_lay = {r.h for r in CL.CELLS["INV_X1"]().rects if r.layer == CL.L_DIFF}
+    _g_nand_lay = {r.h for r in CL.CELLS["NAND2_X1"]().rects if r.layer == CL.L_DIFF}
+    check("EC-G02 数据层 ≡ 版图实测：INV DIFF 高 %r / NAND2 DIFF 高 %r vs 数据层 %r nm · "
+          "poly 宽 %r vs L %r nm"
+          % (sorted(_g_inv_lay), sorted(_g_nand_lay),
+             DC.CELLS["INV"].w_n_nm, CL.RULES["poly_w"], DC.CELLS["INV"].l_nm),
+          _g_inv_lay == {300} and _g_nand_lay == {300}
+          and DC.CELLS["INV"].w_n_nm == 300.0 and DC.CELLS["NAND2"].w_n_nm == 300.0
+          and DC.CELLS["INV"].l_nm == float(CL.RULES["poly_w"]) == 50.0)
+
+    # EC-G03 上限定理**机核**：扫 (μ, W_p/W_n) 二维网格，k / max(s_n,s_p) 不得越界
+    #   🔴 只比 `k/ceiling ≤ 1` 是**循环的**：把 `ceiling` 整体乘 2，比值照样 ≤1。
+    #   所以这里另加一条**独立复算**：上限的实现值必须等于「按 `_series()` 现算的
+    #   max(s_n,s_p)」—— 两条路径算同一个量，任一侧漂移即红。
+    _g_bc = KD.ceiling_bound_check()
+    _g_formula_bad = {n: (KD.ceiling(DC.CELLS[n]), max(KD._series(DC.CELLS[n])))
+                      for n in _g_cr["cells"]
+                      if abs(KD.ceiling(DC.CELLS[n]) - max(KD._series(DC.CELLS[n]))) > 1e-12}
+    check("EC-G03 上限定理 机核：%d 组 (μ, W_p/W_n) 扫描 ⇒ max(k/ceil) = %.13f（≤1+1e-9）· "
+          "上限实现 ≡ 公式 max(s_n,s_p)（失配 %r）· 最紧单元 %s · 证明 %d 步齐备"
+          % (_g_bc["grids"], _g_bc["max_ratio_to_ceiling"], _g_formula_bad,
+             _g_bc["worst_cell"], len(KD.CEILING_PROOF["steps"])),
+          _g_bc["bound_holds"] and _g_formula_bad == {}
+          and _g_bc["max_ratio_to_ceiling"] <= 1.0 + 1e-9
+          and len(KD.CEILING_PROOF["steps"]) == 5
+          and "均匀" in KD.CEILING_PROOF["why_uniform_matters"])
+
+    # EC-G04 🔴 **两侧都要卡**：3 个超上限的「怎么取 μ 都够不到」，6 个「够得到」
+    #   —— 只卡前一半 ⇒ 模型怎么写都行；只卡后一半 ⇒ 抓不到「不可能」的那三个。
+    _g_scan = {n: KD.ceiling_scan(DC.CELLS[n]) for n in _g_cr["cells"]}
+    _g_unreach = sorted(n for n, v in _g_scan.items()
+                        if v["scan_max"] < v["hand"] - 1e-6)
+    _g_reach = sorted(n for n, v in _g_scan.items()
+                      if v["scan_max"] >= v["hand"] - 1e-6)
+    check("EC-G04 超上限 %d 个（%r）: 扫 396 个 μ 的最大值仍够不到手填值；"
+          "其余 %d 个可达（%r）⇒ 模型不是「一律够不到」也不是「怎么都能凑上」"
+          % (len(_g_unreach), _g_unreach, len(_g_reach), _g_reach),
+          _g_unreach == ["NOR2", "NOR3", "OAI21"]
+          and _g_cr["violations"] == ["NOR2", "NOR3", "OAI21"]
+          and len(_g_reach) == 6
+          and all(_g_scan[n]["scan_max"] <= _g_scan[n]["ceiling"] + 1e-9
+                  for n in _g_scan))
+
+    # EC-G05 反解 μ：**三分类互斥**，且解出的 μ 与教科书差 2.5×
+    check("EC-G05 反解 μ：可解 %d（μ ∈ [%.3f, %.3f]，散布 %.3f）· μ 无感 %d（%r）· "
+          "无解 %d（%r）—— 教科书 μ=%.2f **不在**解区间内"
+          % (_g_ir["n_reachable_mu"], _g_ir["mu_range"][0], _g_ir["mu_range"][1],
+             _g_ir["mu_spread"], _g_ir["n_reachable_free"],
+             _g_ir["by_status"].get("REACHABLE_FREE", []), _g_ir["n_unreachable"],
+             _g_ir["by_status"].get("UNREACHABLE", []), _g_ir["textbook_mu"]),
+          _g_ir["n_reachable_mu"] + _g_ir["n_reachable_free"] + _g_ir["n_unreachable"]
+          == _g_ir["n_in_scope"] == 9
+          and _g_ir["by_status"].get("REACHABLE_MU") == ["NAND2", "NAND3", "XNOR2", "XOR2"]
+          and 0.85 <= _g_ir["mu_range"][0] and _g_ir["mu_range"][1] <= 1.02
+          and _g_ir["mu_spread"] < 0.20
+          and not (_g_ir["mu_range"][0] <= _g_ir["textbook_mu"] <= _g_ir["mu_range"][1]))
+
+    # EC-G06 🔴 **保护性约束**：本批**不改值** —— 18 个 k_drive 与主链 9 数一位未动
+    _g_hand = {"INV": 1.00, "BUF": 1.00, "NAND2": 1.80, "NOR2": 2.40, "AND2": 2.10,
+               "OR2": 2.70, "XOR2": 3.00, "XNOR2": 3.00, "MUX2": 1.60, "AOI21": 2.00,
+               "OAI21": 2.40, "NAND3": 2.60, "NOR3": 3.40, "AND3": 2.90, "OR3": 3.60,
+               "DFF": 1.0, "TIEHI": 1.0, "TIELO": 1.0}
+    _g_diff = {n: v for n, v in _g_hand.items()
+               if abs(DC.CELLS[n].k_drive - v) > 1e-12}
+    check("EC-G06 保护性约束（本批只判不改）：18 个 `k_drive` 逐位未动（失配 %r）· "
+          "主链 %.3f µm² · %d/11 · %.3f/%.3f ps · PMOS 平衡=%s（p/n=%.2f）"
+          % (_g_diff, _tb_s["place"]["die_area_um2"], _tb_s["route"]["nets_with_segments"],
+             _tb_t["comb_delay_ideal_ps"], _tb_t["comb_delay_wired_ps"],
+             _g_bl["balanced"], _g_bl["pn_ratio"]),
+          _g_diff == {}
+          and _tb_s["place"]["die_area_um2"] == 52.371
+          and _tb_s["route"]["nets_with_segments"] == 10
+          and _tb_t["comb_delay_ideal_ps"] == 37.192
+          and _tb_t["comb_delay_wired_ps"] == 74.99
+          and _g_bl["balanced"] is False and _g_bl["pn_ratio"] == 1.0)
+
+    # EC-G07 反向探针：W 真进了模型（不是摆设）—— 两条方向相反的探针
+    _g_inv = DC.CELLS["INV"]
+    def _g_mk(nm, wn, wp, fam, n_in, tab, ns):
+        return DC.Cell(name=nm, n_in=n_in, n_tr=2, table=tab, n_series=ns,
+                       k_drive=1.0, pins=("a",), family=fam,
+                       w_n_nm=wn, w_p_nm=wp, l_nm=_g_inv.l_nm, wl_src="RULE_CONSTANT")
+    _g_inv2 = _g_mk("INV", _g_inv.w_n_nm, _g_inv.w_p_nm * 2.0, "inv", 1, (1, 0), 1)
+    _g_n2 = _g_mk("NAND2", 300.0, 300.0, "nand", 2, (1, 1, 1, 0), 2)
+    _g_k_widen = max(*KD._r_side(_g_n2, KD.WL_MU)) / max(*KD._r_side(_g_inv2, KD.WL_MU))
+    _g_k_base = KD.k_geometry(DC.CELLS["NAND2"], KD.WL_MU)
+    _g_inv3 = _g_mk("INV", 600.0, 600.0, "inv", 1, (1, 0), 1)
+    _g_n3 = _g_mk("NAND2", 600.0, 600.0, "nand", 2, (1, 1, 1, 0), 2)
+    _g_k_unif = max(*KD._r_side(_g_n3, KD.WL_MU)) / max(*KD._r_side(_g_inv3, KD.WL_MU))
+    check("EC-G07 反向探针：① INV 的 PMOS 加宽 2× ⇒ NAND2 的 k %.4f→%.4f（**必须变**）；"
+          "② 两侧同乘 2（均匀）⇒ k %.4f→%.4f（**必须不变**）"
+          % (_g_k_base, _g_k_widen, _g_k_base, _g_k_unif),
+          abs(_g_k_widen - _g_k_base) > 1e-3
+          and abs(_g_k_unif - _g_k_base) < 1e-12
+          and _g_wsc["ok"] and _g_wsc["problems"] == [])
+
     print("  [T5/Q4] 可造性判定：宽度下限 **%d nm**（pad %d + 接入 %d）⇒ INV 余 %d nm（%.1f%%）· "
           "NAND2 余 %d nm（%.1f%%）"
           % (_nf_sc["width_floor_nm"], NF.PAD_NM, NF.ACCESS_GAP_NM,

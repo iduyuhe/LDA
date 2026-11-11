@@ -36,8 +36,12 @@ ECORE_CAPABILITY_MANIFEST = [
                       "算出 k 的**形状**并逐单元与手填值比偏差（结论：形状可算、绝对值不可算）",
         "module": "lda_l2.ecore.dkdrive",
         "symbols": ["k_shape", "k_models", "deviation_report", "shape_check",
-                    "self_check", "PREREG"],
-        "introduced_by": "P2 (v0.9.402)", "guard": "run_ecore_s13_smoke.py",
+                    "self_check", "PREREG",
+                    # v0.9.403（W/L 数据层）：几何模型 + 上限定理 + 反解 μ
+                    "k_geometry", "ceiling", "ceiling_report", "ceiling_bound_check",
+                    "implied_mu", "implied_mu_report", "geometry_report",
+                    "balance_report", "wl_self_check", "CEILING_PROOF", "WL_DISCLOSURE"],
+        "introduced_by": "P2 (v0.9.402) · W/L 数据层 (v0.9.403)", "guard": "run_ecore_s13_smoke.py",
     },
     {
         "capability": "单元版图**模板化**：结构公式（代码）+ 校准参数表（数据）⇒ 与手写几何"

@@ -100,6 +100,17 @@ class Cell:
     is_seq: bool = False
     pins: tuple = ()
     family: str = ""
+    #: ── W/L 数据层（v0.9.403 · 新开一批）────────────────────────────────────
+    #: 沟道宽度（nm）。`0.0` = **未知**，出处见 `wl_src`。
+    #: 🔴 这是**数据**不是模型：宽度由版图/单元高度预算决定，不由拓扑推导。
+    w_n_nm: float = 0.0
+    w_p_nm: float = 0.0
+    #: 栅长（nm）。同一库同一 flavor 下全库一致，但仍逐单元登记
+    #: （将来若加 L 变体单元，这里就是唯一落点）。
+    l_nm: float = 0.0
+    #: W/L 的**出处等级**（取值见 `WL_SRC`）。🔴 没有实测就必须写 `UNKNOWN`，
+    #: 不允许用「推导出来的」冒充实测。
+    wl_src: str = "UNKNOWN"
 
     @property
     def area_um2_est(self) -> float:
@@ -123,38 +134,65 @@ def _mk() -> dict:
     def add(name, n_in, n_tr, table, **kw):
         c[name] = Cell(name=name, n_in=n_in, n_tr=n_tr, table=table, **kw)
 
+    # ── W/L 数据层的两个常量（**数据，不是拟合**）───────────────────────────
+    #: 晶体管宽度 = `dcells` 里 DIFF 区的**高度**（沟道宽沿竖直方向）。
+    #: 实测：`INV_X1` 与 `NAND2_X1` 的两块 DIFF 都是 `y: 180..480` ⇒ **300 nm**，
+    #: 且 NMOS/PMOS **同宽**（1:1，无 pMOS 加宽）。
+    W_NM = 300.0
+    #: 栅长 = `dcells.RULES["poly_w"]`（50 nm）。与 DIFF 高度不同量纲，不要混。
+    L_NM = 50.0
+    #: 只有这两个单元有真实版图 ⇒ 它们的 W/L 是 **LAYOUT（实测）**；
+    #: 其余 16 个沿用同一构造常量，属 **RULE_CONSTANT（未验证）**。
+    LAYOUT_CELLS = ("INV", "NAND2")
+
+    def _wl(name, **kw):
+        src = "LAYOUT" if name in LAYOUT_CELLS else "RULE_CONSTANT"
+        return dict(w_n_nm=W_NM, w_p_nm=W_NM, l_nm=L_NM, wl_src=src, **kw)
+
     # 单输入
-    add("INV", 1, 2, (1, 0), n_series=1, k_drive=1.00, pins=("a",), family="inv")
-    add("BUF", 1, 4, (0, 1), n_series=1, k_drive=1.00, pins=("a",), family="inv")
+    add("INV", 1, 2, (1, 0), n_series=1, k_drive=1.00, pins=("a",), family="inv",
+        **_wl("INV"))
+    add("BUF", 1, 4, (0, 1), n_series=1, k_drive=1.00, pins=("a",), family="inv",
+        **_wl("BUF"))
     # 基础双输入
-    add("NAND2", 2, 4, (1, 1, 1, 0), n_series=2, k_drive=1.80, pins=("a", "b"), family="nand")
-    add("NOR2", 2, 4, (1, 0, 0, 0), n_series=2, k_drive=2.40, pins=("a", "b"), family="nor")
-    add("AND2", 2, 6, (0, 0, 0, 1), n_series=2, k_drive=2.10, pins=("a", "b"), family="and")
-    add("OR2", 2, 6, (0, 1, 1, 1), n_series=2, k_drive=2.70, pins=("a", "b"), family="or")
-    add("XOR2", 2, 12, (0, 1, 1, 0), n_series=3, k_drive=3.00, pins=("a", "b"), family="xor")
-    add("XNOR2", 2, 12, (1, 0, 0, 1), n_series=3, k_drive=3.00, pins=("a", "b"), family="xor")
+    add("NAND2", 2, 4, (1, 1, 1, 0), n_series=2, k_drive=1.80, pins=("a", "b"),
+        family="nand", **_wl("NAND2"))
+    add("NOR2", 2, 4, (1, 0, 0, 0), n_series=2, k_drive=2.40, pins=("a", "b"),
+        family="nor", **_wl("NOR2"))
+    add("AND2", 2, 6, (0, 0, 0, 1), n_series=2, k_drive=2.10, pins=("a", "b"),
+        family="and", **_wl("AND2"))
+    add("OR2", 2, 6, (0, 1, 1, 1), n_series=2, k_drive=2.70, pins=("a", "b"),
+        family="or", **_wl("OR2"))
+    add("XOR2", 2, 12, (0, 1, 1, 0), n_series=3, k_drive=3.00, pins=("a", "b"),
+        family="xor", **_wl("XOR2"))
+    add("XNOR2", 2, 12, (1, 0, 0, 1), n_series=3, k_drive=3.00, pins=("a", "b"),
+        family="xor", **_wl("XNOR2"))
     # 复合
     add("MUX2", 3, 12, _t(lambda a, b, s: b if s else a),
-        n_series=2, k_drive=1.60, pins=("a", "b", "s"), family="mux")
+        n_series=2, k_drive=1.60, pins=("a", "b", "s"), family="mux", **_wl("MUX2"))
     add("AOI21", 3, 6, _t(lambda a, b, c: 0 if ((a and b) or c) else 1),
-        n_series=3, k_drive=2.00, pins=("a", "b", "c"), family="aoi")
+        n_series=3, k_drive=2.00, pins=("a", "b", "c"), family="aoi", **_wl("AOI21"))
     add("OAI21", 3, 6, _t(lambda a, b, c: 0 if ((a or b) and c) else 1),
-        n_series=3, k_drive=2.40, pins=("a", "b", "c"), family="oai")
+        n_series=3, k_drive=2.40, pins=("a", "b", "c"), family="oai", **_wl("OAI21"))
     # 三输入
     add("NAND3", 3, 6, _t(lambda a, b, c: 0 if (a and b and c) else 1),
-        n_series=3, k_drive=2.60, pins=("a", "b", "c"), family="nand")
+        n_series=3, k_drive=2.60, pins=("a", "b", "c"), family="nand",
+        **_wl("NAND3"))
     add("NOR3", 3, 6, _t(lambda a, b, c: 0 if (a or b or c) else 1),
-        n_series=3, k_drive=3.40, pins=("a", "b", "c"), family="nor")
+        n_series=3, k_drive=3.40, pins=("a", "b", "c"), family="nor", **_wl("NOR3"))
     add("AND3", 3, 8, _t(lambda a, b, c: 1 if (a and b and c) else 0),
-        n_series=3, k_drive=2.90, pins=("a", "b", "c"), family="and")
+        n_series=3, k_drive=2.90, pins=("a", "b", "c"), family="and", **_wl("AND3"))
     add("OR3", 3, 8, _t(lambda a, b, c: 1 if (a or b or c) else 0),
-        n_series=3, k_drive=3.60, pins=("a", "b", "c"), family="or")
+        n_series=3, k_drive=3.60, pins=("a", "b", "c"), family="or", **_wl("OR3"))
     # 时序
     c["DFF"] = Cell(name="DFF", n_in=2, n_tr=24, table=(), n_series=1,
-                    k_drive=1.0, is_seq=True, pins=("d", "clk"), family="seq")
+                    k_drive=1.0, is_seq=True, pins=("d", "clk"), family="seq",
+                    **_wl("DFF"))
     # 常数
-    add("TIEHI", 0, 2, (1,), n_series=1, k_drive=1.0, pins=(), family="tie")
-    add("TIELO", 0, 2, (0,), n_series=1, k_drive=1.0, pins=(), family="tie")
+    add("TIEHI", 0, 2, (1,), n_series=1, k_drive=1.0, pins=(), family="tie",
+        **_wl("TIEHI"))
+    add("TIELO", 0, 2, (0,), n_series=1, k_drive=1.0, pins=(), family="tie",
+        **_wl("TIELO"))
     return c
 
 
@@ -165,6 +203,51 @@ COMB_CELLS = tuple(k for k, v in CELLS.items() if not v.is_seq and v.n_in > 0)
 
 #: 技术映射的**基元集**：NAND2 + INV 是布尔完备的最小集（成本最低）
 BASE_PRIMS = ("NAND2", "INV")
+
+
+# ---------------------------------------------------------------------------
+# W/L 数据层（v0.9.403）—— **数据出处，不是模型**
+# ---------------------------------------------------------------------------
+#: 出处等级（**只允许这三档**；没有实测就必须写 `UNKNOWN`）
+WL_SRC = {
+    "LAYOUT": "从版图 DIFF 矩形实测（`dcells` 真实几何，可逐位对拍）",
+    "RULE_CONSTANT": "沿用同一构造常量（未逐单元验证 —— 这些单元还没有版图）",
+    "UNKNOWN": "未知（未建模）",
+}
+
+
+def wl_table() -> dict:
+    """逐单元的 W/L + 出处。**这是数据视图，不做任何推导**。
+
+    设计意图：让「有实测」与「沿用常量」在数据层就分开，
+    而不是等到比偏差时才用一句「假设」混过去。
+    """
+    out = {}
+    for name, c in CELLS.items():
+        out[name] = {
+            "w_n_nm": c.w_n_nm, "w_p_nm": c.w_p_nm, "l_nm": c.l_nm,
+            "src": c.wl_src, "family": c.family,
+            "aspect_n": (c.w_n_nm / c.l_nm) if c.l_nm else 0.0,
+            "aspect_p": (c.w_p_nm / c.l_nm) if c.l_nm else 0.0,
+            "pn_ratio": (c.w_p_nm / c.w_n_nm) if c.w_n_nm else 0.0,
+        }
+    return out
+
+
+def wl_provenance_summary() -> dict:
+    """出处分布：`LAYOUT` 只有 2 个 —— 这个数必须如实，不能四舍五入成「都有」。"""
+    cnt = {}
+    for c in CELLS.values():
+        cnt[c.wl_src] = cnt.get(c.wl_src, 0) + 1
+    return {
+        "n_cells": len(CELLS),
+        "by_src": cnt,
+        "n_measured": cnt.get("LAYOUT", 0),
+        "measured_cells": sorted(n for n, c in CELLS.items() if c.wl_src == "LAYOUT"),
+        "note": ("🔴 `LAYOUT` 之外一律**不是实测**：它们沿用同一构造常量，"
+                 "没有版图可对拍。所以「全库 W=300」这句话里只有 2 个单元是证据，"
+                 "另外 16 个是**规则外推**。"),
+    }
 
 
 def cell(name: str) -> Cell:
@@ -303,12 +386,41 @@ def library_self_check(tech: Tech | None = None) -> dict:
     if chain_golden_ps("INV", 0, 1.0, tech) != 0.0:
         problems.append(("golden_zero", chain_golden_ps("INV", 0, 1.0, tech)))
 
+    # ⑦ W/L 数据层自洽（v0.9.403）：**要么是正数，要么显式 UNKNOWN，不许留半截**
+    for name, c in CELLS.items():
+        if c.wl_src not in WL_SRC:
+            problems.append(("wl_src_bad", name, c.wl_src))
+        if c.l_nm <= 0.0:
+            problems.append(("l_zero", name, c.l_nm))
+        if c.w_n_nm < 0.0 or c.w_p_nm < 0.0:
+            problems.append(("w_negative", name, c.w_n_nm, c.w_p_nm))
+        if (c.w_n_nm == 0.0) != (c.wl_src == "UNKNOWN"):
+            # 宽度未知 ⇔ 出处必须是 UNKNOWN。反过来：写了 UNKNOWN 就不许填宽度
+            problems.append(("wl_unknown_mismatch", name, c.w_n_nm, c.wl_src))
+        # 串联器件的栅长必须一致（同一 flavor 只有一个 L）
+        if c.l_nm != CELLS["INV"].l_nm:
+            problems.append(("l_inconsistent", name, c.l_nm, CELLS["INV"].l_nm))
+
+    # ⑧ W/L 的**内部一致性**：同一 family 内 p/n 宽度比必须一致
+    #    （同一套布局规则生成 ⇒ 比例是族的属性，不是单元的属性。
+    #      若哪天有人给某个单元单独改宽，这里会红 —— 那正是需要显式登记的改动）
+    ratio_by_family = {}
+    for name, c in CELLS.items():
+        if c.wl_src == "UNKNOWN" or not c.w_n_nm:
+            continue
+        r = round(c.w_p_nm / c.w_n_nm, 6)
+        ratio_by_family.setdefault(c.family, {}).setdefault(r, []).append(name)
+    for fam, m in sorted(ratio_by_family.items()):
+        if len(m) > 1:
+            problems.append(("pn_ratio_inconsistent", fam, sorted(m)))
+
     return {
         "ok": not problems,
         "problems": problems,
         "n_cells": len(CELLS),
         "n_comb": len(COMB_CELLS),
         "total_tr": sum(c.n_tr for c in CELLS.values()),
+        "wl": wl_provenance_summary(),
     }
 
 
@@ -319,5 +431,14 @@ DCELL_DISCLOSURE = {
     "claimable": False,
     "claimable_reason": "面积/功耗/延时均由一阶模型给出（area_per_tr / r_on / ileak 无可核语料）⇒ MODEL_ESTIMATE，不作签核、不对外比绝对值",
     "not_included": "无标准单元版图（LEF/GDS）· 无多角 PVT · 无 OCV/AOCV · 无噪声/串扰 · 无 EM/IR · 无低功耗单元（电源门控/多阈值）",
-    "verifiable": "真值表长度 · n_tr 拓扑公式 · k_drive 与 n_series 同序 · 金标 0 级恰为 0",
+    "verifiable": "真值表长度 · n_tr 拓扑公式 · k_drive 与 n_series 同序 · 金标 0 级恰为 0 · "
+                  "W/L 出处分级（LAYOUT 的 2 个可与版图逐位对拍）",
+    "wl_layer": {
+        "added": "v0.9.403 · W/L 数据层（`w_n_nm` / `w_p_nm` / `l_nm` / `wl_src`）",
+        "measured": "INV / NAND2（源自 `dcells` 的 DIFF 实测：300nm × 300nm / L=50nm）",
+        "assumed": "其余 16 个沿用同一构造常量（`RULE_CONSTANT`，**未验证**）",
+        "not_claimed": ("① 宽度是**布局决策**，不是拓扑必然 —— 补 W/L 不会让 k_drive 变得可算，"
+                        "只让它变得**可判**；② 全库 p/n = 1:1（**PMOS 未加宽**），"
+                        "这不是「平衡反相器」的尺寸，见 `dkdrive.ceiling_report`"),
+    },
 }

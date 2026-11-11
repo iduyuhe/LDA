@@ -416,6 +416,34 @@ def signoff_ledger(report, netlist=None):
         }
     except Exception as exc:                       # noqa: BLE001
         out["drive_model"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
+
+    # 🔴 v0.9.403（W/L 数据层）：几何模型 + 代数上限定理 + 反解 μ —— 同样只加顶层键。
+    #   结论是**手填表与均匀几何不相容**（3 个值超上限），所以 `k_drive` 仍在 unattr。
+    try:
+        from . import dkdrive as KD
+        from . import dcell as DC
+        _wl = DC.wl_provenance_summary()
+        _cr = KD.ceiling_report()
+        _ir = KD.implied_mu_report()
+        _bl = KD.balance_report()
+        out["drive_geometry"] = {
+            "w_l_provenance": _wl,
+            "n_in_scope": _cr["n_in_scope"],
+            "ceiling_violations": _cr["violations"],
+            "ceiling_statement": ("均匀 W ⇒ k ≤ max(s_n, s_p)（与 μ、与 W 的绝对量无关；"
+                                  "机核：`ceiling_bound_check` 扫 2D 网格不越界）"),
+            "implied_mu": {"by_status": _ir["by_status"],
+                           "range": _ir["mu_range"], "textbook": _ir["textbook_mu"]},
+            "pmos_balanced": _bl["balanced"],
+            "pmos_ratio": _bl["pn_ratio"],
+            "k_drive_source": "hand_filled（几何模型只判不改）",
+            "scope": "DIAGNOSTIC_ONLY",
+            "not_claimed": ("不改 `k_drive`，主链 9 数一位未动；"
+                            "16/18 个单元的 W 是规则外推不是实测；"
+                            "「补了 W/L ⇒ k 可算」**不成立**（3 个值超代数上限）"),
+        }
+    except Exception as exc:                       # noqa: BLE001
+        out["drive_geometry"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
     return out
 
 

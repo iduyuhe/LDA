@@ -83,7 +83,9 @@ from lda_harness.smoke_kit import make_check  # noqa: E402
 
 AN_ELAPSED_MAX_S = 180.0
 #: 85% 布通率档的面积窗口（实测 1691 µm²，相对默认 1152 是 +46%）。
-AREA_85_MAX_UM2 = 1800.0
+#: 🔴 v0.9.404：原来写绝对上限 `1800 µm²` —— 它随单元面积漂（pMOS 加宽后单元 +13%，
+#: 这个数立刻顶穿）。判据要说的是「为拿 85% 布通率要多付多少面积」⇒ 用**倍率**，与尺寸无关。
+AREA_85_MAX_RATIO = 1.45
 #: 「加宽单独做」的崩坏阈值：cols=32 的布通率必须低于 cols=8 的一半。
 SLOW_CH = 1.60
 #: 最优点 cols 的合法区间（随规模漂移，但有界）。
@@ -154,11 +156,13 @@ def main() -> int:
     m85 = DW.min_area_for(G["rows"], 0.85)
     base_area = min(r["area_um2"] for r in G["rows"])
     ok_par = all(rates[i + 1] > rates[i] - 1e-9 for i in range(len(rates) - 1))
+    _m85_ratio = (m85["area_um2"] / base_area) if m85 else 0.0
     check("W5 面积代价：Pareto 前沿 %d 个不劣点、布通率单调；85%% 档最小面积 %.0f µm²"
-          "（+%.0f%% vs %.0f）"
+          "（+%.0f%% vs %.0f ⇒ 倍率 %.2f ≤ %.2f）"
           % (len(par), m85["area_um2"] if m85 else -1,
-             100 * ((m85["area_um2"] / base_area - 1) if m85 else 0), base_area),
-          ok_par and m85 is not None and m85["area_um2"] <= AREA_85_MAX_UM2,
+             100 * ((m85["area_um2"] / base_area - 1) if m85 else 0), base_area,
+             _m85_ratio, AREA_85_MAX_RATIO),
+          ok_par and m85 is not None and _m85_ratio <= AREA_85_MAX_RATIO,
           "85%% 档: %s" % (("%.0f µm² @ cols=%d CH=%.2f (%.1f%%)"
                             % (m85["area_um2"], m85["cols"], m85["ch_um"],
                                100 * m85["route_rate"])) if m85 else "无"))

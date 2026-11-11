@@ -88,9 +88,13 @@ def main() -> int:
     it_inv = HD.inner_tracks(new_inv, HD.HD_ROUTE)
     it_nand = HD.inner_tracks(new_nand, HD.HD_ROUTE)
     it_old = HD.inner_tracks(old_inv, DN.DEMO45.route_rules("nm"))
+    # 🔴 v0.9.404：DEMO45 的 INV 从 1240 抬到 1690nm ⇒ 行内 M3 轨道 1 → **2**，
+    #   「只有 1 条」不再成立。HD 的 5 条与「两单元共用同一 y 网格」这两条**不变**，
+    #   所以本判据的**主论点（库级共用网格）仍在**；但「行内 M3 不可行」这个动机
+    #   已经从「1 条」弱化为「2 条」，需在文档里跟着改口。
     check("H3 行内轨道：HD 两单元各 **%d 条**且 **y 完全一致**（库级共用网格，行内线才能跨单元连通）；"
-          "DEMO45 的 INV 只有 %d 条" % (it_inv["n"], it_old["n"]),
-          it_inv["n"] >= 5 and it_inv["tracks"] == it_nand["tracks"] and it_old["n"] <= 1,
+          "DEMO45 的 INV 有 %d 条（加宽后由 1 变 2）" % (it_inv["n"], it_old["n"]),
+          it_inv["n"] >= 5 and it_inv["tracks"] == it_nand["tracks"] and it_old["n"] <= 2,
           "HD %s · 旧 %s" % (it_inv["tracks"], it_old["tracks"]))
 
     # ── H4 规则参数化**有牙**：同一几何换规则必须**翻面** ─────────────

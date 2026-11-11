@@ -125,10 +125,16 @@ def main() -> int:
     for c, g in gaps.items():
         print("  %-9s 行内最大空隙 %4dnm · 一条 M2 走线需 %.0fnm ⇒ **%d 条** · 余量 %+dnm"
               % (c, g["widest_nm"], g["need_nm"], g["n_tracks"], g["slack_nm"]))
-    check("R2 行内 M2 空间不足（闭式）：%d 种单元的最大空隙都 ≥ %.0fnm 却 **< %.0fnm**"
-          "（只够 1 条轨道，服务不了一行的几十个网）"
-          % (len(gaps), gaps["INV_X1"]["need_nm"], NEED_2_TRACKS_NM),
-          all(g["n_tracks"] <= 1 and g["widest_nm"] < NEED_2_TRACKS_NM for g in gaps.values()),
+    # 🔴 v0.9.404：pMOS 加宽把 NAND2 抬到 1950nm，**引脚位置没动** ⇒ 上方多出 860nm 空带
+    #   ⇒ NAND2 从 1 条变 **2 条**行内 M2（INV 仍 1 条）。结论从「两种单元都只够 1 条」
+    #   收窄成「最窄的 INV 只够 1 条；NAND2 2 条」——**论点仍成立但必须改成实情**：
+    #   一行有几十个网，1~2 条差一个数量级，不足以取代通道布线。
+    check("R2 行内 M2 空间不足（闭式）：%d 种单元最大空隙 %s ⇒ 最多 **%d 条**"
+          "（一行几十个网，1~2 条差一个数量级）"
+          % (len(gaps), {c: g["widest_nm"] for c, g in gaps.items()},
+             max(g["n_tracks"] for g in gaps.values())),
+          all(g["n_tracks"] <= 2 for g in gaps.values())
+          and min(g["n_tracks"] for g in gaps.values()) <= 1,
           "空隙 %s · 需 2 条 %.0fnm" % ({c: g["widest_nm"] for c, g in gaps.items()},
                                         NEED_2_TRACKS_NM))
 

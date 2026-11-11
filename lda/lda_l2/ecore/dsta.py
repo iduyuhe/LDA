@@ -453,7 +453,9 @@ def constraint_layer(nl, tech=None, fo_target=None,
         # ── 可追溯性：每个量的来源符号（禁字面量 DoD 的机核入口）──
         "sources": {
             "clock_period_ps": ["Tech.t_intr_ps", "Tech.r_on_ohm", "Tech.cin_ff",
-                                "FO_TARGET", "Cell.k_drive", "LN2", "OHM_FF_TO_PS"],
+                                "FO_TARGET", "Cell.w_n_nm", "Cell.w_p_nm",
+                                "Cell.l_nm", "Tech.r_sheet_p_over_n", "LN2",
+                                "OHM_FF_TO_PS"],
             "max_fanout": ["FO_TARGET"],
             "max_transition_ps": (["_DEFAULT_SLEW_PS"] if mt_is_asm else
                                   ["Liberty.default_max_transition"]),

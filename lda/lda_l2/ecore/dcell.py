@@ -71,7 +71,11 @@ class Tech:
     name: str = "lda28_est"
     vdd: float = 0.90                 # V · 供电
     cin_ff: float = 1.00              # fF · 每扇入引脚等效电容
-    r_on_ohm: float = 5000.0          # Ω · 单管等效导通电阻（线性区）
+    r_on_ohm: float = 5000.0          # Ω · **标定锚**：参考器件（300/50 nMOS）的导通电阻
+    #: 🔴 v0.9.405：`ρ_p/ρ_n`（= `1/μ_p_over_n`）。电阻按 `R = ρ·L/W` 算之后，这是
+    #: 唯一还需要假设的**器件**量。写成「比值」而不是 μ，是为了让它的物理方向与
+    #: `Q0` 的「×1.05 扰动」一致（比值变大 ⇒ 上拉更弱 ⇒ 必然进延时，可判活）。
+    r_sheet_p_over_n: float = 2.5
     t_intr_ps: float = 2.0            # ps · 单元内在延时（自载翻转）
     area_per_tr_um2: float = 0.040    # µm²/管 · 一阶（含布线余量）
     ileak_na_per_tr: float = 0.05     # nA/管 · 室温漏电
@@ -252,6 +256,75 @@ def wl_provenance_summary() -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# 上拉/下拉拓扑 + 电阻（v0.9.405 · `R = ρ·L/W`）
+# ---------------------------------------------------------------------------
+#: 🔴 **拓扑表归 `dcell`**（这是单元数据，不是判定逻辑）。
+#: `(串联数, 并联数)`；`"n"` = 随 `n_in` 变。v0.9.405 从 `dkdrive` 搬过来 ——
+#: 电阻要按「串联叠加 + 并联不折减（最坏路径）」算，那需要这张表；两处各存一份必漂。
+STRUCT = {
+    "inv": dict(pd=(1, 1), pu=(1, 1)),
+    "nand": dict(pd="n", pu=(1, "n")),
+    "nor": dict(pd=(1, "n"), pu="n"),
+    "and": dict(pd="n", pu=(1, "n")),
+    "or": dict(pd=(1, "n"), pu="n"),
+    "aoi": dict(pd=(2, 1), pu=(2, 1)),
+    "oai": dict(pd=(2, 1), pu=(2, 1)),
+    "xor": dict(pd=(3, 1), pu=(2, 2)),
+    "mux": dict(pd=(2, 1), pu=(2, 2)),
+    "seq": dict(pd=(1, 1), pu=(1, 1)),
+    "tie": dict(pd=(1, 1), pu=(1, 1)),
+}
+
+#: 标定锚：`Tech.r_on_ohm` 指的是**这个尺寸**的 nMOS（= 本库所有单元用的尺寸）
+R_REF_W_NM = 300.0
+R_REF_L_NM = 50.0
+
+
+def series_counts(c: "Cell") -> tuple:
+    """(下拉串联数, 上拉串联数) —— **最坏路径**口径。
+
+    🔴 并联**不折减**：最坏情况下并联支路只有一路导通。把并联当受益是拿「典型值」
+    冒充「最坏值」（`dkdrive.k_shape` 用的是受益口径，两者不可混用）。
+    """
+    st = STRUCT[c.family]
+    out = []
+    for spec in (st["pd"], st["pu"]):
+        if spec == "n":
+            out.append(float(c.n_in))
+        else:
+            out.append(float(c.n_in) if spec[0] == "n" else float(spec[0]))
+    return out[0], out[1]
+
+
+def r_sheet_ohm_sq(tech: Tech | None = None) -> tuple:
+    """(ρ_n, ρ_p) —— 由标定锚反解。**`r_on_ohm` 是「参考器件 300/50 的 R」**，
+    所以 `ρ_n = r_on · W/L`，于是任何 300/50 的 nMOS 都恰好回到 `r_on`。"""
+    tech = tech or DEFAULT_TECH
+    rho_n = tech.r_on_ohm * R_REF_W_NM / R_REF_L_NM
+    return rho_n, rho_n * tech.r_sheet_p_over_n
+
+
+def r_side_ohm(c: "Cell", tech: Tech | None = None) -> tuple:
+    """(下拉电阻, 上拉电阻) —— `R = 串联数 · ρ · L/W`（Ω）。"""
+    tech = tech or DEFAULT_TECH
+    if not (c.l_nm and c.w_n_nm and c.w_p_nm):
+        raise ValueError("单元 %s 缺 W/L 数据（`wl_src`=%s）" % (c.name, c.wl_src))
+    rho_n, rho_p = r_sheet_ohm_sq(tech)
+    sn, sp = series_counts(c)
+    return (sn * rho_n * c.l_nm / c.w_n_nm,
+            sp * rho_p * c.l_nm / c.w_p_nm)
+
+
+def cell_r_ohm(name: str, tech: Tech | None = None) -> float:
+    """单元的**最坏路径等效导通电阻**（Ω）= `max(下拉, 上拉)`。
+
+    🔴 这是 `k_drive` 被几何取代的落点：`k_drive ≡ R_cell / R_INV`，
+    而 `R_INV` 在平衡版图下恰好等于 `Tech.r_on_ohm`（标定锚自洽）。
+    """
+    return max(*r_side_ohm(CELLS[name], tech))
+
+
 def cell(name: str) -> Cell:
     return CELLS[name]
 
@@ -268,14 +341,21 @@ def eval_cell(name: str, ins) -> int:
 
 
 def cell_delay_ps(name: str, load_ff: float, tech: Tech | None = None) -> float:
-    """一阶 RC 延时：`t_intr + k·ln2·R·C_load`。"""
+    """一阶 RC 延时：`t_intr + ln2 · R_cell · C_load`，其中 `R_cell = max(串联·ρ·L/W)`。
+
+    🔴 v0.9.405 **改口**：原来是 `t_intr + k_drive·ln2·r_on·C_load`，`k_drive` 是手填的
+    无量纲系数、`r_on` 是与几何无关的常数 ⇒ **延时对 W/L 完全不敏感**，平衡版图的收益
+    在模型里根本看不见。现在：
+      · `R_cell` 由该单元自己的 `W/L` 与串联数现算（`dcell.cell_r_ohm`）；
+      · `Tech.r_on_ohm` 退化为**标定锚**（参考器件 300/50 的电阻），不再直接乘；
+      · `Cell.k_drive` **不再进延时路径**，只作为历史手填值保留对照（见 `dkdrive`）。
+    """
     # R5-fix：默认值在调用时取，不在 def 时绑定
     if tech is None:
         tech = DEFAULT_TECH
-    c = CELLS[name]
     # Ω × fF = 1e-15 s = 1e-3 ps ⇒ 直接乘换算因子，**不得再乘 1e3**
     # （E34 第一版在这里多乘了 1e3，INV@4fF 报 13864 ps ⇒ 整个 STA 偏大 1000×）
-    return tech.t_intr_ps + c.k_drive * LN2 * tech.r_on_ohm * load_ff * OHM_FF_TO_PS
+    return tech.t_intr_ps + cell_r_ohm(name, tech) * LN2 * load_ff * OHM_FF_TO_PS
 
 
 def cell_area_um2(name: str, tech: Tech | None = None) -> float:

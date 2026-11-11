@@ -44,19 +44,9 @@ from . import dcell as DC
 
 #: 每个 family 的上拉/下拉结构（`"n"` = 随 `n_in` 变，(串联, 并联) = 固定）
 #: 来源：`dcell` 的拓扑注释（nand = N 串联 + P 并联；nor 对偶；and/or = 基门 + INV）
-STRUCT: Dict[str, Dict[str, Any]] = {
-    "inv": dict(pd=(1, 1), pu=(1, 1)),
-    "nand": dict(pd="n", pu=(1, "n")),
-    "nor": dict(pd=(1, "n"), pu="n"),
-    "and": dict(pd="n", pu=(1, "n")),
-    "or": dict(pd=(1, "n"), pu="n"),
-    "aoi": dict(pd=(2, 1), pu=(2, 1)),
-    "oai": dict(pd=(2, 1), pu=(2, 1)),
-    "xor": dict(pd=(3, 1), pu=(2, 2)),
-    "mux": dict(pd=(2, 1), pu=(2, 2)),
-    "seq": dict(pd=(1, 1), pu=(1, 1)),
-    "tie": dict(pd=(1, 1), pu=(1, 1)),
-}
+#: 🔴 v0.9.405：拓扑表已搬进 `dcell.STRUCT`（电阻要用它，属单元数据）。
+#: 这里是**同一个对象的别名**，不是副本 —— 两处各存一份必漂。
+STRUCT: Dict[str, Dict[str, Any]] = DC.STRUCT
 
 #: μ_p/μ_n（**教科书量级假设**，本仓无 μ 字段 ⇒ 登记为 unattr）
 MU_RATIO = 0.40
@@ -304,27 +294,20 @@ def _scope(cell) -> str:
     return SCOPE_CELL.get(cell.name, SCOPE.get(cell.family, "NA"))
 
 
-def _series(cell) -> Tuple[float, float]:
-    """(s_n, s_p) —— **最坏路径的串联级数**。
-
-    🔴 并联**不折减**：最坏情况下并联支路只有一路导通（其余关断），
-    把并联当受益是取「典型值」冒充「最坏值」。P2 的 `k_shape` 用的是受益口径，
-    两者不可混用（`k_shape` 负责形状，本函数负责量级）。
-    """
-    s = STRUCT[cell.family]
-    pd, pu = s["pd"], s["pu"]
-    sn = float(cell.n_in) if pd == "n" else float(pd[0] if pd[0] != "n" else cell.n_in)
-    sp = float(cell.n_in) if pu == "n" else float(pu[0] if pu[0] != "n" else cell.n_in)
-    return sn, sp
+#: 串联级数：直接委托 `dcell`（v0.9.405 起拓扑表只有一份）
+_series = DC.series_counts
 
 
-def _r_side(cell, mu: float) -> Tuple[float, float]:
-    """(下拉电阻, 上拉电阻) —— 以 `L/w` 的方块数计，ρ_n 归一为 1。"""
-    sn, sp = _series(cell)
-    l, wn, wp = cell.l_nm, cell.w_n_nm, cell.w_p_nm
-    if not (l and wn and wp):
-        raise ValueError("单元 %s 缺 W/L 数据（`wl_src`=%s）" % (cell.name, cell.wl_src))
-    return sn * l / wn, sp * l / wp / mu
+def _tech_with_mu(mu: float):
+    """把 μ 变成 `Tech.r_sheet_p_over_n = 1/μ` 的 Tech 副本 —— 电阻只有一条实现路径。"""
+    import dataclasses as _dc
+    return _dc.replace(DC.DEFAULT_TECH, r_sheet_p_over_n=(1.0 / mu))
+
+
+def _r_side(cell, mu: float = None):
+    """(下拉电阻, 上拉电阻) —— 委托 `dcell.r_side_ohm`（Ω）。`mu` 给定时临时改 ρ 比。"""
+    tech = DC.DEFAULT_TECH if mu is None else _tech_with_mu(mu)
+    return DC.r_side_ohm(cell, tech)
 
 
 def k_geometry(cell, mu: float = WL_MU) -> float:
@@ -335,9 +318,10 @@ def k_geometry(cell, mu: float = WL_MU) -> float:
     """
     if _scope(cell) == "NA":
         raise ValueError("单元 %s 不在单级串并联模型适用域（2 级/传输门）" % cell.name)
-    rn, rp = _r_side(cell, mu)
-    inv_rn, inv_rp = _r_side(DC.CELLS["INV"], mu)
-    return max(rn, rp) / max(inv_rn, inv_rp)
+    # 🔴 v0.9.405：数学收归 `dcell.cell_r_ohm`（延时路径用的是同一个函数）——
+    #   判定器与产品**共用一份实现**，这里只做归一化与域检查。
+    tech = _tech_with_mu(mu)
+    return DC.cell_r_ohm(cell.name, tech) / DC.cell_r_ohm("INV", tech)
 
 
 def ceiling(cell) -> float:

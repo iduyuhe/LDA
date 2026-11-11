@@ -556,7 +556,7 @@ def main() -> int:
         "routed": (_st["route"]["nets_with_segments"], _st["route"]["nets_touched"], 10, 11),
         "drc": (_st["drc_lvs"]["drc_violations"], None, 0, None),
         "area": (_st["place"]["die_area_um2"], None, 59.202, None),
-        "delay": (_st["timing"]["comb_delay_wired_ps"], None, 78.358, None),
+        "delay": (_st["timing"]["comb_delay_wired_ps"], None, 86.398, None),
         "def": (_st["def_write"]["bytes"], None, 575, None),
     }
     _bad = {k: v for k, v in _num.items()
@@ -665,7 +665,7 @@ def main() -> int:
           and _cl.get("claimable") is False
           and _st["m1_exit"].get("ok") is True)
 
-    _em_lock = (round(float(_em.get("min_margin_x") or 0.0), 3) == 128.616
+    _em_lock = (round(float(_em.get("min_margin_x") or 0.0), 3) == 141.813
                 and _em.get("n_fail") == 0
                 and _em.get("min_margin_net") == "n16")
     check("S20i 🔴 EM 对外数字逐位锁定：最小裕量 %.3f× @ %s · n_fail %s —— "
@@ -1063,10 +1063,10 @@ def main() -> int:
           and _q_no_verdict(dict(_q, ok=True)) is False
           and _q_no_verdict(dict(_q, **{"pass": 1})) is False)
 
-    check("EC-Q11 🔴 对外主链数字（T2 口径）：59.202 / 78.358 / 575 B / claimable=False / "
+    check("EC-Q11 🔴 对外主链数字（T2 口径）：59.202 / 86.398 / 575 B / claimable=False / "
           "m1_exit.ok=True / failed=3",
           _q_card["placement"]["die_area_um2"] == 59.202
-          and _q_card["timing"]["comb_delay_wired_ps"] == 78.358
+          and _q_card["timing"]["comb_delay_wired_ps"] == 86.398
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True
@@ -1210,7 +1210,7 @@ def main() -> int:
           and _q.get("in_blocking") is False
           and _q.get("scope") == "DIAGNOSTIC_ONLY"
           and _q_card["placement"]["die_area_um2"] == 59.202
-          and _q_card["timing"]["comb_delay_wired_ps"] == 78.358
+          and _q_card["timing"]["comb_delay_wired_ps"] == 86.398
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
@@ -1383,19 +1383,19 @@ def main() -> int:
           and len(_t_zero_gates) == 3)
 
     _t_em_call = _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
-    check("EC-T11 🔴 V5 回归 + 不回灌 `t_c`：`128.616×` / `t_c=125.0` / 主链数字锁定 "
+    check("EC-T11 🔴 V5 回归 + 不回灌 `t_c`：`141.813×` / `t_c=125.0` / 主链数字锁定 "
           "∧ 主链 `em_net_signoff(` 调用未传 `t_c=`",
-          _q_card["em"]["min_margin_x"] == 128.616
+          _q_card["em"]["min_margin_x"] == 141.813
           and _q_card["em"]["assumptions"]["t_c"] == 125.0
           and "t_c=" not in _t_em_call
           and _q_card["placement"]["die_area_um2"] == 59.202
-          and _q_card["timing"]["comb_delay_wired_ps"] == 78.358
+          and _q_card["timing"]["comb_delay_wired_ps"] == 86.398
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
 
     def _t_v5_ok(card):
-        return (card["em"]["min_margin_x"] == 128.616
+        return (card["em"]["min_margin_x"] == 141.813
                 and card["em"]["assumptions"]["t_c"] == 125.0)
 
     check("EC-T11r 反向探针：EM 裕量或 `t_c` 漂移 ⇒ V5 检测器必报",
@@ -1601,13 +1601,13 @@ def main() -> int:
           and (_u.get("assumptions") or {}).get("kappa_is_dimensionless") is True
           and "INCONSISTENT" in str(_u.get("assumptions")))
 
-    check("EC-U10 V5 回归：128.616× / t_c=125.0 / 主链 5 项逐位未变 ∧ "
+    check("EC-U10 V5 回归：141.813× / t_c=125.0 / 主链 5 项逐位未变 ∧ "
           "`em_net_signoff(` 未传 t_c",
-          _q_card["em"]["min_margin_x"] == 128.616
+          _q_card["em"]["min_margin_x"] == 141.813
           and _q_card["em"]["assumptions"]["t_c"] == 125.0
           and "t_c=" not in _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
           and _q_card["placement"]["die_area_um2"] == 59.202
-          and _q_card["timing"]["comb_delay_wired_ps"] == 78.358
+          and _q_card["timing"]["comb_delay_wired_ps"] == 86.398
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
@@ -1755,13 +1755,13 @@ def main() -> int:
           and not any(k in _u for k in ("n_fail", "ok", "pass"))
           and _u_json_ok)
 
-    check("EC-V07 V5 回归：主链 5 项 + 128.616× / t_c=125.0 逐位不变 ∧ "
+    check("EC-V07 V5 回归：主链 5 项 + 141.813× / t_c=125.0 逐位不变 ∧ "
           "`em_net_signoff(` 未传 t_c（EC-B4.5 冻结仍生效）",
-          _q_card["em"]["min_margin_x"] == 128.616
+          _q_card["em"]["min_margin_x"] == 141.813
           and _q_card["em"]["assumptions"]["t_c"] == 125.0
           and "t_c=" not in _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
           and _q_card["placement"]["die_area_um2"] == 59.202
-          and _q_card["timing"]["comb_delay_wired_ps"] == 78.358
+          and _q_card["timing"]["comb_delay_wired_ps"] == 86.398
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
@@ -1781,7 +1781,12 @@ def main() -> int:
     #
     # 🔴 观测向量必须**多维**：只看延时会把 `W_MIN`（只影响 DRC）、
     #   `area_per_tr`（只影响面积）误判为死。
-    _Q0_OBS = ("area", "rout", "wired", "drc", "em")
+    #: 🔴 v0.9.405 扩第 6 维：**INV 单链延时**（4 级 @1fF，闭式）。
+    #   理由：`R = ρ·L/W` 之后 `Tech.r_sheet_p_over_n`（ρ_p/ρ_n）只在**上拉主导**时进延时，
+    #   而 c17 的关键路径全是 NAND2（下拉主导）⇒ 少这一维，ρ 比就被判「死参数」。
+    #   判据看不见它 ≠ 它不重要：**要扩观测向量，不是把参数藏起来**。
+    #   INV 是平衡的（上下拉等阻），任何 ρ_p 变动都会打破平局 ⇒ 这一维能看见它。
+    _Q0_OBS = ("area", "rout", "wired", "drc", "em", "inv_chain")
     # 死参数登记表（棘轮：只减不增）。每条都有 owner，不是"忘了"。
     # 🔴 Q2（v0.9.396）实测变化 —— 11 → 7：
     #   · **转 live（3）**：`ddetail.VIA` / `ddrc_lvs.ENC`（`pad_half()` 改成函数后改真源
@@ -1805,7 +1810,8 @@ def main() -> int:
         return (_s["place"]["die_area_um2"], _s["route"]["nets_with_segments"],
                 _s["timing"]["comb_delay_wired_ps"],
                 sum(_s["drc_lvs"]["drc_by_rule"].values()),
-                _s["em"]["min_margin_x"])
+                _s["em"]["min_margin_x"],
+                DC.chain_golden_ps("INV", 4, 1.0))     # 第 6 维：INV 单链（见 `_Q0_OBS`）
 
     _q0_mods = {"ddetail": DET, "dpnr": P, "ddrc_lvs": DL}
     _q0_geo = [("dproc", m, a) for (m, a) in DP.TOUCHED]
@@ -1845,8 +1851,8 @@ def main() -> int:
           len(_q0_live) + len(_q0_dead) == _q0_all)
     check("Q0-c 死参数集合 == 登记表（棘轮·只减不增，现 %d 个）" % len(_Q0_DEAD),
           frozenset(_q0_dead) == _Q0_DEAD)
-    check("Q0-d 观测向量 %d 维（≥4：面积/布通/延时/DRC/EM）" % len(_Q0_OBS),
-          len(_Q0_OBS) >= 4)
+    check("Q0-d 观测向量 %d 维（面积/布通/延时/DRC/EM + INV 单链）" % len(_Q0_OBS),
+          len(_Q0_OBS) >= 6)
     check("Q0-e 扰动后逐位还原（dproc.diff ∅ ∧ 观测向量相等）",
           DP.diff(_q0_snap) == [] and _q0_observe() == _q0_base)
     print("  [Q0] 可观测性：live %d / dead %d（登记表 %d）· 清单由 TOUCHED+Tech 枚举"
@@ -1944,13 +1950,13 @@ def main() -> int:
         nl, comb_delay_ideal_ps=_tb_s["timing"]["comb_delay_ideal_ps"],
         comb_delay_wired_ps=_tb_s["timing"]["comb_delay_wired_ps"])
     # S1a-a：同一公式在**标准 c17**（6×NAND2）上必须复现规划预注册的 62.145 ps；
-    #        本仓 c17 只有 53.827，差额 8.318 全部来自 `g23` 是 INV（已在 S13b 登记的
+    #        本仓 c17 只有 57.986，差额 10.397 全部来自 `g23` 是 INV（已在 S13b 登记的
     #        TYPE_MISMATCH）—— 两个数都给，不许只报有利的那个。
-    check("S1a-a 预注册复现：标准 c17（3×NAND2）T_ref=%.6f ps（预注册 62.145）∧ "
+    check("S1a-a 预注册复现：标准 c17（3×NAND2）T_ref=%.6f ps（预注册 68.383；v0.9.405 换公式后重定）∧ "
           "本仓 c17=%.6f ps（g23 为 INV，已登记差异）"
           % (_c_std["clock_period_ps"], _c_loc["clock_period_ps"]),
-          abs(_c_std["clock_period_ps"] - 62.144921625355565) < 1e-9
-          and abs(_c_loc["clock_period_ps"] - 53.82715545863622) < 1e-9
+          abs(_c_std["clock_period_ps"] - 68.38324625039507) < 1e-9
+          and abs(_c_loc["clock_period_ps"] - 57.986038541995896) < 1e-9
           and _c_loc["n_stages"] == 3 and _c_loc["dff_on_path"] == 0)
 
     # S1a-b 可追溯（禁字面量）：门禁侧**显式展开** `t_intr + k·ln2·R·C` 再累加，
@@ -1958,19 +1964,28 @@ def main() -> int:
     _tb_tech = DC.DEFAULT_TECH
     _tb_fo = _c_loc["fo_target"]
     _tb_ld = _tb_fo * _tb_tech.cin_ff
-    _tb_re = sum(_tb_tech.t_intr_ps
-                 + DC.CELLS[g.cell].k_drive * DC.LN2 * _tb_tech.r_on_ohm * _tb_ld
-                 * DC.OHM_FF_TO_PS
-                 for g in ST.longest_path_gates(nl) if g.cell != "DFF")
+    # 🔴 v0.9.405：展开式跟着改口 —— `k_drive·r_on` → `R_cell = max(串联·ρ·L/W)`。
+    #   本条的意义就是「不调产品函数、自己按定义式写一遍」，所以必须逐字跟着改。
+    _tb_rho_n = _tb_tech.r_on_ohm * DC.R_REF_W_NM / DC.R_REF_L_NM
+    _tb_rho_p = _tb_rho_n * _tb_tech.r_sheet_p_over_n
+    _tb_re = 0.0
+    for _g in ST.longest_path_gates(nl):
+        if _g.cell == "DFF":
+            continue
+        _cc = DC.CELLS[_g.cell]
+        _sn, _sp = DC.series_counts(_cc)
+        _r = max(_sn * _tb_rho_n * _cc.l_nm / _cc.w_n_nm,
+                 _sp * _tb_rho_p * _cc.l_nm / _cc.w_p_nm)
+        _tb_re += _tb_tech.t_intr_ps + _r * DC.LN2 * _tb_ld * DC.OHM_FF_TO_PS
     check("S1a-b 可追溯：门禁显式展开复算 %.9f == 产品 %.9f（禁字面量；仅 Tech+拓扑+FO）"
           % (_tb_re, _c_loc["clock_period_ps"]), _tb_re == _c_loc["clock_period_ps"])
 
     # S1a-c 值锁定：三个数逐位（T_ref / slack ideal / slack wired）。
     check("S1a-c 数值锁定（T2 口径）：T_ref=%.9f ∧ slack(ideal)=%.9f ∧ slack(wired)=%.9f"
           % (_c_loc["clock_period_ps"], _c_loc["slack_ideal_ps"], _c_loc["slack_wired_ps"]),
-          abs(_c_loc["clock_period_ps"] - 53.82715545863622) < 1e-9
-          and abs(_c_loc["slack_ideal_ps"] - 16.63515545863622) < 1e-9
-          and abs(_c_loc["slack_wired_ps"] + 24.53084454136378) < 1e-9)
+          abs(_c_loc["clock_period_ps"] - 57.986038541995896) < 1e-9
+          and abs(_c_loc["slack_ideal_ps"] - 17.329038541995899) < 1e-9
+          and abs(_c_loc["slack_wired_ps"] + 28.411961458004100) < 1e-9)
 
     # S1a-d 反向探针：`FO_target` 必须**真被消费** —— 改成 1 / 4 时 T_ref 必变且
     #      与手算吻合（FO1 21.9424 / FO4 69.7695）。写死常数则这三个数相同 ⇒ 红。
@@ -1980,8 +1995,8 @@ def main() -> int:
           % (_c1["clock_period_ps"], _c_loc["clock_period_ps"], _c4["clock_period_ps"]),
           len({round(_c1["clock_period_ps"], 9), round(_c_loc["clock_period_ps"], 9),
                round(_c4["clock_period_ps"], 9)}) == 3
-          and abs(_c1["clock_period_ps"] - 21.942385152878742) < 1e-9
-          and abs(_c4["clock_period_ps"] - 69.76954061151497) < 1e-9)
+          and abs(_c1["clock_period_ps"] - 23.328679513998637) < 1e-9
+          and abs(_c4["clock_period_ps"] - 75.314718055994533) < 1e-9)
 
     # S1a-e 判别力**元**判据：T1 只登记、不裁决（规划 §3-DoD.2）。
     #      legacy 上 FO3 两侧 slack 均 > 0 ⇒ 无判别力（**这是登记，不是失败**）；
@@ -2032,8 +2047,8 @@ def main() -> int:
           and _tb_s["route"]["nets_with_segments"] == 10
           and _tb_s["route"]["nets_touched"] == 11
           and _tb_s["route"]["nets_failed"] == 0
-          and _tb_t["comb_delay_ideal_ps"] == 37.192
-          and _tb_t["comb_delay_wired_ps"] == 78.358
+          and _tb_t["comb_delay_ideal_ps"] == 40.657
+          and _tb_t["comb_delay_wired_ps"] == 86.398
           and _tb_s["drc_lvs"]["drc_violations"] == 0
           and _tb_s["drc_lvs"]["lvs_problems"] == 0
           and _tb_s["def_write"]["bytes"] == 575
@@ -2044,7 +2059,7 @@ def main() -> int:
           and _tb_b["drc_lvs"]["lvs_unique_pairs"] == 43)
     print("  [Q1] `short_via` 加层相邻（%d 孔层 × `VIA_BRIDGE`）· 主链 0 / 旧链 105 条不动 · "
           "探针 真短路必报 / 误报必不报 / 未知孔层仍报" % len(DL.VIA_BRIDGE))
-    print("  [S1] T_ref=%.3f ps（标准 c17 口径 62.145；本仓 g23=INV）· max_fanout=%.1f · "
+    print("  [S1] T_ref=%.3f ps（标准 c17 口径 68.383；本仓 g23=INV）· max_fanout=%.1f · "
           "max_transition=%.1f（假设）· 判别力=%s（T1 登记，T2 裁决）"
           % (_c_loc["clock_period_ps"], _c_loc["max_fanout"],
              _c_loc["max_transition_ps"], _c_loc["discriminates"]))
@@ -2091,14 +2106,22 @@ def main() -> int:
 
     # EC-W03r：反向 —— 把 `t_ref` 的独立路径换成"抄产品"，两条相等就成了自证。
     #   用**错误公式**（漏掉 `t_intr`）复算 ⇒ 必须与产品不等，证明这条判据能分辨两条路径。
-    _pv_tref_bad = sum(DC.CELLS[g.cell].k_drive * DC.LN2 * DC.DEFAULT_TECH.r_on_ohm
-                       * ST.FO_TARGET * DC.DEFAULT_TECH.cin_ff * DC.OHM_FF_TO_PS
-                       for g in ST.longest_path_gates(nl))
-    check("EC-W03r 反向探针：漏掉 `t_intr` 的公式给出 %.6f（差 %.6f ps）⇒ 独立重算**真在算**，"
-          "不是把产品值抄过来" % (_pv_tref_bad, _pv_tref_ind - _pv_tref_bad),
-          abs(_pv_tref_bad - _pv_cl["clock_period_ps"]) > 1.0
-          and abs((_pv_tref_ind - _pv_tref_bad)
-                  - len(ST.longest_path_gates(nl)) * DC.DEFAULT_TECH.t_intr_ps) < 1e-9)
+    # 🔴 v0.9.405 换公式后，这里升成**双探针**（比原来更强）：
+    #   ① 漏掉 `t_intr` 的几何式 ⇒ 与产品值之差必须**恰好**是 n·t_intr；
+    #   ② **改口前**的 `k_drive·r_on` 式 ⇒ 与产品值必须显著不同（证明公式真换了，不是抄）。
+    _pv_ld = ST.FO_TARGET * DC.DEFAULT_TECH.cin_ff
+    _pv_path = list(ST.longest_path_gates(nl))
+    _pv_geom_nt = sum(DC.cell_r_ohm(g.cell) * DC.LN2 * _pv_ld * DC.OHM_FF_TO_PS
+                      for g in _pv_path)
+    _pv_old_formula = sum(DC.CELLS[g.cell].k_drive * DC.LN2 * DC.DEFAULT_TECH.r_on_ohm
+                          * _pv_ld * DC.OHM_FF_TO_PS for g in _pv_path)
+    check("EC-W03r 双反向探针：① 漏 `t_intr` 的几何式 %.6f（差 %.6f = n·t_intr）；"
+          "② 改口前的 `k·r_on` 式 %.6f（与产品差 %.6f ⇒ 公式确实换了，不是抄）"
+          % (_pv_geom_nt, _pv_tref_ind - _pv_geom_nt, _pv_old_formula,
+             abs(_pv_tref_ind - _pv_old_formula)),
+          abs((_pv_tref_ind - _pv_geom_nt)
+              - len(_pv_path) * DC.DEFAULT_TECH.t_intr_ps) < 1e-9
+          and abs(_pv_old_formula - _pv_cl["clock_period_ps"]) > 1.0)
 
     # EC-W04：`dead_rules` 必须**空**（T2 让 `W_MIN` 派生自 `W_ROUTE`），且棘轮方向可证伪
     _pv_dead_fake = PV.provenance_audit(tables={"dead_rules": {"W_MIN": {"why": "伪造"}}})
@@ -2219,8 +2242,8 @@ def main() -> int:
              _tb_s["m1_exit"]["ok"]),
           _tb_s["place"]["die_area_um2"] == 59.202
           and _tb_s["route"]["nets_with_segments"] == 10
-          and _tb_t["comb_delay_ideal_ps"] == 37.192
-          and _tb_t["comb_delay_wired_ps"] == 78.358
+          and _tb_t["comb_delay_ideal_ps"] == 40.657
+          and _tb_t["comb_delay_wired_ps"] == 86.398
           and _tb_s["drc_lvs"]["drc_violations"] == 0
           and _tb_s["drc_lvs"]["lvs_problems"] == 0
           and _tb_s["def_write"]["bytes"] == 575
@@ -2282,8 +2305,8 @@ def main() -> int:
              _tb_s["def_write"]["bytes"], _tb["claimability"]["claimable"],
              _tb_s["m1_exit"]["ok"], _lib_t_off["lib_chain"]),
           _lib_t_off["lib_chain"] == "closed"
-          and _lib_t_off["comb_delay_ideal_ps"] == 37.192
-          and _lib_t_off["comb_delay_wired_ps"] == 78.358
+          and _lib_t_off["comb_delay_ideal_ps"] == 40.657
+          and _lib_t_off["comb_delay_wired_ps"] == 86.398
           and _tb_s["place"]["die_area_um2"] == 59.202
           and _tb_s["route"]["nets_with_segments"] == 10
           and _tb_s["drc_lvs"]["drc_violations"] == 0
@@ -2378,10 +2401,10 @@ def main() -> int:
           and _lib_pf_sta.comb_delay_ps == _lib_a1.comb_delay_ps)
 
     # EC-X08 🔴 出处翻转而数字不变：`max_transition` 从「假设」变「库数据」
-    _lib_c0 = ST.constraint_layer(nl, comb_delay_ideal_ps=37.192,
-                                  comb_delay_wired_ps=78.358)
-    _lib_c1 = ST.constraint_layer(nl, comb_delay_ideal_ps=37.192,
-                                  comb_delay_wired_ps=78.358, lib=_lib_l2)
+    _lib_c0 = ST.constraint_layer(nl, comb_delay_ideal_ps=40.657,
+                                  comb_delay_wired_ps=86.398)
+    _lib_c1 = ST.constraint_layer(nl, comb_delay_ideal_ps=40.657,
+                                  comb_delay_wired_ps=86.398, lib=_lib_l2)
     check("EC-X08 出处翻转而数字不变：`max_transition` %.1f → %.1f ps · "
           "`is_assumption` %s → %s · source `%s` → `%s` · 判别力 %s→%s"
           % (_lib_c0["max_transition_ps"], _lib_c1["max_transition_ps"],
@@ -2401,7 +2424,7 @@ def main() -> int:
     #   因为它零改口且规划 DoD 明确要求「至少报三组而非一组」。
     _cn = ST.signoff_corners(nl, wire_load_ff=_wl2)
     _cn_tt = _cn["corners"]["tt"]
-    # 🔴 **表示差异 vs 真差异**：report 里的 `comb_delay_*` 是 **3 位取整**（37.192 / 78.358），
+    # 🔴 **表示差异 vs 真差异**：report 里的 `comb_delay_*` 是 **3 位取整**（40.657 / 86.398），
     #   而 `signoff_corners` 给的是未取整值（37.191623125 / 74.989632028）。
     #   拿取整值做「逐位相等」判据 ⇒ 假红（差值 8.7e-4 全是舍入）。故此处**现算一份未取整**。
     _cn_pl = ST.FO_PORT * DC.DEFAULT_TECH.cin_ff
@@ -2452,7 +2475,7 @@ def main() -> int:
           % (_cn["spread_pct"]["t_ref_ps"], _cn["spread_pct"]["ideal_ps"],
              _cn["spread_pct"]["wired_ps"]),
           _cn["spread_pct"]["t_ref_ps"] > _cn["spread_pct"]["wired_ps"] > 0
-          and abs(_cn["spread_pct"]["t_ref_ps"] - 44.427) < 0.01)
+          and abs(_cn["spread_pct"]["t_ref_ps"] - 44.826) < 0.01)
 
     # EC-Y05 🔴🔴 **结构性发现**：三个角 slack(wired) 全为负，且 span 只有 ~3 ps
     #   而 T_ref 散布 44.4% ⇒ **违例的根因不是 corner**，是 FO_target=3 的负载假设。
@@ -2463,7 +2486,10 @@ def main() -> int:
              _cn["slack_wired"]["span_ps"], _cn["spread_pct"]["t_ref_ps"]),
           _cn["slack_wired"]["all_negative"] is True
           and _cn["slack_wired"]["n_negative"] == _cn["slack_wired"]["n_corners"] == 3
-          and _cn["slack_wired"]["span_ps"] < 5.0
+          # 🔴 v0.9.405：原来写 `span < 5.0 ps` —— 那是拟合旧几何的魔数（新值 5.058 就假红）。
+          #   要说的性质是「corner 只解释了违例的一小部分」⇒ 用**比值**：span 与最轻违例之比。
+          and _cn["slack_wired"]["span_ps"] < 0.25 * abs(
+              max(_cn["corners"][k]["slack_wired_ps"] for k in _cn["corners_order"]))
           and _cn["spread_pct"]["t_ref_ps"] > 40.0)
 
     # EC-Y06 反例实证：网级 RC 合计只占总延时的 0.035% ⇒ **「对线做 corner」等于没做**
@@ -2615,8 +2641,8 @@ def main() -> int:
           and _tb_s["route"]["nets_with_segments"] == 10
           and _tb_s["drc_lvs"]["drc_violations"] == 0
           and _tb_s["drc_lvs"]["lvs_problems"] == 0
-          and _tb_t["comb_delay_ideal_ps"] == 37.192
-          and _tb_t["comb_delay_wired_ps"] == 78.358
+          and _tb_t["comb_delay_ideal_ps"] == 40.657
+          and _tb_t["comb_delay_wired_ps"] == 86.398
           and _tb_s["def_write"]["bytes"] == 575
           and _tb["claimability"]["claimable"] is False
           and _tb_s["m1_exit"]["ok"] is True
@@ -2733,15 +2759,15 @@ def main() -> int:
              DC.DEFAULT_TECH.t_intr_ps),
           _tb_s["place"]["die_area_um2"] == 59.202
           and _tb_s["route"]["nets_with_segments"] == 10
-          and _tb_t["comb_delay_ideal_ps"] == 37.192
-          and _tb_t["comb_delay_wired_ps"] == 78.358
+          and _tb_t["comb_delay_ideal_ps"] == 40.657
+          and _tb_t["comb_delay_wired_ps"] == 86.398
           and DC.DEFAULT_TECH.t_intr_ps == 2.0)
 
     # EC-K05 **预注册**：若采用模型值，主链会变多少（只登记，不实施）
     _kd_ti = KD.PREREG["t_intr_ps"]["candidates"]
     _kd_mc = KD.PREREG["main_chain_if_adopted"]
     check("EC-K05 预注册（未实施）：`t_intr` 2.0 → %s ps（三候选，缺器件数据）⇒ "
-          "主链 ideal 37.192 → %s ps（%s）—— 改它连带动 `T_ref`/slack/三角，属**独立发布**"
+          "主链 ideal 40.657 → %s ps（%s）—— 改它连带动 `T_ref`/slack/三角，属**独立发布**"
           % (list(_kd_ti.values()), list(_kd_mc["ideal_ps"].values())[1:],
              ["+%.1f%%" % v for v in list(_kd_mc["delta_pct"].values())[1:]]),
           len(_kd_ti) == 3
@@ -2874,8 +2900,8 @@ def main() -> int:
           _g_diff == {}
           and _tb_s["place"]["die_area_um2"] == 59.202
           and _tb_s["route"]["nets_with_segments"] == 10
-          and _tb_t["comb_delay_ideal_ps"] == 37.192
-          and _tb_t["comb_delay_wired_ps"] == 78.358
+          and _tb_t["comb_delay_ideal_ps"] == 40.657
+          and _tb_t["comb_delay_wired_ps"] == 86.398
           and _g_bl["balanced"] is True
           and abs(_g_bl["pn_ratio"] - CL.P_RATIO) < 1e-9)
 
@@ -2904,6 +2930,22 @@ def main() -> int:
           abs(_g_k_widen - _g_k_base) > 1e-3
           and abs(_g_k_unif - _g_k_base) < 1e-12
           and _g_wsc["ok"] and _g_wsc["problems"] == [])
+
+    # EC-G08 🔴 v0.9.405 **平衡条件跨真源对拍**：`R = ρ·L/W` 之后，同一个 μ 有两处落点 ——
+    #   版图的 `p/n` 尺寸比（`dcells`）与 `Tech.r_sheet_p_over_n`（电阻比）。
+    #   **改一个不改另一个，就必须红**：否则「版图按 μ 标定」这句话无从验证。
+    #   三条一起断：① 两处比值相等；② INV 上下拉**等阻**（平衡的直接后果）；③ INV 的 R
+    #   恰好等于 `r_on_ohm`（标定锚自洽 —— 保证「换公式不白送速度」）。
+    _g_inv_side = DC.r_side_ohm(DC.CELLS["INV"])
+    _g_pn_lay = _g_inv_lay[1] / _g_inv_lay[0]
+    check("EC-G08 平衡条件跨真源：版图 p/n = **%.2f** ≡ `Tech.r_sheet_p_over_n` = **%.2f** · "
+          "INV 上下拉 %s Ω **等阻** · INV R = **%.0f Ω** = `r_on_ohm`（标定锚自洽）"
+          % (_g_pn_lay, DC.DEFAULT_TECH.r_sheet_p_over_n,
+             ("%.1f / %.1f" % _g_inv_side), DC.cell_r_ohm("INV")),
+          abs(_g_pn_lay - DC.DEFAULT_TECH.r_sheet_p_over_n) < 1e-9
+          and abs(_g_pn_lay - CL.P_RATIO) < 1e-9
+          and abs(_g_inv_side[0] - _g_inv_side[1]) < 1e-9
+          and abs(DC.cell_r_ohm("INV") - DC.DEFAULT_TECH.r_on_ohm) < 1e-9)
 
     print("  [T5/Q4] 可造性判定：宽度下限 **%d nm**（pad %d + 接入 %d）⇒ INV 余 %d nm（%.1f%%）· "
           "NAND2 余 %d nm（%.1f%%）"

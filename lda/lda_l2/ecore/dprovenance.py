@@ -120,9 +120,11 @@ def derivable_table() -> Dict[str, Dict[str, Any]]:
         "timing.t_ref": {
             "recorded": None,     # 依赖网表，由 `t_ref_for()` 现算；此处只登记公式
             "unit": "ps",
-            "formula": "Σ_{i∈L_top}( t_intr + k_drive(i)·ln2·R_on·FO_target·cin_ff )",
-            "depends_on": ("Tech.t_intr_ps", "Tech.r_on_ohm", "Tech.cin_ff",
-                           "dsta.FO_TARGET", "dcell.Cell.k_drive"),
+            "formula": ("Σ_{i∈L_top}( t_intr + ln2·max(s_n·ρ_n·L/W_n, s_p·ρ_p·L/W_p)"
+                        "·FO_target·cin_ff )"),
+            "depends_on": ("Tech.t_intr_ps", "Tech.r_on_ohm", "Tech.r_sheet_p_over_n",
+                           "Tech.cin_ff", "dsta.FO_TARGET",
+                           "dcell.Cell.w_n_nm", "dcell.Cell.w_p_nm", "dcell.Cell.l_nm"),
             "recompute": None,    # 需要网表参数 ⇒ 见 `t_ref_for(nl)`
         },
         "geom.scales_max": {
@@ -141,12 +143,20 @@ def t_ref_for(netlist) -> float:
     🔴 这条是 U-0 的要求：出处必须能**独立重算**。直接返回 `constraint_layer()["clock_period_ps"]`
     等于用被检验者证明被检验者（`slack` 自证的同一形态）。
     """
+    # 🔴 v0.9.405 改口：延时不再走 `k_drive · r_on`，改成 `R_cell · ln2 · C`。
+    #   本条是**独立重算路径**（K2），所以这里自己按定义式再写一遍，
+    #   **不调** `dcell.cell_delay_ps` / `cell_r_ohm` —— 否则就是用被检验者证明被检验者。
+    rho_n = DC.DEFAULT_TECH.r_on_ohm * DC.R_REF_W_NM / DC.R_REF_L_NM
+    rho_p = rho_n * DC.DEFAULT_TECH.r_sheet_p_over_n
+    c_load = ST.FO_TARGET * DC.DEFAULT_TECH.cin_ff
     total = 0.0
     for g in ST.longest_path_gates(netlist):
-        k = DC.CELLS[g.cell].k_drive
+        c = DC.CELLS[g.cell]
+        s_pd, s_pu = DC.series_counts(c)          # 最坏路径串联数（下拉 / 上拉）
+        r_pd = s_pd * rho_n * c.l_nm / c.w_n_nm
+        r_pu = s_pu * rho_p * c.l_nm / c.w_p_nm
         total += (DC.DEFAULT_TECH.t_intr_ps
-                  + k * DC.LN2 * DC.DEFAULT_TECH.r_on_ohm
-                  * ST.FO_TARGET * DC.DEFAULT_TECH.cin_ff * DC.OHM_FF_TO_PS)
+                  + max(r_pd, r_pu) * DC.LN2 * c_load * DC.OHM_FF_TO_PS)
     return total
 
 

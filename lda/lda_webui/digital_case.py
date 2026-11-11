@@ -253,7 +253,7 @@ def _compute() -> Dict[str, Any]:
             "hpwl_um": placed.get("hpwl_um"),          # 主链不算 HPWL ⇒ None（旧链值见 baseline）
             # 🔴 v0.9.383 补透（`.382` 在 report 里就有值、卡片忘了带出来 ⇒ 线上是 null）：
             #    **无 pad 时的 die 尺寸/面积**是「pad 带 + I/O 落点」这笔面积代价的唯一基线，
-            #    没有它，读者只能看到 52.371 µm² 而无法判断「为端口可布付了多少」。
+            #    没有它，读者只能看到 59.202 µm² 而无法判断「为端口可布付了多少」。
             "die_w_um_noport": placed.get("die_w_um_noport"),
             "die_area_um2_noport": placed.get("die_area_um2_noport"),
             "ports": dict(placed.get("ports") or {}),

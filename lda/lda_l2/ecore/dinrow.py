@@ -85,11 +85,13 @@ def row_gaps(cell_name: str) -> dict:
         if y0 > prev:
             gaps.append((prev, y0, y0 - prev))
         prev = max(prev, y1)
-    if CL.H_ROW > prev:
-        gaps.append((prev, CL.H_ROW, CL.H_ROW - prev))
+    if c.h > prev:
+        # 🔴 v0.9.404：用**该单元自己的高度**，不是模块级 `H_ROW`。
+        #   pMOS sizing 之后 INV 1690 ≠ NAND2 1950，拿 `CL.H_ROW` 会算错上方空白。
+        gaps.append((prev, c.h, c.h - prev))
     need_nm = (PN.W + DL.S_MIN) * 1000.0
     widest = max((g for (_a, _b, g) in gaps), default=0)
-    return {"cell": cell_name, "h_row_nm": CL.H_ROW, "gaps_nm": gaps,
+    return {"cell": cell_name, "h_row_nm": c.h, "gaps_nm": gaps,
             "widest_nm": widest, "need_nm": need_nm,
             "n_tracks": int(widest // need_nm), "slack_nm": widest - need_nm}
 

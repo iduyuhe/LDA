@@ -80,12 +80,15 @@ def _C(cx: float, cy: float, size: int, role: str, layer: int = L_CONT):
 def gen_inv(P: Dict[str, Any]):
     """单输入反相器：1 PMOS + 1 NMOS，栅共用 A，漏共用 Y。"""
     w, h = P["w"], P["h"]
-    dx0, dw, dh = P["diff_x0"], P["diff_w"], P["diff_h"]
+    dx0, dw = P["diff_x0"], P["diff_w"]
+    # 🔴 v0.9.404：pMOS 加宽后两侧 DIFF 高度**不再相同** ⇒ 必须分开两个参数。
+    #   旧模板用一个 `dh` 表示两侧，那是「p/n 同宽」时代的假设，平衡尺寸下不成立。
+    dh_n, dh_p = P["diff_h_n"], P["diff_h_p"]
     dx1 = dx0 + dw
     ny0 = P["ndiff_y0"]
-    ny1 = ny0 + dh
+    ny1 = ny0 + dh_n
     py0 = ny1 + P["gap"]
-    py1 = py0 + dh
+    py1 = py0 + dh_p
     rail = P["rail_h"]
     gx0 = P["gate_cx"] - P["gate_l"] // 2
     gx1 = gx0 + P["gate_l"]
@@ -101,7 +104,8 @@ def gen_inv(P: Dict[str, Any]):
 
     csl = dx0 + P["cont_l_off"]
     csr = dx1 - P["cont_r_off"]
-    for cy in (P["cont_y_n"], P["cont_y_p"]):
+    # cont_y_p 是**序列**：pMOS 加宽后每个源漏沿宽度均布多个孔（不是「居中的一个」）
+    for cy in tuple(P["cont_y_n"]) + tuple(P["cont_y_p"]):
         for cx in (csl, csr):
             rects.append(_C(cx, cy, cs, "cont_sd"))
     rects.append(_C(P["cont_gate_cx"], ny1 + P["cont_gate_dy"], cs, "cont_gate"))
@@ -132,8 +136,8 @@ def gen_inv(P: Dict[str, Any]):
         "Y": CL.R(L_M1, P["pin_y"][0], P["pin_y"][1],
                   P["pin_y"][0] + P["pad"], P["pin_y"][1] + P["pad"], net="Y"),
     }
-    devs = [("pmos", dh, P["gate_l"], "A", "Y", "VDD"),
-            ("nmos", dh, P["gate_l"], "A", "VSS", "Y")]
+    devs = [("pmos", dh_p, P["gate_l"], "A", "Y", "VDD"),
+            ("nmos", dh_n, P["gate_l"], "A", "VSS", "Y")]
     return CL.Cell("INV_X1", w, h, rects, pins, devs)
 
 
@@ -143,12 +147,13 @@ def gen_inv(P: Dict[str, Any]):
 def gen_nand2(P: Dict[str, Any]):
     """2 输入 NAND：2 串联 NMOS（两端 cont）+ 2 并联 PMOS（3 cont）。"""
     w, h = P["w"], P["h"]
-    dx0, dw, dh = P["diff_x0"], P["diff_w"], P["diff_h"]
+    dx0, dw = P["diff_x0"], P["diff_w"]
+    dh_n, dh_p = P["diff_h_n"], P["diff_h_p"]     # 同 gen_inv：两侧高度分开
     dx1 = dx0 + dw
     ny0 = P["ndiff_y0"]
-    ny1 = ny0 + dh
+    ny1 = ny0 + dh_n
     py0 = ny1 + P["gap"]
-    py1 = py0 + dh
+    py1 = py0 + dh_p
     rail = P["rail_h"]
     gl = P["gate_l"]
     cs = P["cont"]
@@ -169,9 +174,11 @@ def gen_nand2(P: Dict[str, Any]):
 
     nm = (P["cont_n_x0"], P["cont_n_x1"])
     for cx in nm:
-        rects.append(_C(cx, P["cont_y_n"], cs, "cont_sd"))
+        for cy in P["cont_y_n"]:                     # 序列（n 侧目前只 1 个）
+            rects.append(_C(cx, cy, cs, "cont_sd"))
     for cx in P["cont_p_x"]:
-        rects.append(_C(cx, P["cont_y_p"], cs, "cont_sd"))
+        for cy in P["cont_y_p"]:
+            rects.append(_C(cx, cy, cs, "cont_sd"))
     for cx in P["cont_gate_x"]:
         rects.append(_C(cx, P["cont_gate_y"], cs, "cont_gate"))
 
@@ -201,10 +208,10 @@ def gen_nand2(P: Dict[str, Any]):
         pins[nm_] = CL.R(L_M1, px, py, px + P["pad"], py + P["pad"], net=nm_)
     pins["Y"] = CL.R(L_M1, yx, yy, yx + P["pad"], yy + P["pad"], net="Y")
 
-    devs = [("pmos", dh, gl, "A", "Y", "VDD"),
-            ("pmos", dh, gl, "B", "VDD", "Y"),
-            ("nmos", dh, gl, "A", "VSS", "n1"),
-            ("nmos", dh, gl, "B", "n1", "Y")]
+    devs = [("pmos", dh_p, gl, "A", "Y", "VDD"),
+            ("pmos", dh_p, gl, "B", "VDD", "Y"),
+            ("nmos", dh_n, gl, "A", "VSS", "n1"),
+            ("nmos", dh_n, gl, "B", "n1", "Y")]
     return CL.Cell("NAND2_X1", w, h, rects, pins, devs)
 
 
@@ -214,34 +221,34 @@ TEMPLATES = {"inv": gen_inv, "nand2": gen_nand2}
 PARAMS: Dict[str, Dict[str, Any]] = {
     "INV_X1": dict(
         family="inv",
-        w=620, h=1240, rail_h=70,
-        diff_x0=110, diff_w=400, diff_h=300,
+        w=620, h=1690, rail_h=70,
+        diff_x0=110, diff_w=400, diff_h_n=300, diff_h_p=750,
         ndiff_y0=180, gap=220,
         gate_cx=315, gate_l=50,
         nwell_x0=30,
         gp_dx0=65, gp_dy0=60, gp_dx1=5, gp_dy1=145,
         cont=45, cont_l_off=72.5, cont_r_off=67.5,
-        cont_y_n=312.5, cont_y_p=772.5,
+        cont_y_n=(312.5,), cont_y_p=(950.0, 1200.0),
         cont_gate_cx=267.5, cont_gate_dy=102.5,
-        strap_w=65, strap_vss_h=170, my_y0=100, my_y1=1105,
+        strap_w=65, strap_vss_h=170, my_y0=100, my_y1=1400,
         strap_vdd_y0=40,
         pin_a=(0, 415), pin_y=(375, 850), pad=240,
         strap_a=(233, 550), strap_a_w=67, strap_a_h=70,
     ),
     "NAND2_X1": dict(
         family="nand2",
-        w=980, h=1500, rail_h=70,
-        diff_x0=110, diff_w=680, diff_h=300,
+        w=980, h=1950, rail_h=70,
+        diff_x0=110, diff_w=680, diff_h_n=300, diff_h_p=750,
         ndiff_y0=180, gap=520,
         gate0=250, gate_pitch=310, gate_l=50,
         nwell_x0=30,
         gate_pads=[(145, 310), (505, 615)], gp_y0=545, gp_y1=660,
-        cont=45, cont_y_n=312.5, cont_y_p=1087.5,
+        cont=45, cont_y_n=(312.5,), cont_y_p=(1250.0, 1500.0),
         cont_n_x0=172.5, cont_n_x1=722.5,
         cont_p_x=(172.5, 422.5, 722.5),
         cont_gate_x=(260.0, 565.0), cont_gate_y=585.0,
-        strap_w=65, strap_vss_y1=345, my_y0=280, my_y1=1120,
-        strap_yl_y0=780, strap_yl_y1=1120,
+        strap_w=65, strap_vss_y1=345, my_y0=280, my_y1=1700,
+        strap_yl_y0=780, strap_yl_y1=1700,
         strap_vdd_y0=1055, vdd_cont_x=(422.5,),
         pins_in_xy=[(0, 410), (360, 410)], pad=240,
         gate_bridges=[(226, 550, 68, 70)],

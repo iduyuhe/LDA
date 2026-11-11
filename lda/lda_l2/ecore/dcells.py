@@ -104,14 +104,26 @@ RSH = {"poly": 8.0, "diff": 120.0, "m1": 0.10}
 R_CONTACT = 6.0          # Ω / 个（单接触孔）
 
 # ---- 单元行高与公共带（nm）----
-H_ROW = 1240             # 单元高度（含上下电源轨）
+#: 🔴 **pMOS sizing（v0.9.404）**：平衡反相器要求 `w_p/w_n = 1/μ`。
+#: `MU_P_OVER_N` 是**教科书假设**（本仓无器件测量，与 `dkdrive.WL_MU` 同值）；
+#: 一旦有实测 μ，改这一个数即可，几何与器件表都跟着走。
+MU_P_OVER_N = 0.40
+W_N = 300                                     # NMOS 沟道宽 = DIFF 高度（nm）
+P_RATIO = 1.0 / MU_P_OVER_N                   # = 2.5
+W_P = W_N * P_RATIO                           # = 750 nm
+
 RAIL_H = 70              # 电源轨高度（M1）
+Y_NDIFF = (180, 480)                     # NMOS 有源（W = 300）
+Y_PDIFF = (700, 700 + int(round(W_P)))   # PMOS 有源（W = 750 —— 加宽后只能向上长）
+Y_NWELL = (Y_PDIFF[0] - 80, Y_PDIFF[1] + 80)
+#: INV 行高 = p-diff 顶 + nwell 余量 80 + 与轨间距 90 + 轨高 70 = **1690**
+H_ROW = Y_PDIFF[1] + 80 + 90 + RAIL_H
 Y_VSS = (0, RAIL_H)                      # VSS 轨
 Y_VDD = (H_ROW - RAIL_H, H_ROW)          # VDD 轨
-Y_NDIFF = (180, 480)                     # NMOS 有源（W = 300）
-Y_PDIFF = (700, 1000)                    # PMOS 有源（W = 300）
-Y_NWELL = (620, 1080)                    # NWELL（包住 PMOS 有源 ±80）
 GAP = (Y_NDIFF[1], Y_PDIFF[0])           # 有源之间的间隙（放栅接触与局部互连）
+#: 🔴 NAND2 的高度**不在这里写常量**：它由「gap 要塞 3 个 pin pad + p-diff 加宽到 750」
+#: 现算得出（`build_nand2` 的 `y_vdd[1]`）。行高由 `dpnr.row_height_um()` 取各单元最大值。
+#: 曾经想加一个 `H_ROW_NAND2 = 1950` 常量做「对齐」，但它是零引用的死声明 —— 删掉。
 
 
 @dataclass(frozen=True)
@@ -221,12 +233,15 @@ def build_inv() -> Cell:
     rects.append(R(L_POLY, 225, 540, 335, 625, role="gate_pad"))
 
     rects += [_cont(182.5, 312.5, role="cont_sd"),     # NMOS 源 → VSS
-              _cont(442.5, 312.5, role="cont_sd"),     # NMOS 漏 → Y
-              _cont(182.5, 772.5, role="cont_sd"),     # PMOS 源 → VDD
-              _cont(442.5, 772.5, role="cont_sd"),     # PMOS 漏 → Y
-              _cont(267.5, 582.5, role="cont_gate")]   # 栅接触 → A（落在 poly 条内，reach>0）
+              _cont(442.5, 312.5, role="cont_sd")]     # NMOS 漏 → Y
+    # 🔴 v0.9.404 pMOS 加宽：W=750 ⇒ 每个源漏沿宽度**均布 2 个孔**。
+    #   单个 45nm 孔去承担 750nm 的沟道宽，扩展电阻不可忽略，也不是真实做法。
+    #   y 取 1/3·W 与 2/3·W（两端各留 250nm 给 `cont_enc_diff`）。
+    for cy in (Y_PDIFF[0] + W_P / 3.0, Y_PDIFF[0] + 2.0 * W_P / 3.0):
+        rects += [_cont(182.5, cy, role="cont_sd"), _cont(442.5, cy, role="cont_sd")]
+    rects.append(_cont(267.5, 582.5, role="cont_gate"))   # 栅接触 → A
 
-    m_y = R(L_M1, 410, 280, 475, 1105, role="strap")   # Y：NMOS 漏 ↔ PMOS 漏（上延至 pin pad）
+    m_y = R(L_M1, 410, 280, 475, Y_PDIFF[1] - 50, role="strap")   # Y：漏↔漏（延到新 p-diff 顶）
     rects += [R(L_M1, 150, Y_VSS[1], 215, 350, role="strap"),   # VSS → NMOS 源
               R(L_M1, 150, 740, 215, Y_VDD[0], role="strap"),   # VDD → PMOS 源
               m_y,
@@ -240,8 +255,8 @@ def build_inv() -> Cell:
             "VSS": R(L_M1, 0, Y_VSS[0], w, Y_VSS[1], net="VSS"),
             "A": R(L_M1, 0, 415, 240, 655, net="A"),
             "Y": R(L_M1, 375, 850, 615, 1090, net="Y")}
-    devs = [("pmos", 300, 50, "A", "VDD", "Y"),
-            ("nmos", 300, 50, "A", "VSS", "Y")]
+    devs = [("pmos", W_P, 50, "A", "VDD", "Y"),
+            ("nmos", W_N, 50, "A", "VSS", "Y")]
     return Cell("INV_X1", w, H_ROW, rects, pins, devs)
 
 
@@ -261,9 +276,9 @@ def build_nand2() -> Cell:
       ⇒ gap 至少 60+70+60+60+70+60 = 380，故 PMOS 行下移到 y=1000、单元高 1500。
     """
     w = 980
-    y_pdiff = (1000, 1300)
-    y_nwell = (920, 1380)
-    y_vdd = (1430, 1500)
+    y_pdiff = (1000, 1000 + int(round(W_P)))     # pMOS 加宽：1000..1750
+    y_nwell = (y_pdiff[0] - 80, y_pdiff[1] + 80)
+    y_vdd = (y_pdiff[1] + 130, y_pdiff[1] + 200)  # 1880..1950
     rects = [R(L_M1, 0, Y_VSS[0], w, Y_VSS[1], role="rail"),
              R(L_M1, 0, y_vdd[0], w, y_vdd[1], role="rail"),
              R(L_NWELL, 30, y_nwell[0], 870, y_nwell[1], role="nwell"),
@@ -278,11 +293,12 @@ def build_nand2() -> Cell:
 
     # 源漏接触孔：NMOS 左=VSS / 右=Y；PMOS 左=Y / 中=VDD / 右=Y
     rects += [_cont(172.5, 312.5, role="cont_sd"),
-              _cont(722.5, 312.5, role="cont_sd"),
-              _cont(172.5, 1087.5, role="cont_sd"),
-              _cont(422.5, 1087.5, role="cont_sd"),
-              _cont(722.5, 1087.5, role="cont_sd"),
-              _cont(260.0, 585.0, role="cont_gate"),
+              _cont(722.5, 312.5, role="cont_sd")]
+    # 🔴 v0.9.404：pMOS 每个源漏沿 750nm 宽度均布 2 个孔（理由同 INV）
+    for cy in (y_pdiff[0] + W_P / 3.0, y_pdiff[0] + 2.0 * W_P / 3.0):
+        for cx in (172.5, 422.5, 722.5):
+            rects.append(_cont(cx, cy, role="cont_sd"))
+    rects += [_cont(260.0, 585.0, role="cont_gate"),
               _cont(565.0, 585.0, role="cont_gate")]
 
     # M1：电源引下 / 两输入 pin pad / 输出 pin pad / Y 三段（左竖 + gap 横 + 右竖）
@@ -290,7 +306,7 @@ def build_nand2() -> Cell:
     #    输入 pad 高 240、中心 y=0.530 两两 x 间距 0.360（A 0–300 / B 390–630）；
     #    Y pad 下沉到 780–1020（中心 y=0.900），与输入中心纵向差 0.370 ⇒ 三引脚的
     #    M3 接入焊盘（0.242）两两间距 ≥0.10 全部成立（见 `PINS_V2_NOTE`）。
-    m_y_r = R(L_M1, 690, 280, 755, 1120, role="strap")
+    m_y_r = R(L_M1, 690, 280, 755, y_pdiff[1] - 50, role="strap")
     rects += [R(L_M1, 140, Y_VSS[1], 205, 345, role="strap"),          # VSS
               R(L_M1, 390, 1055, 455, y_vdd[0], role="strap"),         # VDD
               R(L_M1, 0, 410, 240, 650, role="pin"),                   # A pin pad（x 中心 120）
@@ -298,7 +314,7 @@ def build_nand2() -> Cell:
               R(L_M1, 360, 410, 600, 650, role="pin"),                 # B pin pad（x 中心 480）
               m_y_r,
               R(L_M1, 720, 780, 960, 1020, role="pin"),                # Y pin pad（x 中心 840）
-              R(L_M1, 140, 780, 205, 1120, role="strap"),              # Y 接 PMOS 左端（左竖）
+              R(L_M1, 140, 780, 205, y_pdiff[1] - 50, role="strap"),   # Y 接 PMOS 左端（左竖）
               R(L_M1, 140, 780, 755, 850, role="strap")]               # Y gap 横连
 
     pins = {"VDD": R(L_M1, 0, y_vdd[0], w, y_vdd[1], net="VDD"),
@@ -306,10 +322,10 @@ def build_nand2() -> Cell:
             "A": R(L_M1, 0, 410, 240, 650, net="A"),
             "B": R(L_M1, 360, 410, 600, 650, net="B"),
             "Y": R(L_M1, 720, 780, 960, 1020, net="Y")}
-    devs = [("pmos", 300, 50, "A", "Y", "VDD"),
-            ("pmos", 300, 50, "B", "VDD", "Y"),
-            ("nmos", 300, 50, "A", "VSS", "n1"),
-            ("nmos", 300, 50, "B", "n1", "Y")]
+    devs = [("pmos", W_P, 50, "A", "Y", "VDD"),
+            ("pmos", W_P, 50, "B", "VDD", "Y"),
+            ("nmos", W_N, 50, "A", "VSS", "n1"),
+            ("nmos", W_N, 50, "B", "n1", "Y")]
     return Cell("NAND2_X1", w, y_vdd[1], rects, pins, devs)
 
 

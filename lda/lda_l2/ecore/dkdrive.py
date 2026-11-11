@@ -600,26 +600,35 @@ def wl_self_check() -> Dict[str, Any]:
     if cr["violations"] != ["NOR2", "NOR3", "OAI21"]:
         problems.append("violations_%r" % (cr["violations"],))
 
-    # ④ 反向：把 INV 的 PMOS 加宽 2× ⇒ NAND2 的 k 必须变（证明 W 真进了模型）
+    # ④ 反向：**破坏 p/n 比例**（把 INV 的 pMOS 缩回 1:1）⇒ NAND2 的 k 必须变。
+    #   🔴 v0.9.404 实测发现：版图一旦**平衡**，INV 两侧电阻相等 ⇒ 单侧加宽/缩窄
+    #   **都不改变** `max()`（另一侧顶住）⇒ k 是「平台」。所以「加宽 pMOS」不再是有效探针，
+    #   有效的是「改比例」。这本身就是平衡态的指纹：k 对单侧尺寸一阶不敏感。
     inv = DC.CELLS["INV"]
     c2 = DC.Cell(name="INV", n_in=1, n_tr=2, table=(1, 0), n_series=1, k_drive=1.0,
                  pins=("a",), family="inv", w_n_nm=inv.w_n_nm,
-                 w_p_nm=inv.w_p_nm * 2.0, l_nm=inv.l_nm, wl_src=inv.wl_src)
+                 w_p_nm=inv.w_n_nm, l_nm=inv.l_nm, wl_src=inv.wl_src)   # p/n 退回 1.0
     rn, rp = _r_side(DC.CELLS["NAND2"], WL_MU)
     irn, irp = _r_side(c2, WL_MU)
-    widened = max(rn, rp) / max(irn, irp)
-    if abs(widened - k_geometry(DC.CELLS["NAND2"], WL_MU)) < 1e-9:
+    unbalanced = max(rn, rp) / max(irn, irp)
+    if abs(unbalanced - k_geometry(DC.CELLS["NAND2"], WL_MU)) < 1e-9:
         problems.append("w_not_effective")
 
-    # ⑤ 反向：均匀 W 的不变性 —— 两侧同乘一个因子，k 必须**不变**
+    # ⑤ 反向：**保比**缩放的不变性 —— n 与 p 同乘一个因子，k 必须**不变**。
+    #   🔴 v0.9.404：原来写死 600/600（那是 1:1 时代）。现在 p/n=2.5，600/600 会把比例
+    #   改成 1.0 —— 那测的是「换比例」，不是「换尺度」。必须两边乘同一个因子。
+    _sc_f = 2.0
     a = k_geometry(DC.CELLS["NAND2"], WL_MU)
+    _inv0 = DC.CELLS["INV"]
     sc = DC.Cell(name="NAND2", n_in=2, n_tr=4, table=(1, 1, 1, 0), n_series=2,
                  k_drive=1.8, pins=("a", "b"), family="nand",
-                 w_n_nm=600.0, w_p_nm=600.0, l_nm=50.0, wl_src="RULE_CONSTANT")
-    b = max(*_r_side(sc, WL_MU)) / max(*_r_side(c2.__class__(
-        name="INV", n_in=1, n_tr=2, table=(1, 0), n_series=1, k_drive=1.0,
-        pins=("a",), family="inv", w_n_nm=600.0, w_p_nm=600.0, l_nm=50.0,
-        wl_src="RULE_CONSTANT"), WL_MU))
+                 w_n_nm=_inv0.w_n_nm * _sc_f, w_p_nm=_inv0.w_p_nm * _sc_f,
+                 l_nm=_inv0.l_nm, wl_src="RULE_CONSTANT")
+    sc_inv = DC.Cell(name="INV", n_in=1, n_tr=2, table=(1, 0), n_series=1, k_drive=1.0,
+                     pins=("a",), family="inv", w_n_nm=_inv0.w_n_nm * _sc_f,
+                     w_p_nm=_inv0.w_p_nm * _sc_f, l_nm=_inv0.l_nm,
+                     wl_src="RULE_CONSTANT")
+    b = max(*_r_side(sc, WL_MU)) / max(*_r_side(sc_inv, WL_MU))
     if abs(a - b) > 1e-12:
         problems.append("uniform_scale_not_invariant:%.6f_vs_%.6f" % (a, b))
 

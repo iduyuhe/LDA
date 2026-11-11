@@ -136,9 +136,11 @@ def _mk() -> dict:
 
     # ── W/L 数据层的两个常量（**数据，不是拟合**）───────────────────────────
     #: 晶体管宽度 = `dcells` 里 DIFF 区的**高度**（沟道宽沿竖直方向）。
-    #: 实测：`INV_X1` 与 `NAND2_X1` 的两块 DIFF 都是 `y: 180..480` ⇒ **300 nm**，
-    #: 且 NMOS/PMOS **同宽**（1:1，无 pMOS 加宽）。
+    #: 🔴 v0.9.404：布局已按**平衡反相器**重画（`w_p/w_n = 1/μ = 2.5`）⇒
+    #: NMOS **300 nm**、PMOS **750 nm**。此前是 1:1（pMOS 未加宽），那正是
+    #: 「手填 k 表与几何不相容」的根源（见 v0.9.403 的上限定理）。
     W_NM = 300.0
+    W_PM = 750.0
     #: 栅长 = `dcells.RULES["poly_w"]`（50 nm）。与 DIFF 高度不同量纲，不要混。
     L_NM = 50.0
     #: 只有这两个单元有真实版图 ⇒ 它们的 W/L 是 **LAYOUT（实测）**；
@@ -147,7 +149,7 @@ def _mk() -> dict:
 
     def _wl(name, **kw):
         src = "LAYOUT" if name in LAYOUT_CELLS else "RULE_CONSTANT"
-        return dict(w_n_nm=W_NM, w_p_nm=W_NM, l_nm=L_NM, wl_src=src, **kw)
+        return dict(w_n_nm=W_NM, w_p_nm=W_PM, l_nm=L_NM, wl_src=src, **kw)
 
     # 单输入
     add("INV", 1, 2, (1, 0), n_series=1, k_drive=1.00, pins=("a",), family="inv",

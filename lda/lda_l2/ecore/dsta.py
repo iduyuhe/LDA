@@ -205,7 +205,7 @@ def sta(nl, tech=None, port_load_ff: float = 0.0,
     #   主链（`ST.sta(nl, topo_sort=True)` 不传 tech）永远读旧值，参数看似"死"。
     #   改为 None 后取值，`DEFAULT_TECH` 未变时**逐位不变**（T1a 零变化实证：
     #   T1a 时点 base 43.490 不变；r_on×4 → 155.959、t_intr×4 → 61.490 两条手算吻合。
-    #   （T2 起 base = 74.990 ps —— 数值变、关系不变。）
+    #   （T2 起 base = 74.990 ps；v0.9.404 pMOS 加宽后 78.358 ps —— 数值变、关系不变。）
     if tech is None:
         tech = DC.DEFAULT_TECH
     load = loads_of(nl, port_load_ff, tech, wire_load_ff)
@@ -314,7 +314,7 @@ def _inet(port, bit):
 # T1b · S1a / S1c 最小约束层（**零数字变化**：只把"量尺"造出来，不改量出的数）
 # ═══════════════════════════════════════════════════════════════════════════
 # 🔴 为什么这一层值得单独存在：在此之前，仓库里**没有任何地方定义"周期应该多长"**，
-#   于是"延时 74.990 ps"（T2 口径）这个数字**没有满足/不满足可言** —— 没有约束的数字无法
+#   于是"延时 78.358 ps"（T2 口径）这个数字**没有满足/不满足可言** —— 没有约束的数字无法
 #   证伪，也无法在 T2 改几何后回答"是变好了还是变差了"。本层只做四件事：
 #   把 `clock_period` / `max_fanout` / `max_transition` 由 `Tech` + 拓扑派生，
 #   并给出两套口径的 `slack`（ideal / wired）—— **只给数，不给判决**。

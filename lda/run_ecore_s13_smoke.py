@@ -275,6 +275,17 @@ def _local_closures(source: str) -> dict:
     return {name: _closure(name) for name in funcs}
 
 
+#: 🔴 手填 `k_drive` 的 18 个值 —— **模块级 golden，唯一真源**。
+#: 为什么提到模块级：`EC-G06`（G 段）与 `EC-K04`（K 段，在 G 段之前执行）都要用它，
+#: 各写一份必然漂。谁想改 `k_drive`，必须先改这里 —— 那就是一次显式改口。
+_HAND_K_DRIVE = {
+    "INV": 1.00, "BUF": 1.00, "NAND2": 1.80, "NOR2": 2.40, "AND2": 2.10,
+    "OR2": 2.70, "XOR2": 3.00, "XNOR2": 3.00, "MUX2": 1.60, "AOI21": 2.00,
+    "OAI21": 2.40, "NAND3": 2.60, "NOR3": 3.40, "AND3": 2.90, "OR3": 3.60,
+    "DFF": 1.0, "TIEHI": 1.0, "TIELO": 1.0,
+}
+
+
 def main() -> int:
     print("S13 门禁：B1 四项零风险判据（拓扑机核 / K0 完备性 / K2 独立性 / 面积交叉分段）")
 
@@ -556,7 +567,7 @@ def main() -> int:
         "routed": (_st["route"]["nets_with_segments"], _st["route"]["nets_touched"], 10, 11),
         "drc": (_st["drc_lvs"]["drc_violations"], None, 0, None),
         "area": (_st["place"]["die_area_um2"], None, 59.202, None),
-        "delay": (_st["timing"]["comb_delay_wired_ps"], None, 86.398, None),
+        "delay": (_st["timing"]["comb_delay_wired_ps"], None, 92.398, None),
         "def": (_st["def_write"]["bytes"], None, 575, None),
     }
     _bad = {k: v for k, v in _num.items()
@@ -665,7 +676,7 @@ def main() -> int:
           and _cl.get("claimable") is False
           and _st["m1_exit"].get("ok") is True)
 
-    _em_lock = (round(float(_em.get("min_margin_x") or 0.0), 3) == 141.813
+    _em_lock = (round(float(_em.get("min_margin_x") or 0.0), 3) == 151.661
                 and _em.get("n_fail") == 0
                 and _em.get("min_margin_net") == "n16")
     check("S20i 🔴 EM 对外数字逐位锁定：最小裕量 %.3f× @ %s · n_fail %s —— "
@@ -1063,10 +1074,10 @@ def main() -> int:
           and _q_no_verdict(dict(_q, ok=True)) is False
           and _q_no_verdict(dict(_q, **{"pass": 1})) is False)
 
-    check("EC-Q11 🔴 对外主链数字（T2 口径）：59.202 / 86.398 / 575 B / claimable=False / "
+    check("EC-Q11 🔴 对外主链数字（T2 口径）：59.202 / 92.398 / 575 B / claimable=False / "
           "m1_exit.ok=True / failed=3",
           _q_card["placement"]["die_area_um2"] == 59.202
-          and _q_card["timing"]["comb_delay_wired_ps"] == 86.398
+          and _q_card["timing"]["comb_delay_wired_ps"] == 92.398
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True
@@ -1210,7 +1221,7 @@ def main() -> int:
           and _q.get("in_blocking") is False
           and _q.get("scope") == "DIAGNOSTIC_ONLY"
           and _q_card["placement"]["die_area_um2"] == 59.202
-          and _q_card["timing"]["comb_delay_wired_ps"] == 86.398
+          and _q_card["timing"]["comb_delay_wired_ps"] == 92.398
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
@@ -1383,19 +1394,19 @@ def main() -> int:
           and len(_t_zero_gates) == 3)
 
     _t_em_call = _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
-    check("EC-T11 🔴 V5 回归 + 不回灌 `t_c`：`141.813×` / `t_c=125.0` / 主链数字锁定 "
+    check("EC-T11 🔴 V5 回归 + 不回灌 `t_c`：`151.661×` / `t_c=125.0` / 主链数字锁定 "
           "∧ 主链 `em_net_signoff(` 调用未传 `t_c=`",
-          _q_card["em"]["min_margin_x"] == 141.813
+          _q_card["em"]["min_margin_x"] == 151.661
           and _q_card["em"]["assumptions"]["t_c"] == 125.0
           and "t_c=" not in _t_em_call
           and _q_card["placement"]["die_area_um2"] == 59.202
-          and _q_card["timing"]["comb_delay_wired_ps"] == 86.398
+          and _q_card["timing"]["comb_delay_wired_ps"] == 92.398
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
 
     def _t_v5_ok(card):
-        return (card["em"]["min_margin_x"] == 141.813
+        return (card["em"]["min_margin_x"] == 151.661
                 and card["em"]["assumptions"]["t_c"] == 125.0)
 
     check("EC-T11r 反向探针：EM 裕量或 `t_c` 漂移 ⇒ V5 检测器必报",
@@ -1601,13 +1612,13 @@ def main() -> int:
           and (_u.get("assumptions") or {}).get("kappa_is_dimensionless") is True
           and "INCONSISTENT" in str(_u.get("assumptions")))
 
-    check("EC-U10 V5 回归：141.813× / t_c=125.0 / 主链 5 项逐位未变 ∧ "
+    check("EC-U10 V5 回归：151.661× / t_c=125.0 / 主链 5 项逐位未变 ∧ "
           "`em_net_signoff(` 未传 t_c",
-          _q_card["em"]["min_margin_x"] == 141.813
+          _q_card["em"]["min_margin_x"] == 151.661
           and _q_card["em"]["assumptions"]["t_c"] == 125.0
           and "t_c=" not in _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
           and _q_card["placement"]["die_area_um2"] == 59.202
-          and _q_card["timing"]["comb_delay_wired_ps"] == 86.398
+          and _q_card["timing"]["comb_delay_wired_ps"] == 92.398
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
@@ -1755,13 +1766,13 @@ def main() -> int:
           and not any(k in _u for k in ("n_fail", "ok", "pass"))
           and _u_json_ok)
 
-    check("EC-V07 V5 回归：主链 5 项 + 141.813× / t_c=125.0 逐位不变 ∧ "
+    check("EC-V07 V5 回归：主链 5 项 + 151.661× / t_c=125.0 逐位不变 ∧ "
           "`em_net_signoff(` 未传 t_c（EC-B4.5 冻结仍生效）",
-          _q_card["em"]["min_margin_x"] == 141.813
+          _q_card["em"]["min_margin_x"] == 151.661
           and _q_card["em"]["assumptions"]["t_c"] == 125.0
           and "t_c=" not in _q_trunk_src.split("em_net_signoff(", 1)[-1][:200]
           and _q_card["placement"]["die_area_um2"] == 59.202
-          and _q_card["timing"]["comb_delay_wired_ps"] == 86.398
+          and _q_card["timing"]["comb_delay_wired_ps"] == 92.398
           and _q_card["def_export"]["bytes"] == 575
           and _q_card["claimable"] is False
           and _q_card["m1_exit"]["ok"] is True)
@@ -1950,24 +1961,27 @@ def main() -> int:
         nl, comb_delay_ideal_ps=_tb_s["timing"]["comb_delay_ideal_ps"],
         comb_delay_wired_ps=_tb_s["timing"]["comb_delay_wired_ps"])
     # S1a-a：同一公式在**标准 c17**（6×NAND2）上必须复现规划预注册的 62.145 ps；
-    #        本仓 c17 只有 57.986，差额 10.397 全部来自 `g23` 是 INV（已在 S13b 登记的
+    #        本仓 c17 只有 61.986，差额 10.397 全部来自 `g23` 是 INV（已在 S13b 登记的
     #        TYPE_MISMATCH）—— 两个数都给，不许只报有利的那个。
-    check("S1a-a 预注册复现：标准 c17（3×NAND2）T_ref=%.6f ps（预注册 68.383；v0.9.405 换公式后重定）∧ "
+    check("S1a-a 预注册复现：标准 c17（3×NAND2）T_ref=%.6f ps（预注册 74.383；v0.9.405 换公式后重定）∧ "
           "本仓 c17=%.6f ps（g23 为 INV，已登记差异）"
           % (_c_std["clock_period_ps"], _c_loc["clock_period_ps"]),
-          abs(_c_std["clock_period_ps"] - 68.38324625039507) < 1e-9
-          and abs(_c_loc["clock_period_ps"] - 57.986038541995896) < 1e-9
+          abs(_c_std["clock_period_ps"] - 74.383246250395075) < 1e-9
+          and abs(_c_loc["clock_period_ps"] - 61.986038541995896) < 1e-9
           and _c_loc["n_stages"] == 3 and _c_loc["dff_on_path"] == 0)
 
-    # S1a-b 可追溯（禁字面量）：门禁侧**显式展开** `t_intr + k·ln2·R·C` 再累加，
+    # S1a-b 可追溯（禁字面量）：门禁侧**显式展开** `ln2·R·(C_self + C_load)` 再累加，
     #      与产品侧 `DC.cell_delay_ps` 路径逐位一致 ⇒ 四个量真的只由 Tech+拓扑+FO 决定。
     _tb_tech = DC.DEFAULT_TECH
     _tb_fo = _c_loc["fo_target"]
     _tb_ld = _tb_fo * _tb_tech.cin_ff
     # 🔴 v0.9.405：展开式跟着改口 —— `k_drive·r_on` → `R_cell = max(串联·ρ·L/W)`。
+    #   🔴 v0.9.406：自载项也几何化 ⇒ `ln2·R·(C_self + C_load)`，**不再有那个常数 `t_intr`**。
     #   本条的意义就是「不调产品函数、自己按定义式写一遍」，所以必须逐字跟着改。
     _tb_rho_n = _tb_tech.r_on_ohm * DC.R_REF_W_NM / DC.R_REF_L_NM
     _tb_rho_p = _tb_rho_n * _tb_tech.r_sheet_p_over_n
+    # `C_self` 按定义式独立写出（= 让 INV 恰好回到 `t_intr_ps` 的那个电容）
+    _tb_cself = _tb_tech.t_intr_ps / (DC.LN2 * _tb_tech.r_on_ohm * DC.OHM_FF_TO_PS)
     _tb_re = 0.0
     for _g in ST.longest_path_gates(nl):
         if _g.cell == "DFF":
@@ -1976,16 +1990,16 @@ def main() -> int:
         _sn, _sp = DC.series_counts(_cc)
         _r = max(_sn * _tb_rho_n * _cc.l_nm / _cc.w_n_nm,
                  _sp * _tb_rho_p * _cc.l_nm / _cc.w_p_nm)
-        _tb_re += _tb_tech.t_intr_ps + _r * DC.LN2 * _tb_ld * DC.OHM_FF_TO_PS
+        _tb_re += _r * DC.LN2 * (_tb_cself + _tb_ld) * DC.OHM_FF_TO_PS
     check("S1a-b 可追溯：门禁显式展开复算 %.9f == 产品 %.9f（禁字面量；仅 Tech+拓扑+FO）"
           % (_tb_re, _c_loc["clock_period_ps"]), _tb_re == _c_loc["clock_period_ps"])
 
     # S1a-c 值锁定：三个数逐位（T_ref / slack ideal / slack wired）。
     check("S1a-c 数值锁定（T2 口径）：T_ref=%.9f ∧ slack(ideal)=%.9f ∧ slack(wired)=%.9f"
           % (_c_loc["clock_period_ps"], _c_loc["slack_ideal_ps"], _c_loc["slack_wired_ps"]),
-          abs(_c_loc["clock_period_ps"] - 57.986038541995896) < 1e-9
-          and abs(_c_loc["slack_ideal_ps"] - 17.329038541995899) < 1e-9
-          and abs(_c_loc["slack_wired_ps"] + 28.411961458004100) < 1e-9)
+          abs(_c_loc["clock_period_ps"] - 61.986038541995896) < 1e-9
+          and abs(_c_loc["slack_ideal_ps"] - 15.329038541995899) < 1e-9
+          and abs(_c_loc["slack_wired_ps"] + 30.411961458004100) < 1e-9)
 
     # S1a-d 反向探针：`FO_target` 必须**真被消费** —— 改成 1 / 4 时 T_ref 必变且
     #      与手算吻合（FO1 21.9424 / FO4 69.7695）。写死常数则这三个数相同 ⇒ 红。
@@ -1995,8 +2009,8 @@ def main() -> int:
           % (_c1["clock_period_ps"], _c_loc["clock_period_ps"], _c4["clock_period_ps"]),
           len({round(_c1["clock_period_ps"], 9), round(_c_loc["clock_period_ps"], 9),
                round(_c4["clock_period_ps"], 9)}) == 3
-          and abs(_c1["clock_period_ps"] - 23.328679513998637) < 1e-9
-          and abs(_c4["clock_period_ps"] - 75.314718055994533) < 1e-9)
+          and abs(_c1["clock_period_ps"] - 27.328679513998630) < 1e-9
+          and abs(_c4["clock_period_ps"] - 79.314718055994533) < 1e-9)
 
     # S1a-e 判别力**元**判据：T1 只登记、不裁决（规划 §3-DoD.2）。
     #      legacy 上 FO3 两侧 slack 均 > 0 ⇒ 无判别力（**这是登记，不是失败**）；
@@ -2047,8 +2061,8 @@ def main() -> int:
           and _tb_s["route"]["nets_with_segments"] == 10
           and _tb_s["route"]["nets_touched"] == 11
           and _tb_s["route"]["nets_failed"] == 0
-          and _tb_t["comb_delay_ideal_ps"] == 40.657
-          and _tb_t["comb_delay_wired_ps"] == 86.398
+          and _tb_t["comb_delay_ideal_ps"] == 46.657
+          and _tb_t["comb_delay_wired_ps"] == 92.398
           and _tb_s["drc_lvs"]["drc_violations"] == 0
           and _tb_s["drc_lvs"]["lvs_problems"] == 0
           and _tb_s["def_write"]["bytes"] == 575
@@ -2059,7 +2073,7 @@ def main() -> int:
           and _tb_b["drc_lvs"]["lvs_unique_pairs"] == 43)
     print("  [Q1] `short_via` 加层相邻（%d 孔层 × `VIA_BRIDGE`）· 主链 0 / 旧链 105 条不动 · "
           "探针 真短路必报 / 误报必不报 / 未知孔层仍报" % len(DL.VIA_BRIDGE))
-    print("  [S1] T_ref=%.3f ps（标准 c17 口径 68.383；本仓 g23=INV）· max_fanout=%.1f · "
+    print("  [S1] T_ref=%.3f ps（标准 c17 口径 74.383；本仓 g23=INV）· max_fanout=%.1f · "
           "max_transition=%.1f（假设）· 判别力=%s（T1 登记，T2 裁决）"
           % (_c_loc["clock_period_ps"], _c_loc["max_fanout"],
              _c_loc["max_transition_ps"], _c_loc["discriminates"]))
@@ -2106,21 +2120,28 @@ def main() -> int:
 
     # EC-W03r：反向 —— 把 `t_ref` 的独立路径换成"抄产品"，两条相等就成了自证。
     #   用**错误公式**（漏掉 `t_intr`）复算 ⇒ 必须与产品不等，证明这条判据能分辨两条路径。
-    # 🔴 v0.9.405 换公式后，这里升成**双探针**（比原来更强）：
-    #   ① 漏掉 `t_intr` 的几何式 ⇒ 与产品值之差必须**恰好**是 n·t_intr；
-    #   ② **改口前**的 `k_drive·r_on` 式 ⇒ 与产品值必须显著不同（证明公式真换了，不是抄）。
+    # 🔴 v0.9.405 换公式后，这里升成**双探针**；v0.9.406 再加**第三探针**：
+    #   ① 漏掉**自载项**的几何式 ⇒ 与产品值之差必须恰好 = **Σ 逐单元 t_intr**；
+    #   ② 那个差值**不得**等于 `n·t_intr_ps`（旧口径）—— 这一条直接证明
+    #      「t_intr 已从「一个常数给所有单元」变成「逐单元 ∝ R」」；
+    #   ③ **改口前**的 `k_drive·r_on` 式 ⇒ 与产品值必须显著不同（证明公式真换了，不是抄）。
     _pv_ld = ST.FO_TARGET * DC.DEFAULT_TECH.cin_ff
     _pv_path = list(ST.longest_path_gates(nl))
     _pv_geom_nt = sum(DC.cell_r_ohm(g.cell) * DC.LN2 * _pv_ld * DC.OHM_FF_TO_PS
                       for g in _pv_path)
     _pv_old_formula = sum(DC.CELLS[g.cell].k_drive * DC.LN2 * DC.DEFAULT_TECH.r_on_ohm
                           * _pv_ld * DC.OHM_FF_TO_PS for g in _pv_path)
-    check("EC-W03r 双反向探针：① 漏 `t_intr` 的几何式 %.6f（差 %.6f = n·t_intr）；"
-          "② 改口前的 `k·r_on` 式 %.6f（与产品差 %.6f ⇒ 公式确实换了，不是抄）"
-          % (_pv_geom_nt, _pv_tref_ind - _pv_geom_nt, _pv_old_formula,
-             abs(_pv_tref_ind - _pv_old_formula)),
-          abs((_pv_tref_ind - _pv_geom_nt)
-              - len(_pv_path) * DC.DEFAULT_TECH.t_intr_ps) < 1e-9
+    _pv_gap = _pv_tref_ind - _pv_geom_nt
+    _pv_sum_ti = sum(DC.t_intr_ps_for(g.cell) for g in _pv_path)
+    _pv_flat_ti = len(_pv_path) * DC.DEFAULT_TECH.t_intr_ps
+    check("EC-W03r 三反向探针：① 漏自载项 ⇒ 差 %.6f = Σ逐单元 t_intr（%s 的 %r）；"
+          "② 该差 **≠** 旧口径 n·t_intr=%.6f（差 %.6f ⇒ 自载项已逐单元化）；"
+          "③ 改口前 `k·r_on` 式 %.6f（与产品差 %.6f ⇒ 公式确实换了）"
+          % (_pv_gap, " + ".join("%.0f" % DC.t_intr_ps_for(g.cell) for g in _pv_path),
+             [g.cell for g in _pv_path], _pv_flat_ti, abs(_pv_gap - _pv_flat_ti),
+             _pv_old_formula, abs(_pv_tref_ind - _pv_old_formula)),
+          abs(_pv_gap - _pv_sum_ti) < 1e-9
+          and abs(_pv_gap - _pv_flat_ti) > 1.0
           and abs(_pv_old_formula - _pv_cl["clock_period_ps"]) > 1.0)
 
     # EC-W04：`dead_rules` 必须**空**（T2 让 `W_MIN` 派生自 `W_ROUTE`），且棘轮方向可证伪
@@ -2242,8 +2263,8 @@ def main() -> int:
              _tb_s["m1_exit"]["ok"]),
           _tb_s["place"]["die_area_um2"] == 59.202
           and _tb_s["route"]["nets_with_segments"] == 10
-          and _tb_t["comb_delay_ideal_ps"] == 40.657
-          and _tb_t["comb_delay_wired_ps"] == 86.398
+          and _tb_t["comb_delay_ideal_ps"] == 46.657
+          and _tb_t["comb_delay_wired_ps"] == 92.398
           and _tb_s["drc_lvs"]["drc_violations"] == 0
           and _tb_s["drc_lvs"]["lvs_problems"] == 0
           and _tb_s["def_write"]["bytes"] == 575
@@ -2305,8 +2326,8 @@ def main() -> int:
              _tb_s["def_write"]["bytes"], _tb["claimability"]["claimable"],
              _tb_s["m1_exit"]["ok"], _lib_t_off["lib_chain"]),
           _lib_t_off["lib_chain"] == "closed"
-          and _lib_t_off["comb_delay_ideal_ps"] == 40.657
-          and _lib_t_off["comb_delay_wired_ps"] == 86.398
+          and _lib_t_off["comb_delay_ideal_ps"] == 46.657
+          and _lib_t_off["comb_delay_wired_ps"] == 92.398
           and _tb_s["place"]["die_area_um2"] == 59.202
           and _tb_s["route"]["nets_with_segments"] == 10
           and _tb_s["drc_lvs"]["drc_violations"] == 0
@@ -2401,10 +2422,10 @@ def main() -> int:
           and _lib_pf_sta.comb_delay_ps == _lib_a1.comb_delay_ps)
 
     # EC-X08 🔴 出处翻转而数字不变：`max_transition` 从「假设」变「库数据」
-    _lib_c0 = ST.constraint_layer(nl, comb_delay_ideal_ps=40.657,
-                                  comb_delay_wired_ps=86.398)
-    _lib_c1 = ST.constraint_layer(nl, comb_delay_ideal_ps=40.657,
-                                  comb_delay_wired_ps=86.398, lib=_lib_l2)
+    _lib_c0 = ST.constraint_layer(nl, comb_delay_ideal_ps=46.657,
+                                  comb_delay_wired_ps=92.398)
+    _lib_c1 = ST.constraint_layer(nl, comb_delay_ideal_ps=46.657,
+                                  comb_delay_wired_ps=92.398, lib=_lib_l2)
     check("EC-X08 出处翻转而数字不变：`max_transition` %.1f → %.1f ps · "
           "`is_assumption` %s → %s · source `%s` → `%s` · 判别力 %s→%s"
           % (_lib_c0["max_transition_ps"], _lib_c1["max_transition_ps"],
@@ -2424,7 +2445,7 @@ def main() -> int:
     #   因为它零改口且规划 DoD 明确要求「至少报三组而非一组」。
     _cn = ST.signoff_corners(nl, wire_load_ff=_wl2)
     _cn_tt = _cn["corners"]["tt"]
-    # 🔴 **表示差异 vs 真差异**：report 里的 `comb_delay_*` 是 **3 位取整**（40.657 / 86.398），
+    # 🔴 **表示差异 vs 真差异**：report 里的 `comb_delay_*` 是 **3 位取整**（46.657 / 92.398），
     #   而 `signoff_corners` 给的是未取整值（37.191623125 / 74.989632028）。
     #   拿取整值做「逐位相等」判据 ⇒ 假红（差值 8.7e-4 全是舍入）。故此处**现算一份未取整**。
     _cn_pl = ST.FO_PORT * DC.DEFAULT_TECH.cin_ff
@@ -2475,7 +2496,10 @@ def main() -> int:
           % (_cn["spread_pct"]["t_ref_ps"], _cn["spread_pct"]["ideal_ps"],
              _cn["spread_pct"]["wired_ps"]),
           _cn["spread_pct"]["t_ref_ps"] > _cn["spread_pct"]["wired_ps"] > 0
-          and abs(_cn["spread_pct"]["t_ref_ps"] - 44.826) < 0.01)
+          # 🔴 v0.9.406：44.826% → **41.934%**。原因不是「数据变了」，是**模型更少了常数项**：
+          #   自载项几何化后 `t_pd` 整体 ∝ R，corner 对 `r_on` 的缩放不再被那个固定 `t_intr`
+          #   稀释 ⇒ 散布收窄。⚠️ 这条仍是「按当前模型测的值」，不是物理常数。
+          and abs(_cn["spread_pct"]["t_ref_ps"] - 41.933667) < 0.01)
 
     # EC-Y05 🔴🔴 **结构性发现**：三个角 slack(wired) 全为负，且 span 只有 ~3 ps
     #   而 T_ref 散布 44.4% ⇒ **违例的根因不是 corner**，是 FO_target=3 的负载假设。
@@ -2641,8 +2665,8 @@ def main() -> int:
           and _tb_s["route"]["nets_with_segments"] == 10
           and _tb_s["drc_lvs"]["drc_violations"] == 0
           and _tb_s["drc_lvs"]["lvs_problems"] == 0
-          and _tb_t["comb_delay_ideal_ps"] == 40.657
-          and _tb_t["comb_delay_wired_ps"] == 86.398
+          and _tb_t["comb_delay_ideal_ps"] == 46.657
+          and _tb_t["comb_delay_wired_ps"] == 92.398
           and _tb_s["def_write"]["bytes"] == 575
           and _tb["claimability"]["claimable"] is False
           and _tb_s["m1_exit"]["ok"] is True
@@ -2751,29 +2775,44 @@ def main() -> int:
           and _kd_rep["max_abs_dev"] > 0.20          # 有结构性偏差才是实话
           and _kd_rep["by_class"].get("WITHIN_5PCT", 0) == 10)
 
-    # EC-K04 🔴 **保护性约束**：本批**不改值** —— 主链 9 数一位未动
-    check("EC-K04 保护性约束（本批只判不改）：主链 %.3f µm² · %d/11 · %.3f/%.3f ps · "
-          "`t_intr` 仍 %.1f ps（常数，未换 ln2·R·C_self）"
-          % (_tb_s["place"]["die_area_um2"], _tb_s["route"]["nets_with_segments"],
-             _tb_t["comb_delay_ideal_ps"], _tb_t["comb_delay_wired_ps"],
-             DC.DEFAULT_TECH.t_intr_ps),
-          _tb_s["place"]["die_area_um2"] == 59.202
-          and _tb_s["route"]["nets_with_segments"] == 10
-          and _tb_t["comb_delay_ideal_ps"] == 40.657
-          and _tb_t["comb_delay_wired_ps"] == 86.398
-          and DC.DEFAULT_TECH.t_intr_ps == 2.0)
+    # EC-K04 🔴 **保护性约束**（v0.9.406 改口）：
+    #   P2 那批的原始语义是「`k_drive` 与 `t_intr` **都不许动**」。v0.9.406 **动了 `t_intr`**
+    #   ⇒ 这条必须跟着改口，否则它会变成一句「与事实相反但恒真」的绿色标语。
+    #   现在它守两件**仍然成立**的事：① `k_drive` 18 个值一位未动；
+    #   ② `t_intr` 的**锚**仍是 2.0 ps（动的是「逐单元化」，不是锚）。
+    _k04_ti = {n: DC.t_intr_ps_for(n) for n in ("INV", "NAND2", "NAND3", "NOR2", "XOR2")}
+    check("EC-K04 保护性约束（改口后守锚，不守常数）：`k_drive` 18 值未动（失配 %r）· "
+          "锚 `t_intr(INV)=%.9f` ps 仍 %.1f · 而 `t_intr` 已**逐单元**（NAND2 %.1f / NAND3 %.1f ≠ 锚）"
+          " ⇒ 「自载项常数」这条旧事实**已作废**"
+          % ({n: v for n, v in _HAND_K_DRIVE.items()
+              if abs(DC.CELLS[n].k_drive - v) > 1e-12},
+             _k04_ti["INV"], DC.DEFAULT_TECH.t_intr_ps, _k04_ti["NAND2"], _k04_ti["NAND3"]),
+          {n: v for n, v in _HAND_K_DRIVE.items()
+           if abs(DC.CELLS[n].k_drive - v) > 1e-12} == {}
+          and abs(_k04_ti["INV"] - DC.DEFAULT_TECH.t_intr_ps) < 1e-12
+          and DC.DEFAULT_TECH.t_intr_ps == 2.0
+          and abs(_k04_ti["NAND2"] - 4.0) < 1e-9 and abs(_k04_ti["NAND3"] - 6.0) < 1e-9
+          and _tb_s["place"]["die_area_um2"] == 59.202
+          and _tb_t["comb_delay_ideal_ps"] == 46.657
+          and _tb_t["comb_delay_wired_ps"] == 92.398)
 
-    # EC-K05 **预注册**：若采用模型值，主链会变多少（只登记，不实施）
-    _kd_ti = KD.PREREG["t_intr_ps"]["candidates"]
+    # EC-K05 🔴 预注册 **已实施**（v0.9.406）。这条现在守两件事：
+    #   ① 文档里的 `C_self` 必须等于代码里的 `c_self_ff`（**防文档与实现漂**）；
+    #   ② 三个**未采用**的候选值仍登记在案（不许因为"已经选了"就把它们删掉 ——
+    #      删掉等于把「还有别的可能」这件事抹掉）。
+    _kd_ti = KD.PREREG["t_intr_ps"]
     _kd_mc = KD.PREREG["main_chain_if_adopted"]
-    check("EC-K05 预注册（未实施）：`t_intr` 2.0 → %s ps（三候选，缺器件数据）⇒ "
-          "主链 ideal 40.657 → %s ps（%s）—— 改它连带动 `T_ref`/slack/三角，属**独立发布**"
-          % (list(_kd_ti.values()), list(_kd_mc["ideal_ps"].values())[1:],
-             ["+%.1f%%" % v for v in list(_kd_mc["delta_pct"].values())[1:]]),
-          len(_kd_ti) == 3
-          and abs(_kd_mc["ideal_ps"]["1·cin"] - 41.589) < 0.01
-          and abs(_kd_mc["ideal_ps"]["2·cin"] - 51.986) < 0.01
-          and abs(_kd_mc["ideal_ps"]["3·cin"] - 62.383) < 0.01)
+    check("EC-K05 预注册已实施：文档 `C_self=%.12f` fF ≡ 代码 `c_self_ff=%.12f` · "
+          "锚给出 ideal **%.3f ps** · 未采用的 1/2/3·cin 候选仍登记 %r"
+          % (_kd_ti["implemented_c_self_ff"], DC.c_self_ff(),
+             _kd_mc["ideal_ps"]["0.5771·cin（已实施）"],
+             [_kd_mc["ideal_ps"][k] for k in ("1·cin", "2·cin", "3·cin")]),
+          abs(_kd_ti["implemented_c_self_ff"] - DC.c_self_ff()) < 1e-12
+          and _kd_ti["status"].startswith("IMPLEMENTED")
+          and abs(_kd_mc["ideal_ps"]["0.5771·cin（已实施）"] - 46.657) < 0.01
+          and abs(_kd_mc["ideal_ps"]["1·cin"] - 55.452) < 0.01
+          and abs(_kd_mc["ideal_ps"]["2·cin"] - 76.246) < 0.01
+          and abs(_kd_mc["ideal_ps"]["3·cin"] - 97.041) < 0.01)
 
     # EC-K06 反向探针：μ 从 0.40 改 0.10 ⇒ NAND2 的瓶颈**翻侧** ⇒ 模型值必须变
     _kd_b1 = KD.k_models(mu=0.40)["NAND2"]["bottleneck"]
@@ -2886,10 +2925,7 @@ def main() -> int:
           and _g_ir["mu_spread"] < 0.10)
 
     # EC-G06 🔴 **保护性约束**：本批**不改值** —— 18 个 k_drive 与主链 9 数一位未动
-    _g_hand = {"INV": 1.00, "BUF": 1.00, "NAND2": 1.80, "NOR2": 2.40, "AND2": 2.10,
-               "OR2": 2.70, "XOR2": 3.00, "XNOR2": 3.00, "MUX2": 1.60, "AOI21": 2.00,
-               "OAI21": 2.40, "NAND3": 2.60, "NOR3": 3.40, "AND3": 2.90, "OR3": 3.60,
-               "DFF": 1.0, "TIEHI": 1.0, "TIELO": 1.0}
+    _g_hand = _HAND_K_DRIVE          # 唯一真源在模块级（G06 与 K04 共用）
     _g_diff = {n: v for n, v in _g_hand.items()
                if abs(DC.CELLS[n].k_drive - v) > 1e-12}
     check("EC-G06 保护性约束（本批只判不改）：18 个 `k_drive` 逐位未动（失配 %r）· "
@@ -2900,8 +2936,8 @@ def main() -> int:
           _g_diff == {}
           and _tb_s["place"]["die_area_um2"] == 59.202
           and _tb_s["route"]["nets_with_segments"] == 10
-          and _tb_t["comb_delay_ideal_ps"] == 40.657
-          and _tb_t["comb_delay_wired_ps"] == 86.398
+          and _tb_t["comb_delay_ideal_ps"] == 46.657
+          and _tb_t["comb_delay_wired_ps"] == 92.398
           and _g_bl["balanced"] is True
           and abs(_g_bl["pn_ratio"] - CL.P_RATIO) < 1e-9)
 
@@ -2946,6 +2982,62 @@ def main() -> int:
           and abs(_g_pn_lay - CL.P_RATIO) < 1e-9
           and abs(_g_inv_side[0] - _g_inv_side[1]) < 1e-9
           and abs(DC.cell_r_ohm("INV") - DC.DEFAULT_TECH.r_on_ohm) < 1e-9)
+
+    # ── v0.9.406：自载项几何化（`t_intr` 从「一个常数给所有单元」变成「∝ R」）──────
+    #   🔴 这批的性质和前面几批不同：改的不是「精度」，是**内部矛盾**——
+    #   原来 NAND3 的 R 是 INV 的 3 倍，自载延时却同样是 2.0 ps。
+    _ti_tech = DC.DEFAULT_TECH
+    _ti_cself_def = _ti_tech.t_intr_ps / (DC.LN2 * _ti_tech.r_on_ohm * DC.OHM_FF_TO_PS)
+    _ti_cself_inv = DC.t_intr_ps_for("INV") / (DC.LN2 * DC.cell_r_ohm("INV") * DC.OHM_FF_TO_PS)
+    _ti_inv_anchor = (_ti_tech.t_intr_ps
+                      + DC.cell_r_ohm("INV") * DC.LN2 * 4.0 * DC.OHM_FF_TO_PS)
+    _ti_nand = {n: DC.t_intr_ps_for(n) for n in ("NAND2", "NAND3", "NAND4")
+                if n in DC.CELLS}
+
+    # EC-G09 ① C_self 两条独立算法一致 ② INV 与「锚式」逐位相同（换式不白送速度）
+    check("EC-G09 自载项几何化：C_self 两算一致（定义式 %.12f ≡ 由 INV 反解 %.12f）· "
+          "INV@4fF **与旧锚式逐位相同**（%.12f）· `t_intr ∝ R`"
+          % (_ti_cself_def, _ti_cself_inv, _ti_inv_anchor),
+          abs(_ti_cself_def - _ti_cself_inv) < 1e-15
+          and DC.cell_delay_ps("INV", 4.0) == _ti_inv_anchor)
+
+    # EC-G10 🔴 **最强形态：通式必须退化为可解析的特例**
+    #   `nand` 族的 `R = max(s_n·ρ_n·L/W_n, s_p·ρ_p·L/W_p)`，而平衡版图下
+    #   `ρ_n·L/W_n = ρ_p·L/W_p = r_on` 恰好成立 ⇒ `R = s_n·r_on` ⇒ **`t_intr = s_n·t_intr_ps`**。
+    #   于是「自载项 ∝ 串联数」不是拟合出来的，是**代数结论**。
+    #   这条同时反查平衡条件：p/n 若不是 2.5，`ρ_p·L/W_p ≠ r_on`，等式立刻不成立。
+    _ti_rho_n = _ti_tech.r_on_ohm * DC.R_REF_W_NM / DC.R_REF_L_NM
+    _ti_rho_p = _ti_rho_n * _ti_tech.r_sheet_p_over_n
+    _ti_inv_c = DC.CELLS["INV"]
+    _ti_unit_r = (_ti_rho_n * _ti_inv_c.l_nm / _ti_inv_c.w_n_nm,
+                  _ti_rho_p * _ti_inv_c.l_nm / _ti_inv_c.w_p_nm)
+    _ti_expect = {n: DC.series_counts(DC.CELLS[n])[0] * _ti_tech.t_intr_ps
+                  for n in ("NAND2", "NAND3", "NAND4") if n in DC.CELLS}
+    check("EC-G10 通式退化为特例（解析）：平衡下 `ρ_n·L/W_n = %.1f Ω = r_on` ∧ "
+          "`ρ_p·L/W_p = %.1f Ω = r_on` ⇒ `t_intr(NANDk) = k·t_intr_ps` 精确成立 %r vs 实测 %r"
+          % (_ti_unit_r[0], _ti_unit_r[1], _ti_expect,
+             {n: round(v, 9) for n, v in _ti_nand.items()}),
+          abs(_ti_unit_r[0] - _ti_tech.r_on_ohm) < 1e-9
+          and abs(_ti_unit_r[1] - _ti_tech.r_on_ohm) < 1e-9
+          and all(abs(_ti_nand[n] - _ti_expect[n]) < 1e-9 for n in _ti_nand)
+          and _ti_expect.get("NAND3") == 6.0)
+
+    # EC-G11 反向探针：**「一个常数给所有单元」这种错法必须能被抓住**
+    #   用常数锚重算 T_ref ⇒ 与产品之差必须**恰好** = Σ(t_intr(cell) − t_intr_ps)，且 > 0。
+    #   若有人把 `cell_delay_ps` 改回 `t_intr_ps + ln2·R·C`，产品值就等于常数式 ⇒ 差为 0 ⇒ 红。
+    _ti_path = list(ST.longest_path_gates(nl))
+    _ti_flat_ref = sum(_ti_tech.t_intr_ps
+                       + DC.cell_r_ohm(g.cell, _ti_tech) * DC.LN2
+                       * _c_loc["load_per_stage_ff"] * DC.OHM_FF_TO_PS
+                       for g in _ti_path if g.cell != "DFF")
+    _ti_gap_want = sum(DC.t_intr_ps_for(g.cell, _ti_tech) - _ti_tech.t_intr_ps
+                       for g in _ti_path if g.cell != "DFF")
+    check("EC-G11 反向探针：用「常数 t_intr」重算 T_ref = %.9f ⇒ 比产品少 **%.9f ps**"
+          "（= Σ(逐单元 − 锚)，%r）⇒ 常数模型必被拒"
+          % (_ti_flat_ref, _c_loc["clock_period_ps"] - _ti_flat_ref,
+             [g.cell for g in _ti_path]),
+          abs((_c_loc["clock_period_ps"] - _ti_flat_ref) - _ti_gap_want) < 1e-9
+          and _ti_gap_want > 1.0)
 
     print("  [T5/Q4] 可造性判定：宽度下限 **%d nm**（pad %d + 接入 %d）⇒ INV 余 %d nm（%.1f%%）· "
           "NAND2 余 %d nm（%.1f%%）"

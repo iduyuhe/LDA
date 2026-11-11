@@ -465,7 +465,8 @@ ECORE_CAPABILITY_MANIFEST = [
     {
         "capability": "**自有标准单元库**（静态互补 CMOS · 18 单元 / 130 管）· "
                       "**晶体管数 `n_tr` 作绝对锚**（拓扑必然：INV=2T / NAND2=4T / DFF=24T，"
-                      "非拟合）· 一阶 RC 延时 `t_intr + k·ln2·R·C` · "
+                      "非拟合）· 一阶 RC 延时 `ln2·R_cell·(C_self+C_load)`（R 由 W/L 与串联数算，"
+                      "**自载项也 ∝ R**）· "
                       "**族内 `k_drive` 与串联数同序 + 跨族方向判据**（NOR>NAND / AND>NAND）· "
                       "解析金标 `chain_golden_ps`（0 级恰为 0）",
         "module": "lda_l2.ecore.dcell",

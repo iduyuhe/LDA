@@ -45,10 +45,23 @@ E21 三条红线里第二条「数字链借不借」在 E34 由**人**裁决为�
 ══════════════════════════════════════════════════════════════════════════
 延时模型（一阶 RC + 内在项）
 ══════════════════════════════════════════════════════════════════════════
-    t_pd = t_intr + k_drive · ln2 · R_on · C_load        （ln2 = 0.69，一阶 RC 的 50% 点）
+    t_pd = ln2 · R_cell · (C_self + C_load)              （ln2 = 0.69，一阶 RC 的 50% 点）
+    R_cell = max( s_n·ρ_n·L/W_n , s_p·ρ_p·L/W_p )
+
+⇒ **两项都 ∝ `R_cell`**：`C_self`（自载）与 `C_load`（扇出）只差电容，没有“常数延时”。
 
 单位约定：`R` 取 Ω、`C` 取 fF ⇒ `R·C = 1e-15 s = 1e-3 ps`。
-⇒ `t_pd[ps] = t_intr + k_drive · 0.69 · r_on_ohm · load_ff · 1e-3`
+
+🔴 **三次演进（每次只改一处、每次都必须有标定锚）**：
+
+| 版本 | 公式 | 毛病 |
+|---|---|---|
+| ≤ v0.9.404 | `t_intr + k_drive·ln2·r_on·C_load` | `k_drive` 手填、`r_on` 与几何无关 ⇒ **对 W/L 零敏感** |
+| v0.9.405 | `t_intr + ln2·R_cell·C_load` | 负载项几何化了，**自载项还是常数**（NAND3 的 R 是 INV 的 3 倍，延时却相同） |
+| **v0.9.406** | `ln2·R_cell·(C_self + C_load)` | —— 本式；`C_self` 由 `t_intr_ps` 反解，**锚不变** |
+
+⚠️ `C_self = 0.5771 fF` 是**旧常数所隐含的电容**，不是新测的器件数据。
+`MU=0.40` / `ρ_p·ρ_n=2.5` / `r_on=5000 Ω` 也都是一阶估计 ⇒ 绝对延时仍 `claimable=False`。
 
 🔴 **结构金标（`chain_golden_ps`）**：N 级**同构**单元串联、负载恒定 ⇒ 总延时**必然**
 等于 `N · t_pd`（串行代数相加，不是 RSS —— 见 `timing.py` 的「时间要分拓扑相加」）。
@@ -76,7 +89,10 @@ class Tech:
     #: 唯一还需要假设的**器件**量。写成「比值」而不是 μ，是为了让它的物理方向与
     #: `Q0` 的「×1.05 扰动」一致（比值变大 ⇒ 上拉更弱 ⇒ 必然进延时，可判活）。
     r_sheet_p_over_n: float = 2.5
-    t_intr_ps: float = 2.0            # ps · 单元内在延时（自载翻转）
+    #: 🔴 v0.9.406：**标定锚** —— 参考单元（INV，`R = r_on`）的自载延时。
+    #: 它不再「给所有单元用同一个值」，而是反解出 `C_self`（`dcell.c_self_ff`），
+    #: 再由 `t_intr(cell) = ln2·R_cell·C_self` 逐单元算出 ⇒ `t_intr ∝ R`。
+    t_intr_ps: float = 2.0
     area_per_tr_um2: float = 0.040    # µm²/管 · 一阶（含布线余量）
     ileak_na_per_tr: float = 0.05     # nA/管 · 室温漏电
     t_setup_ps: float = 6.0           # ps · DFF 建立时间
@@ -325,6 +341,31 @@ def cell_r_ohm(name: str, tech: Tech | None = None) -> float:
     return max(*r_side_ohm(CELLS[name], tech))
 
 
+def c_self_ff(tech: Tech | None = None) -> float:
+    """单元的**自载电容**（fF）—— 由 `t_intr_ps` 反解，不是新数据。
+
+    🔴 v0.9.406 的关键一步：`t_intr` 原来是**一个常数给所有单元**。
+    这在物理上不自洽 —— `t_intr ≈ ln2·R·C_self`，而 `R` 对 NAND3 是 INV 的 3 倍，
+    自载延时凭什么是同一个 2.0 ps？
+
+    本函数把它翻译成几何形式：**保持 `t_intr` 对参考单元（INV，`R = r_on`）仍恰好 2.0 ps**，
+    于是 `C_self = t_intr_ps/(ln2·r_on)` = **0.5771 fF**（= 0.5771·cin）。
+    这不是新测得的器件数据，是**旧常数所隐含的那个电容** —— 写成电容只为了让它能
+    跟着 `R` 缩放（电容不随驱动强度变，延时随 `R` 变）。
+    """
+    tech = tech or DEFAULT_TECH
+    return tech.t_intr_ps / (LN2 * tech.r_on_ohm * OHM_FF_TO_PS)
+
+
+def t_intr_ps_for(name: str, tech: Tech | None = None) -> float:
+    """单元的**内在延时**（自载翻转，ps）= `ln2 · R_cell · C_self`。
+
+    ⇒ `t_intr ∝ R`：INV 2.0 / NAND2 4.0 / NAND3 6.0 ps。串联级数越多，越慢（物理上对）。
+    """
+    tech = tech or DEFAULT_TECH
+    return LN2 * cell_r_ohm(name, tech) * c_self_ff(tech) * OHM_FF_TO_PS
+
+
 def cell(name: str) -> Cell:
     return CELLS[name]
 
@@ -341,21 +382,26 @@ def eval_cell(name: str, ins) -> int:
 
 
 def cell_delay_ps(name: str, load_ff: float, tech: Tech | None = None) -> float:
-    """一阶 RC 延时：`t_intr + ln2 · R_cell · C_load`，其中 `R_cell = max(串联·ρ·L/W)`。
+    """一阶 RC 延时：`ln2 · R_cell · (C_self + C_load)` —— **两项都 ∝ R**。
 
-    🔴 v0.9.405 **改口**：原来是 `t_intr + k_drive·ln2·r_on·C_load`，`k_drive` 是手填的
-    无量纲系数、`r_on` 是与几何无关的常数 ⇒ **延时对 W/L 完全不敏感**，平衡版图的收益
-    在模型里根本看不见。现在：
-      · `R_cell` 由该单元自己的 `W/L` 与串联数现算（`dcell.cell_r_ohm`）；
-      · `Tech.r_on_ohm` 退化为**标定锚**（参考器件 300/50 的电阻），不再直接乘；
-      · `Cell.k_drive` **不再进延时路径**，只作为历史手填值保留对照（见 `dkdrive`）。
+    🔴 v0.9.406 **改口**（`t_intr` 几何化）。三步演进，每一步都只改一处、都必须有锚：
+      · v0.9.404 `t_intr + k_drive·ln2·r_on·C_load` —— 延时对 W/L 零敏感；
+      · v0.9.405 `t_intr + ln2·R_cell·C_load` —— 负载项几何化了，但**自载项还是常数**；
+      · v0.9.406 `ln2·R_cell·(C_self + C_load)` —— 自载项也几何化。
+
+    为什么必须改：`t_intr` 是一个常数给所有单元，而 `R` 对 NAND3 是 INV 的 3 倍
+    ⇒ 「自载延时相同」在物理上不成立。本批把这个**内部矛盾**消掉。
+
+    🔴 **标定锚不变**：`C_self` 由 `t_intr_ps` 反解（= 0.5771 fF），所以
+    `t_intr(INV) = 2.0 ps` **逐位不变**，INV 的延时与 v0.9.405 **完全一致**。
+    整个变化可归因到一件事：**k>1 的单元变慢了**（NAND2 +2 ps/级）。
     """
     # R5-fix：默认值在调用时取，不在 def 时绑定
     if tech is None:
         tech = DEFAULT_TECH
     # Ω × fF = 1e-15 s = 1e-3 ps ⇒ 直接乘换算因子，**不得再乘 1e3**
     # （E34 第一版在这里多乘了 1e3，INV@4fF 报 13864 ps ⇒ 整个 STA 偏大 1000×）
-    return tech.t_intr_ps + cell_r_ohm(name, tech) * LN2 * load_ff * OHM_FF_TO_PS
+    return LN2 * cell_r_ohm(name, tech) * (c_self_ff(tech) + load_ff) * OHM_FF_TO_PS
 
 
 def cell_area_um2(name: str, tech: Tech | None = None) -> float:
@@ -482,6 +528,22 @@ def library_self_check(tech: Tech | None = None) -> dict:
         # 串联器件的栅长必须一致（同一 flavor 只有一个 L）
         if c.l_nm != CELLS["INV"].l_nm:
             problems.append(("l_inconsistent", name, c.l_nm, CELLS["INV"].l_nm))
+
+    # ⑨ 自载项的**锚自洽 + 逐单元化**（v0.9.406）
+    #    ① `t_intr(INV)` 必须回到锚 `t_intr_ps`（容差 1e-12：反解 `C_self` 有一次浮点往返）；
+    #    ② `t_intr(cell)/t_intr(INV)` 必须**恰好**等于 `R_cell/R_INV` ⇒ `t_intr ∝ R`；
+    #    ③ 至少要有一个单元的 `t_intr` **不等于**锚（否则「逐单元化」没发生）。
+    _ti_inv = t_intr_ps_for("INV", tech)
+    if abs(_ti_inv - tech.t_intr_ps) > 1e-12:
+        problems.append(("t_intr_anchor", _ti_inv, tech.t_intr_ps))
+    for _n in ("NAND2", "NAND3", "NOR2", "XOR2"):
+        _want = tech.t_intr_ps * (cell_r_ohm(_n, tech) / cell_r_ohm("INV", tech))
+        if abs(t_intr_ps_for(_n, tech) - _want) > 1e-9:
+            problems.append(("t_intr_not_prop_to_R", _n,
+                             t_intr_ps_for(_n, tech), _want))
+    if all(abs(t_intr_ps_for(_n, tech) - tech.t_intr_ps) <= 1e-12
+           for _n in CELLS):
+        problems.append(("t_intr_not_per_cell", "全部单元都等于锚 ⇒ 又退回常数"))
 
     # ⑧ W/L 的**内部一致性**：同一 family 内 p/n 宽度比必须一致
     #    （同一套布局规则生成 ⇒ 比例是族的属性，不是单元的属性。

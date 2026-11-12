@@ -108,6 +108,7 @@ c17 上前者是 `2 NAND2 + INV`、后者是 `3×NAND2` ⇒ 收益 1.50 vs 1.25�
 | 反事实口径 | `r_side_ohm(..., w_p_nm=)` / `cell_r_ohm(..., w_p_nm=)` —— **同一份实现**接受 1:1 覆盖，不写第二套 |
 | 消费者 | `dsignoff.signoff_ledger` 顶层 `pmos_sizing`（逐单元收益 + 主导侧 + 路径收益 + 三条 not_claimed） |
 | 对外形状 | **未扩**：`stages` 11 段；台账 `rows` 仍 12 行 |
+| 回归 | `core-fast` **351 PASS / 0 SKIP / 0 FAIL**（839.7 s，首跑即全绿）· **全量 `--tag core` 406 PASS / 0 SKIP / 0 FAIL**（**11141.64 s = 3.09 h**，`n_reused=0`，`git_head=f7786c5`）⇒ 凭证 green，`F4` 转绿（陈旧 0.06 h）。**主链 9 数一位未动**（本批纯分析，不改延时/版图） |
 
 ### 🔴 诚实边界
 

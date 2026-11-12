@@ -550,6 +550,25 @@ def run_trunk_from_verilog(src: str, **kw) -> dict:
     return run_trunk(nl, **kw)
 
 
+def run_trunk_from_bench(src: str, mode: str = "A", **kw) -> dict:
+    """从 ISCAS-85 `.bench` 源文本跑干线（F1 · 第二种真实输入格式）。
+
+    `dbench.parse_bench → decompose → to_netlist → run_trunk`，与
+    `run_trunk_from_verilog` 并列，共用**同一条**主链（不是第二套实现）。
+
+    🔴 **诚实边界（F1-2）**：`run_trunk` 内部用 `dpnr.place_real(nl)` 的默认
+    `max_cells=32`；超过 32 门的网表（c432 分解后 300–417 门）会**抛 ValueError**
+    而不是静默截断 —— 这正是 v0.9.400 修掉的「分子分母一起缩的假绿灯」。
+    大规模网表的规模真值请走 `scripts/ecore_capability_audit.py --only E14`，
+    那里显式传 `max_cells=len(nl.gates)`（显式授权，不是绕过）。
+    """
+    from lda_l2.ecore import dbench as BENCH
+    spec = BENCH.parse_bench(src)
+    gates = BENCH.decompose(spec, mode=mode)
+    nl = BENCH.to_netlist(spec, gates, name="bench_%s" % mode.lower())
+    return run_trunk(nl, **kw)
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # 代表性 ISCAS-85 c17（S3 dverilog.SAMPLE_VERILOG 同款；在此模块内按需导入）
 # ═══════════════════════════════════════════════════════════════════════════

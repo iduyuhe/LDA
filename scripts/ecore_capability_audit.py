@@ -303,6 +303,68 @@ def e13():
     return {"s13_check_calls": n}
 
 
+# ── E14 c432 规模真值（F1 · 三口径分解 × 双口径布通率）────────────────────
+@evidence("E14", "c432 规模真值：三口径门数 + 双口径布通率与三段归因")
+def e14():
+    """只度量两种**不同定义**的布通率，不做阶段决策。
+
+    · `main` = 交付链口径：`build_ports + route_block(ports=)`，
+      分母 `coverage.total`（全部网，含 primary I/O），DEMO45 单元库；
+    · `e53_style` = E53 实验口径：`HD` 库 + `in_row_m3`、无 pad 建模，
+      分母 `len(routed)+len(unrouted)`（仅内部网），`cols=8`。
+    🔴 两者分母/库/配置都不同，**禁止互引或混称「布通率」**。
+    """
+    from lda_l2.ecore import dbench as B
+    from lda_l2.ecore import ddrc_lvs as DL
+    from lda_l2.ecore import dhdlib as HD
+    from lda_l2.ecore import dpnr as PN
+    from lda_l2.ecore import dproc as PR
+
+    spec = B.parse_bench(B.load_corpus("c432"))
+    out = {"corpus": "c432", "sha256": B.BENCH_SOURCE["c432"]["sha256"],
+           "n_inputs": len(spec["inputs"]), "n_outputs": len(spec["outputs"]),
+           "n_source_gates": len(spec["gates"]),
+           "fanin_hist": B.decompose_report(spec, "A")["fanin_hist"],
+           "definitions": {
+               "main": "build_ports + route_block(ports=) · coverage.total · DEMO45",
+               "e53_style": "PR.use(DEMO28,lib=HD) + in_row_m3 · routed+unrouted · cols=8",
+               "note": "两口径分母/库/配置不同，不可互引；阶段决策不在本脚本判定"},
+           "modes": {}}
+    for mode in B.DECOMP_MODES:
+        gates = B.decompose(spec, mode)
+        nl = B.to_netlist(spec, gates, name="c432_%s" % mode)
+        n = len(nl.gates)
+        pl = PN.place_real(nl, max_cells=n)
+        ports = PN.build_ports(nl, pl)
+        rt = PN.route_block(nl, ports["pl"], ports=ports)
+        cov = rt["coverage"]
+        drc_main = len(DL.run_drc(PN.all_routing(rt))["violations"])
+        with PR.use("DEMO28", lib=HD):
+            pl2 = PN.place_real(nl, max_cells=n, cols=8)
+            rt2 = PN.route_block(nl, pl2, in_row_m3=True)
+            drc_e53 = len(DL.run_drc(PN.all_routing(rt2))["violations"])
+        n_int = len(rt2["routed"]) + len(rt2["unrouted"])
+        out["modes"][mode] = {
+            "n_decomposed_gates": n,
+            "cell_hist": B.decompose_report(spec, mode)["cell_hist"],
+            "main": {"routed": cov["routed"], "total": cov["total"],
+                     "failed": cov["failed"], "complete": cov["complete"],
+                     "coverage_matches_independent": cov == PN.net_coverage(rt),
+                     "n_col_fail_no_column": rt["n_col_fail_no_column"],
+                     "n_col_fail_too_far": rt["n_col_fail_too_far"],
+                     "n_in_row_m3_fail": len(rt["in_row_m3_fail"]),
+                     "n_skipped_true_port": cov["skipped_true_port"],
+                     "drc_violations": drc_main,
+                     "rows": pl["rows"], "cols": pl["cols"]},
+            "e53_style": {"routed": len(rt2["routed"]), "n_int": n_int,
+                          "n_in_row_m3": rt2["n_in_row_m3"],
+                          "n_col_fail_no_column": rt2["n_col_fail_no_column"],
+                          "drc_violations": drc_e53,
+                          "rows": pl2["rows"], "cols": pl2["cols"]},
+        }
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default=None, help="只跑某一项，如 E07")

@@ -120,7 +120,10 @@ NEW_MODULES = ("dliberty", "dlef", "dverilog", "ddef", "db3_trunk", "dxcheck",
                #: v0.9.401（P5）：非门禁下游 = `dsignoff.signoff_ledger`（台账顶层 `cell_layout_coverage`）
                "dcelltpl",
                #: v0.9.402（P2）：非门禁下游 = `dsignoff.signoff_ledger`（台账顶层 `drive_model`）
-               "dkdrive")
+               "dkdrive",
+               #: v0.9.410（F1）：非门禁下游 = `db3_trunk.run_trunk_from_bench`（产品链入口）
+               #: 与 `scripts/ecore_capability_audit.py` 的 E14（规模真值证据）
+               "dbench")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

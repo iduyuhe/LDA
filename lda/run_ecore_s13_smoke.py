@@ -70,7 +70,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lda_harness.smoke_kit import make_check  # noqa: E402
 
 from lda_l2.ecore import db3_trunk as B3        # noqa: E402
+from lda_l2.ecore import dbench as DB           # noqa: E402
 from lda_l2.ecore import dcell as DC           # noqa: E402
+from lda_l2.ecore import dhdlib as DHD         # noqa: E402
 from lda_l2.ecore import dcells as CL         # noqa: E402
 from lda_l2.ecore import ddef as DF            # noqa: E402
 from lda_l2.ecore import ddetail as DET        # noqa: E402
@@ -3360,6 +3362,126 @@ def main() -> int:
              _pv_cr["summary"][PV.UNDECIDABLE]))
     print("  [T3 边界] 报表**不给签核结论**（claimable=False）；`drc`/`lvs` 仍是 ROUTED_SUBSET_ONLY；"
           "面积与 DEF 无支配约束 ⇒ 只能说「是什么」")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # F1 · `.bench` 入口与规模真值（v0.9.410）
+    # 🔴 实现前的只读测算推翻了两条原先的假设：① c432 有 8/9 输入 AND、4 输入 NAND，
+    #    原指定口径分解后是 417 门而非 [160,300]；② 阶段验收没绑定布通率口径，
+    #    主链口径与 E53 实验口径会给出相反决策。⇒ 判据改问「闭式值/守恒/口径方向」，
+    #    不把任何一档布通率写成期望值，也不在这里做阶段决策。
+    # ══════════════════════════════════════════════════════════════════════
+    _f1_src = DB.load_corpus("c432")
+    _f1_sp = DB.parse_bench(_f1_src)
+    _f1_bad = 0
+    for _f1_probe in ("1 = FOO(2)", "1 = NAND(99)",
+                      "1 = NOT(2)\n1 = NOT(3)", "1 = NOT(2)\nOUTPUT(9)"):
+        try:
+            DB.parse_bench("INPUT(2)\nOUTPUT(1)\n" + _f1_probe)
+        except DB.BenchSyntaxError:
+            _f1_bad += 1
+    check("EC-G21 `.bench` 入口 fail-closed：c432 解析 **36 输入 / 7 输出 / 160 门**"
+          " · 语料 sha256 锁 %s… · 四类坏输入（未知门型/未定义网/重复驱动/悬空输出）"
+          " **%d/4 全被拒**" % (DB.BENCH_SOURCE["c432"]["sha256"][:12], _f1_bad),
+          len(_f1_sp["inputs"]) == 36 and len(_f1_sp["outputs"]) == 7
+          and len(_f1_sp["gates"]) == 160 and _f1_bad == 4
+          and DB.BENCH_SOURCE["c432"]["bytes"] == 3655
+          and DB.normalize_net_name("1") != "1",
+          "inputs=%d outputs=%d gates=%d bad=%d"
+          % (len(_f1_sp["inputs"]), len(_f1_sp["outputs"]),
+             len(_f1_sp["gates"]), _f1_bad))
+
+    _f1_r = {m: DB.decompose_report(_f1_sp, m) for m in DB.DECOMP_MODES}
+    _f1_n = {m: _f1_r[m]["n_decomposed_gates"] for m in DB.DECOMP_MODES}
+    _f1_det = DB.decompose(_f1_sp, "A") == DB.decompose(_f1_sp, "A")
+    _f1_fan = _f1_r["A"]["fanin_hist"]
+    check("EC-G22 分解闭式门数 **A %d / B %d / C %d**（原指定口径 A 超出原定区间 [160,300]"
+          " ⇒ 已用真实扇入普查证伪）；A→B 差 %d = 19 个 NOR2 ×(4→1)；B→C 差 %d"
+          " · 真实扇入含 AND/9×%d、NAND/4×%d · 两次分解逐位相同"
+          % (_f1_n["A"], _f1_n["B"], _f1_n["C"],
+             _f1_n["A"] - _f1_n["B"], _f1_n["B"] - _f1_n["C"],
+             _f1_fan.get("AND/9", 0), _f1_fan.get("NAND/4", 0)),
+          _f1_n == {"A": 417, "B": 360, "C": 300}
+          and _f1_n["A"] - _f1_n["B"] == 3 * _f1_r["B"]["cell_hist"].get("NOR2", 0)
+          and _f1_n["B"] - _f1_n["C"] == 60
+          and _f1_fan.get("AND/9") == 3 and _f1_fan.get("AND/8") == 1
+          and _f1_fan.get("NAND/4") == 14
+          and all(_f1_r[m]["cells_all_in_library"] for m in DB.DECOMP_MODES)
+          and _f1_det,
+          "; ".join("%s:%d%s" % (m, _f1_n[m], _f1_r[m]["cell_hist"])
+                    for m in DB.DECOMP_MODES))
+
+    _f1_t = {m: DB.template_truth_check(m) for m in DB.DECOMP_MODES}
+    _f1_e = {m: DB.equivalence_report(_f1_sp, DB.decompose(_f1_sp, m), n_vectors=64)
+             for m in DB.DECOMP_MODES}
+    check("EC-G23 分解式逻辑等价（两套零共享引擎）：模板级 **%d 组 2^k 全穷举**"
+          " × 3 口径 = %d 组，整电路 64 向量 ×3 口径，失配 **%d / %d**"
+          % (_f1_t["A"]["n_vectors"],
+             sum(v["n_vectors"] for v in _f1_t.values()),
+             sum(v["mismatches"] for v in _f1_t.values()),
+             sum(v["mismatches"] for v in _f1_e.values())),
+          all(v["mismatches"] == 0 and v["n_templates"] == 17
+              and v["n_vectors"] >= 1600 for v in _f1_t.values())
+          and all(v["mismatches"] == 0 and v["n_vectors"] == 64
+                  for v in _f1_e.values()),
+          "模板 %r · 整电路 %r"
+          % ({m: v["mismatches"] for m, v in _f1_t.items()},
+             {m: v["mismatches"] for m, v in _f1_e.items()}))
+
+    _f1_nl = DB.to_netlist(_f1_sp, DB.decompose(_f1_sp, "A"), name="c432_A")
+    try:
+        P.place_real(_f1_nl, max_cells=32)
+        _f1_reject = False
+    except ValueError as _f1_ex:
+        _f1_reject = "拒绝静默截断" in str(_f1_ex)
+    _f1_trunc = P.place_real(_f1_nl, max_cells=32, truncate_ok=True)
+    check("EC-G24 规模实验不假绿：%d 门网表传 `max_cells=32` **默认抛 ValueError**；"
+          "显式 `truncate_ok=True` 才放行，且返回 `n_truncated=%d` 可逐位对拍"
+          % (len(_f1_nl.gates), _f1_trunc["n_truncated"]),
+          _f1_reject and _f1_trunc["truncated"]
+          and _f1_trunc["n_truncated"] == len(_f1_nl.gates) - 32
+          and _f1_trunc["n_gates_total"] == len(_f1_nl.gates),
+          "reject=%r truncated=%r n_picked=%d"
+          % (_f1_reject, _f1_trunc["truncated"], _f1_trunc["n_picked"]))
+
+    _f1_pl = P.place_real(_f1_nl, max_cells=len(_f1_nl.gates))
+    _f1_po = P.build_ports(_f1_nl, _f1_pl)
+    _f1_rt = P.route_block(_f1_nl, _f1_po["pl"], ports=_f1_po)
+    _f1_cov = _f1_rt["coverage"]
+    _f1_drc = len(DL.run_drc(P.all_routing(_f1_rt))["violations"])
+    with DP.use("DEMO28", lib=DHD):
+        _f1_pl2 = P.place_real(_f1_nl, max_cells=len(_f1_nl.gates), cols=8)
+        _f1_rt2 = P.route_block(_f1_nl, _f1_pl2, in_row_m3=True)
+        _f1_drc2 = len(DL.run_drc(P.all_routing(_f1_rt2))["violations"])
+    _f1_nint = len(_f1_rt2["routed"]) + len(_f1_rt2["unrouted"])
+    _f1_main = _f1_cov["routed"] / _f1_cov["total"]
+    _f1_e53 = len(_f1_rt2["routed"]) / _f1_nint
+    check("EC-G25 规模真值**双口径各报一个数**：主链 %.1f%%（%d/%d · no_column %d ·"
+          " DRC %d）vs E53 实验口径 %.1f%%（%d/%d · 行内 %d · DRC %d）；"
+          " 覆盖记账与独立复算一致 · `no_column>0` · 端口网全进图"
+          % (100 * _f1_main, _f1_cov["routed"], _f1_cov["total"],
+             _f1_rt["n_col_fail_no_column"], _f1_drc,
+             100 * _f1_e53, len(_f1_rt2["routed"]), _f1_nint,
+             _f1_rt2["n_in_row_m3"], _f1_drc2),
+          _f1_cov["complete"] and _f1_cov == P.net_coverage(_f1_rt)
+          and _f1_cov["accounted"] == _f1_cov["total"]
+          and _f1_cov["skipped_true_port"] == 0
+          and _f1_rt["n_col_fail_no_column"] > 0
+          and _f1_main < _f1_e53 and _f1_nint > 0,
+          "MAIN %.4f / E53_STYLE %.4f · 两口径分母/库/配置不同，禁止互引、本判据不做阶段决策"
+          % (_f1_main, _f1_e53))
+
+    _f1_rep = B3.run_trunk_from_bench(DB.load_corpus("c17"))
+    _f1_st = {n: p for n, p in _f1_rep["stages"]}
+    check("EC-G26 `.bench` 真进主链：`run_trunk_from_bench(c17)` 跑出 **%d 段**"
+          "（parse→…→m1_exit）· %d 门 / %d 网 · 布通 %d/%d · chain=%s"
+          % (len(_f1_rep["stages"]), _f1_st["parse"]["gates"],
+             _f1_st["parse"]["nets"], _f1_st["route"]["nets_with_segments"],
+             _f1_st["route"]["nets_touched"], _f1_rep["chain"]),
+          _f1_rep["chain"] == B3.TRUNK_CHAIN and len(_f1_rep["stages"]) == 11
+          and _f1_st["parse"]["gates"] == 6 and _f1_st["parse"]["nets"] == 11
+          and _f1_st["route"]["nets_with_segments"] == 10
+          and _f1_st["route"]["nets_touched"] == 11,
+          "stages=%r" % ([n for n, _ in _f1_rep["stages"]],))
 
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)

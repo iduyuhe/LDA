@@ -1163,6 +1163,23 @@ ECORE_CAPABILITY_MANIFEST = [
         "introduced_by": "S4 B4",
         "guard": "run_ecore_s7_smoke.py",
     },
+    {
+        "capability": "ISCAS-85 `.bench` 输入入口（F1）：解析门级网表（**任意扇入**，"
+                      "未知语法/未定义网/重复驱动一律 fail-closed），把 AND/OR/XOR/NAND/NOR "
+                      "按三种显式口径分解到库内**有真实版图**的 INV/NAND2/NOR2，产出 "
+                      "dsynth.Netlist 供既有数字链消费；分解式由 (门型, 扇入) 模板的 2^k "
+                      "**全穷举**真值表 + 两套零共享代码路径的引擎对拍验证。内置公开学术基准"
+                      "语料并逐字节校验 sha256。诚实边界：语料只作被测输入，非 golden / "
+                      "非 PDK / 非运行时依赖，零网络调用，不作流片或性能宣称；本模块只产出"
+                      "事实与度量，不含判据、不含结论。",
+        "module": "lda_l2.ecore.dbench",
+        "symbols": ["BENCH_SOURCE", "DECOMP_MODES", "LIB_CELLS", "DECOMP_TEMPLATES",
+                    "BenchSyntaxError", "load_corpus", "parse_bench", "decompose",
+                    "decompose_report", "to_netlist", "normalize_net_name",
+                    "bench_eval", "template_truth_check", "equivalence_report"],
+        "introduced_by": "F1 (v0.9.410)",
+        "guard": "run_ecore_s13_smoke.py",
+    },
 ]
 
 

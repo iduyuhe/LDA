@@ -632,7 +632,7 @@ def sizing_gain_chain(cells, load_ff=None, tech=None) -> dict:
     「ΣR 比」而是逐级加权，两者在该退化的地方必须**逐位**相等（门禁侧有断言）。
     """
     tech = tech or DC.DEFAULT_TECH
-    seq = _normalize_chain(cells, load_ff, tech)
+    seq = normalize_chain(cells, load_ff, tech)
 
     cs = DC.c_self_ff(tech)
     rows = []
@@ -674,12 +674,21 @@ def self_load_default(load_ff, tech=None):
     return (FO_TARGET * tech.cin_ff) if load_ff is None else float(load_ff)
 
 
-def _normalize_chain(cells, load_ff, tech):
+def normalize_chain(cells, load_ff, tech):
     """把 `cells` 归一成 `[(name, load_ff)]`。
 
     🔴 `sizing_gain_chain` 与 `area_delay_tradeoff` **共用这一份**：
     「路径上的负载怎么定」如果两处各写一次，一个改了另一个不改就会给出
     「延时收益按 A 口径、面积代价按 B 口径」的合成指标 —— 那比没有指标更坏。
+
+    🔴 **为什么是公开名（不带下划线）**：`lda_harness.reachability` 的引用图
+    **只连公开函数**（`public_funcs` ⇒ `edges = {t for t in ids_in(node) if t in funcs}`）
+    ⇒ 私有 helper 对它是**透明**的：私有函数体内引用到的公开函数会被判成「零引用」。
+    v0.9.408 首版用 `_normalize_chain`，它体内的 `self_load_default` 立刻被 R1 判死
+    （全量 405 PASS / 1 FAIL 的唯一来源）。这不是「改名换绿」——本函数被两个公开 API
+    共用，公开是它真实的可见性；改名让引用图**如实反映**调用关系。
+    ⚠️ 反向的教训：**把公开函数重构成私有 helper，会触发 reachability 假红**，
+    不要为此去扩 `DEAD_BASELINE`。
     """
     seq = []
     for item in cells:
@@ -728,7 +737,7 @@ def area_delay_tradeoff(cells, load_ff=None, tech=None) -> dict:
     """
     from . import dcells as CL
     tech = tech or DC.DEFAULT_TECH
-    seq = _normalize_chain(cells, load_ff, tech)
+    seq = normalize_chain(cells, load_ff, tech)
     rows = []
     a_bal = a_11 = d_bal = d_11 = 0.0
     for name, lf in seq:

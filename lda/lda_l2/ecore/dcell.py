@@ -461,11 +461,68 @@ def cell_delay_ps(name: str, load_ff: float, tech: Tech | None = None,
             * (c_self_ff(tech) + load_ff) * OHM_FF_TO_PS)
 
 
+AREA_BASIS_LAYOUT = "LAYOUT_GEOMETRY"
+AREA_BASIS_SYMBOLIC = "SYMBOLIC"
+
+
+def area_basis(name: str) -> str:
+    """该单元的面积**用哪一套口径**（v0.9.409）。
+
+    🔴 这是对 `C1`（面积三套口径差 13.10×）的处置：不是「统一成一个数」，
+    而是**让每颗单元自己说清用哪套**，并且**有版图的必须走几何**。
+
+    · `LAYOUT_GEOMETRY`：有版图（`Cell.layout` 非空）⇒ `dcells` 真几何 w×h；
+    · `SYMBOLIC`：无版图 ⇒ `n_tr × area_per_tr_um2`（一阶估计，**已知比几何小 13×**）。
+    """
+    return AREA_BASIS_LAYOUT if CELLS[name].layout else AREA_BASIS_SYMBOLIC
+
+
+def cell_area_layout_um2(name: str) -> float:
+    """该单元的**几何真值**（µm²，`dcells` 的 w×h）。无版图 ⇒ 抛错，不返回估计。"""
+    c = CELLS[name]
+    if not c.layout:
+        raise ValueError("单元 %s 没有版图（`Cell.layout` 为空），无几何面积" % name)
+    from . import dcells as _CL          # 惰性：`dcells` 不 import `dcell`，无环
+    return _CL.cell_area_um2_at(c.layout)
+
+
 def cell_area_um2(name: str, tech: Tech | None = None) -> float:
+    """单元面积（µm²）——**符号口径**：`n_tr × area_per_tr_um2`。
+
+    🔴🔴 **这个数比几何真值小 13 倍，且它仍是 `dsynth.area` / `dplac` 成本 /
+    `dxcheck` / `ec_b3_signoff` 的输入**（v0.9.409 实测：INV 0.0800 vs 几何 1.0478）。
+
+    为什么不直接改：改它会让 EC-B3 的四口径、EC-P12/P13/Q05/R01/R04 共 6 条判据
+    一次全红 —— 那是**受控改口**（要重定 golden + 重生台账 + 全量），不属于
+    「不改数字」的 F0 批次。⇒ 本批只做**强制声明口径**：
+
+    · `area_basis(name)` 告诉调用方拿到的是哪一套；
+    · `area_gap_report()` 把倍差**显式报出来**，让「差 13 倍」不再是一个没人看的注释。
+
+    真正的归一排在 F5（受控改口，四项接线一起做）。
+    """
     # R5-fix：默认值在调用时取，不在 def 时绑定
     if tech is None:
         tech = DEFAULT_TECH
     return CELLS[name].n_tr * tech.area_per_tr_um2
+
+
+def area_gap_report() -> dict:
+    """符号口径 vs 几何真值的**倍差**（只对有版图的单元）—— 让偏差可被看见。"""
+    rows = {}
+    for name, c in CELLS.items():
+        if not c.layout:
+            continue
+        geo = cell_area_layout_um2(name)
+        sym = cell_area_um2(name)
+        rows[name] = {"symbolic_um2": sym, "layout_um2": geo,
+                      "ratio": (geo / sym) if sym else None}
+    ratios = [r["ratio"] for r in rows.values() if r["ratio"]]
+    return {"by_cell": rows, "n_measured": len(rows),
+            "ratio_min": min(ratios) if ratios else None,
+            "ratio_max": max(ratios) if ratios else None,
+            "note": ("符号口径系统性偏小；F5 受控改口前，凡用 `cell_area_um2` 的数字"
+                     "都必须标 `basis=SYMBOLIC`")}
 
 
 def cell_leak_nw(name: str, tech: Tech | None = None) -> float:

@@ -3253,6 +3253,58 @@ def main() -> int:
           and abs(_ad_elas_ratio - 6.0) < 1e-9
           and abs(_ad_c17["elasticity"] - _ad_c17_want) < 1e-12)
 
+    # ── v0.9.409（F0）：两条「静默缺口」的守护 ────────────────────────────
+    #   ① 面积三套口径曾差 13.10×（符号 INV 0.0800 vs 几何 1.0478），而
+    #      `dsynth`/`dplac`/`dxcheck` 三处消费者**自洽但全错** —— 比值判据抓不住量级错；
+    #   ② `ileak_na_per_tr` 曾零消费（只有 `dcell.py` 的定义处）—— 参数在、没读者。
+    #   ⇒ 两条判据都不问「参数在不在」，只问「有没有人在用、用的是哪一套」。
+    _ar_bad = []
+    for _ar_n, _ar_c in DC.CELLS.items():
+        _ar_b = DC.area_basis(_ar_n)
+        _ar_has = bool(_ar_c.layout)
+        # ① `basis` 必须与「版图到底有没有」一致（不许声称几何却没有版图，反之亦然）
+        if _ar_has != (_ar_b == DC.AREA_BASIS_LAYOUT):
+            _ar_bad.append((_ar_n, "basis_mismatch", _ar_b, _ar_c.layout))
+        # ② 有版图的，几何真值必须与 `dcells` 逐位一致（两个真源对拍）
+        if _ar_has:
+            if _ar_c.layout not in CL.CELLS:
+                _ar_bad.append((_ar_n, "no_geom", _ar_c.layout))
+            else:
+                _ar_g = DC.cell_area_layout_um2(_ar_n)
+                if abs(_ar_g - CL.cell_area_um2_at(_ar_c.layout)) > 1e-12:
+                    _ar_bad.append((_ar_n, "geometry_drift", _ar_g))
+    _ar_gap = DC.area_gap_report()
+    # ③ **量级锚**：倍差必须被报出且落在 [11,14]。这条防两种坏样子：
+    #    悄悄归一了却没人知道（ratio→1），或倍差继续扩大（模型漂了）。
+    _ar_gap_ok = (1.0e1 <= (_ar_gap["ratio_min"] or 0) <= (_ar_gap["ratio_max"] or 0) <= 1.4e1)
+    _ar_lay = sorted(n for n in DC.CELLS if DC.area_basis(n) == DC.AREA_BASIS_LAYOUT)
+    check("EC-G19 面积口径**声明**（v0.9.409）：符号 vs 几何倍差 **%.2f..%.2f**（%d 颗有版图）"
+          " —— 本批**不强制归一**（那会让 EC-B3 四口径等 6 条判据一次全红），"
+          "但偏差必须被 `area_gap_report` 显式报出；`area_basis` 与版图存在性一致；"
+          "几何真值与 `dcells` 逐位对拍。不一致 %d 项"
+          % (_ar_gap["ratio_min"] or 0, _ar_gap["ratio_max"] or 0, _ar_gap["n_measured"],
+             len(_ar_bad)),
+          not _ar_bad and _ar_gap_ok and len(_ar_lay) == 3,
+          "不一致 %s · gap∈[%.2f,%.2f]" % (_ar_bad[:4], _ar_gap["ratio_min"] or 0,
+                                          _ar_gap["ratio_max"] or 0))
+
+    # 漏电：① 单管逐位等于 n_tr×ileak×vdd；② 报表里真的出现 `leakage` 段；③ 总量 > 0
+    _lk_inv = DC.cell_leak_nw("INV")
+    _lk_want = (DC.CELLS["INV"].n_tr * _ti_tech.ileak_na_per_tr * _ti_tech.vdd)
+    _lk_seg = (_pv_led or {}).get("leakage") or {}
+    _lk_ok = (abs(_lk_inv - _lk_want) <= 1e-12
+              and "error" not in _lk_seg
+              and _lk_seg.get("total_nw", 0.0) > 0.0
+              and abs(_lk_seg.get("total_nw", -1.0)
+                      - sum(DC.cell_leak_nw(g.cell) for g in nl.gates)) <= 1e-9)
+    check("EC-G20 漏电入报表（v0.9.409）：`ileak_na_per_tr` 从**零消费**变为有消费者 —— "
+          "INV 单管 %.9f nW（= %d×%.3f×%.2f 逐位）· 台账 `leakage.total_nw` = %.9f nW / %d 门 · "
+          "scope=%s"
+          % (_lk_inv, DC.CELLS["INV"].n_tr, _ti_tech.ileak_na_per_tr, _ti_tech.vdd,
+             _lk_seg.get("total_nw", -1.0), _lk_seg.get("n_gates", -1),
+             _lk_seg.get("scope")),
+          _lk_ok and _lk_seg.get("in_blocking") is False)
+
     # EC-G18 🔴 **升到 P&R 级**：NOR 网表真的能 place → route → DRC，且
     #   ① 每个信号引脚都进图（引脚守恒 —— 这正是 v0.9.408 修掉的那个 bug 的看守）；
     #   ② 行高不变（否则 `dpnr` 的预算被顶起、主链 9 个数全作废）；

@@ -445,6 +445,33 @@ def signoff_ledger(report, netlist=None):
     except Exception as exc:                       # noqa: BLE001
         out["drive_geometry"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
 
+    # 🔴 v0.9.409（F0-1）：**漏电入报表** —— `ileak_na_per_tr` 此前**零消费**
+    #   （审计脚本 E08 实测：产品链里只有 `dcell.py` 的定义处，没有任何消费者）。
+    #   功耗域因此只有动态功耗、没有静态功耗，而「1340 门控制壳的漏电」是必答项。
+    #   归因：`dsignoff` 只报 switching/clock，漏电被写成「一阶估计、不参与判决」之后就没人用了 ——
+    #   **「有参数、有注释、无消费者」是一种静默的能力缺口**，任何只查定义不查调用的判据都发现不了。
+    try:
+        _lk = {}
+        for g in netlist.gates:
+            _lk[g.cell] = _lk.get(g.cell, 0.0) + DC.cell_leak_nw(g.cell)
+        _lk_total = sum(_lk.values())
+        out["leakage"] = {
+            "scope": "DIAGNOSTIC_ONLY",
+            "in_blocking": False,
+            "unit": "nW",
+            "by_cell": {k: round(v, 9) for k, v in sorted(_lk.items())},
+            "total_nw": round(_lk_total, 9),
+            "per_gate_nw": (round(_lk_total / len(netlist.gates), 9)
+                            if netlist.gates else 0.0),
+            "n_gates": len(netlist.gates),
+            "basis": ("SYMBOLIC · n_tr × ileak_na_per_tr × vdd（一阶，"
+                      "claimable=False）"),
+            "not_claimed": ("室温单管估计：无 stacking effect、无温度/工艺依赖、"
+                            "无多阈值单元，也不与动态功耗合并成总能效"),
+        }
+    except Exception as exc:                       # noqa: BLE001
+        out["leakage"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
+
     # 🔴 v0.9.407：pMOS 平衡**买到了多少延时** —— 只加顶层键、不动 `rows`。
     #   为什么必须给：v0.9.404 的 README 曾把「单元级 2.50×」写得像链级收益，
     #   而 c17 实测只有 1.50×（拓扑路径）/ 1.25×（延迟关键路径）。

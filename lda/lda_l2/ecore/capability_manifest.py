@@ -468,10 +468,19 @@ ECORE_CAPABILITY_MANIFEST = [
                       "非拟合）· 一阶 RC 延时 `ln2·R_cell·(C_self+C_load)`（R 由 W/L 与串联数算，"
                       "**自载项也 ∝ R**）· "
                       "**族内 `k_drive` 与串联数同序 + 跨族方向判据**（NOR>NAND / AND>NAND）· "
-                      "解析金标 `chain_golden_ps`（0 级恰为 0）",
+                      "解析金标 `chain_golden_ps`（0 级恰为 0）"
+                      "✅ **v0.9.409 面积口径暴露**：`cell_area_um2` 是**符号口径**（`n_tr×area_per_tr`），"
+                      "实测比 `dcells` 几何真值**小 11.94–13.10×**（INV 0.0800 vs 1.0478 µm²），"
+                      "而它仍是 `dsynth.area` / `dplac` 成本 / `dxcheck` / `ec_b3_signoff` 的输入 ⇒ "
+                      "四处自洽、合起来偏小一个数量级（「比值判据抓不住量级错」的活标本）。"
+                      "本批**不强制归一**（会让 EC-B3 四口径等 6 条判据一次全红，属受控改口，排 F5），"
+                      "只做**强制声明**：`area_basis()` 说明用哪一套、`area_gap_report()` 把倍差显式报出、"
+                      "`cell_area_layout_um2()` 给几何真值（无版图则抛错，不返回估计）",
         "module": "lda_l2.ecore.dcell",
         "symbols": ["Cell", "Tech", "CELLS", "COMB_CELLS", "BASE_PRIMS", "DEFAULT_TECH",
                     "cell", "eval_cell", "cell_delay_ps", "cell_area_um2", "cell_leak_nw",
+                    "cell_area_layout_um2", "area_basis", "area_gap_report",
+                    "AREA_BASIS_LAYOUT", "AREA_BASIS_SYMBOLIC",
                     "chain_golden_ps", "library_self_check", "DCELL_DISCLOSURE"],
         "introduced_by": "D-209 (E34)", "guard": "run_ecore_e34_smoke.py",
     },
@@ -804,7 +813,12 @@ ECORE_CAPABILITY_MANIFEST = [
                       "（tt≈3.16ps / ss≈4.15ps 量级），EM 标称 0.2mA 通过（裕量 1.68×）、0.4mA 必红。"
                       "🔴 **不是 signoff**：一阶解析模型，真实签核还需 foundry ITF/3D 场/SPEF/PVT/EM 规则表/"
                       "硅实测 —— 七项缺口在 `B3_DISCLOSURE.missing_for_real_signoff` 里逐条列出（对外必须同给）。"
-                      "⚠️ 多角系数与 `J_MAX` 是**演示量级假设**，非工艺认证；**净增 0 锚**（闭式算术 ⇒ 门禁形态，E42 · 9 判据）",
+                      "⚠️ 多角系数与 `J_MAX` 是**演示量级假设**，非工艺认证；**净增 0 锚**（闭式算术 ⇒ 门禁形态，E42 · 9 判据）"
+                      "✅ **v0.9.409 漏电入台账**：`ileak_na_per_tr` 此前**零消费**（审计 E08 实测：产品链里"
+                      "只有 `dcell.py` 的定义处）⇒ 功耗域只有动态、没有静态。现新增顶层键 `leakage`"
+                      "（`by_cell` / `total_nw` / `per_gate_nw` / `basis=SYMBOLIC` / `not_claimed`），"
+                      "**不动 `rows`（恒 12）**、`scope=DIAGNOSTIC_ONLY`、`in_blocking=False`。"
+                      "⚠️ 「参数有定义、无消费者」是一种**静默能力缺口** —— 只查定义不查调用的判据发现不了它",
         "module": "lda_l2.ecore.dsignoff",
         "symbols": ["wire_r", "wire_c", "net_rc", "elmore_closed", "elmore_ladder",
                     "delay_at_corner", "corner_table", "ir_drop_closed", "ir_drop_ladder",

@@ -1,5 +1,50 @@
 # Changelog
 
+## v0.9.409（2026-11-12 · **F0：把两个「静默缺口」变成可机核的事实** · 净增 0 锚 · CI core **406**）
+
+### 一句话
+
+两个缺口都不是「没实现」，而是「**实现了但没人用**」：
+`ileak_na_per_tr` 有定义、无消费者（功耗域只有动态项）；`cell_area_um2` 有值、但比几何真值小一个数量级，
+而四个消费者（`dsynth` / `dplac` / `dxcheck` / `ec_b3_signoff`）**自洽地一起错**。
+任何只查「参数在不在」的判据都发现不了它们。
+
+### ✅ 漏电入台账（`dsignoff.leakage`）
+
+| 项 | 值 |
+|---|---|
+| 新增顶层键 | `leakage`（`by_cell` / `total_nw` / `per_gate_nw` / `basis` / `not_claimed`） |
+| c17 实测 | **0.99 nW / 6 门**（INV 0.09 + NAND2 0.90） |
+| 单管校验 | INV = `2 × 0.05 nA × 0.90 V` = 0.09 nW（逐位） |
+| 不动既有结构 | `rows` 仍 **12**；`scope=DIAGNOSTIC_ONLY`；`in_blocking=False` |
+
+### ✅ 面积口径：不归一，但强制声明
+
+`cell_area_um2` 保持符号口径，但新增三件：
+
+- `area_basis(name)` → `LAYOUT_GEOMETRY` / `SYMBOLIC`
+- `area_gap_report()` → 逐单元倍差 + `ratio_min/max`
+- `cell_area_layout_um2(name)` → 几何真值（无版图**抛错**，不返回估计）
+
+实测倍差 **11.94–13.10×**（INV 0.0800 vs 1.0478 µm²）。
+
+🔴 **为什么本批不归一**：改它会让 EC-B3 四口径、EC-P12/P13/Q05/R01/R04 共 **6 条判据一次全红**
+—— 那是**受控改口**（重定 golden + 重生台账 + 全量），不属于「不改数字」的 F0 批次。
+（这是执行时的真实发现：规划的验收条件写「→1.00」，实际一改就撞 6 条判据。）
+⇒ 归一排在 F5，与 PVT/SPEF/IR/节点四项接线一起做。
+
+### 判据（219 → 221）
+
+- `EC-G19` 面积口径**声明**：`area_basis` 与版图存在性一致 · 几何真值与 `dcells` 逐位对拍 ·
+  **倍差落在 [11,14]** —— 这条同时防「悄悄归一了没人知道」和「倍差继续扩大」
+- `EC-G20` 漏电入报表：单管逐位 + 台账 `total_nw` 与逐门求和一致 + `in_blocking=False`
+
+### 文件
+
+`dcell.py`（`area_basis` / `area_gap_report` / `cell_area_layout_um2`）·
+`dsignoff.py`（`leakage` 段）· `capability_manifest.py`（2 条）·
+`run_ecore_s13_smoke.py`（+2 判据）· `scripts/ecore_capability_audit.py`（**新增**，13 项证据）
+
 ## v0.9.408（2026-11-12 · **从时序级升到 P&R 级：NOR 能画、能布、能算坪效** · 净增 0 锚 · CI core **406**）
 
 ### 一句话

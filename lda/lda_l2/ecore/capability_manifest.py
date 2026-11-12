@@ -509,11 +509,22 @@ ECORE_CAPABILITY_MANIFEST = [
         "capability": "**静态时序分析 + 面积/功耗**：拓扑序到达时间传播 · clk→Q 起点 · "
                       "建立检查 `t_clk_min=max(arrival(D)+t_setup)` · 关键路径回溯 · "
                       "**三条独立路径金标**（图传播 / 逐级累加 / 代数相乘，rel<1e-12）· "
-                      "🔴 `hold_checked=False`（单角零偏斜下形式满足 ⇒ **不谎称验过**）",
+                      "🔴 `hold_checked=False`（单角零偏斜下形式满足 ⇒ **不谎称验过**）"
+                      "✅ **v0.9.408 面积↔延时联合指标**（`area_delay_tradeoff`）：把「面积代价」"
+                      "与「延时收益」合成**一个比值**，因为两个数并排看会给出相反印象。两个互补口径："
+                      "`elasticity`（无量纲 = (延时收益−1)/(面积比−1)，每 1% 面积买回的 % 延时）与"
+                      "`ps_per_um2`（坪效）。实测 NOR2×10@3fF：面积 ×1.300 / 延时 ×2.500 ⇒ 弹性 **5.0**、"
+                      "**84.3 ps/µm²**；NAND2 同规模：×1.300 / ×1.250 ⇒ 弹性 0.833、14.1 ps/µm²；"
+                      "c17 拓扑路径 ×1.313 / ×1.500 ⇒ 1.597。⇒ **面积效率差 6 倍**（同面积比时弹性比"
+                      "= 1.5/0.25 可闭式预测）。⚠️ 面积是**瓦片面积**（Σ w×h，不含通道/间隙），"
+                      "与主链 59.202 µm² 的**布局面积**口径不同，不可互相引用；`area_ratio==1` 时"
+                      "`elasticity=None`（纯下拉主导单元：这笔改动没有可报的收益）。`build_chain_nl` "
+                      "新增 `tie_inputs`（多输入单元其余脚共接一条输入网）—— 旧版无条件只连一脚，"
+                      "对 NAND2/NOR2 是**悬空脚**，网表在物理链上非法",
         "module": "lda_l2.ecore.dsta",
         "symbols": ["Timing", "sta", "loads_of", "switching_power_nw", "clock_power_nw",
                     "chain_golden_from_loads", "build_chain_nl", "sta_self_check",
-                    "DSTA_DISCLOSURE"],
+                    "sizing_gain_chain", "area_delay_tradeoff", "DSTA_DISCLOSURE"],
         "introduced_by": "D-213 (E34)", "guard": "run_ecore_e34_smoke.py",
     },
     {
@@ -742,9 +753,22 @@ ECORE_CAPABILITY_MANIFEST = [
                       "ledger 锚会撞 zero_resid 棘轮）⇒ 以门禁几何律形态落地（E40 · 9 判据 · 反向探针 9 条）。"
                       "⚠️ 诚实边界：规则集是**自建 LDA-DEMO45**（45nm 量级教科书尺度），**非任何 foundry "
                       "PDK 真值**；**不是 SPICE**（只有 W/L + 方块电阻，无 I-V/C/温度/噪声）；"
-                      "电流拥挤未建模 ⇒ R 偏乐观；不含 M2 内部走线；不报 TOPS/fJ/能效（未流片）",
+                      "电流拥挤未建模 ⇒ R 偏乐观；不含 M2 内部走线；不报 TOPS/fJ/能效（未流片）"
+                      "✅ **v0.9.408 补 NOR2_X1 版图**：`build_nor2` 给出 2 串 PMOS + 2 并 NMOS 的"
+                      "**真几何**（DRC 0 / LVS 0 / 抽 2pmos+2nmos），尺寸 **980×1950 nm 与 NAND2 完全相同**"
+                      "—— 这是**刻意约束**（`dpnr.row_height_um`/`CELL_W_UM` 取 CELLS 的 max，一旦超出，"
+                      "主链 c17 的 9 个固定口径数字全部作废）。拓扑机核：pmos 共享 1 节点（串联）、"
+                      "nmos 共享 2 节点（并联）⇒ 「画的是 NOR 不是 NAND」可查。"
+                      "🔴 版图上的两个**实测陷阱**：① NOR 的输出在**中间段**，若沿用 NAND2 的"
+                      "三格 pad 分配（A120/B480/Y840），Y 的绕行竖条必然穿过 B pad ⇒ **直接短路**；"
+                      "本版改「A/B 同带两侧、Y 下沉」，Y 的 p 侧引出点落在 pad 正上方 ⇒ 零绕行。"
+                      "② 派生 M1 包围不能手写 `round(cy)±k`：孔的 y0 是 `int(round(cy−22.5))`，"
+                      "偶数舍入使两组孔的补偿量不等 ⇒ 首跑 4 条 `cont_enc_m1` 差 1–2 nm；"
+                      "改用 `_cont_box` 取孔的整数边界。`cell_area_um2_at(kind, w_p_nm)` 走**真几何**"
+                      "重建（`build_*(w_p_nm=)`）算反事实面积，不用高度外推",
         "module": "lda_l2.ecore.dcells",
-        "symbols": ["build_inv", "build_nand2", "CELLS", "RULES", "RSH", "R_CONTACT",
+        "symbols": ["build_inv", "build_nand2", "build_nor2", "cell_area_um2_at",
+                    "CELLS", "RULES", "RSH", "R_CONTACT",
                     "diff_segments", "connectivity", "extract_devices", "run_drc",
                     "run_lvs", "extract_r", "gate_r", "cell_self_check", "B1_DISCLOSURE",
                     "PINS_V2_NOTE"],
@@ -851,7 +875,7 @@ ECORE_CAPABILITY_MANIFEST = [
                       "全量 DRC **0**、10/10 网布通、每网 1 连通分量、列失败 0。"
                       "🔴 **零 DRC 只对这一个用例成立**（12 单元 / 4 列 / INV+NAND2 / LDA-DEMO45），"
                       "换单元类型（DFF 未建模）、列数、通道高度都要重测。"
-                      "⚠️ 子块接入非全 IP（dcells 仅 INV/NAND2，DFF 跳过并计数；DRC 为 O(n²) 规模受限）；"
+                      "⚠️ 子块接入非全 IP（dcells 有 INV/NAND2/NOR2，DFF 跳过并计数；DRC 为 O(n²) 规模受限）；"
                       "非通用路由器（每网单 trunk 星形，无 maze/rip-up）；M2 只画焊盘；行高取 max 底对齐；"
                       "单元间距 0.46µm（=1.44−0.98，为轨道间距整数倍）换 pin 可达性；"
                       "只布内部网（端口网如实计入未布）；**净增 0 锚**（E45 · 12 判据）"
@@ -1090,7 +1114,7 @@ ECORE_CAPABILITY_MANIFEST = [
         "guard": "run_ecore_s3_smoke.py",
     },
     {
-        "capability": "S4 结构级 Verilog 子集解析器（B2/S3 · 门级网表入口）：把 ISCAS/EPFL 这类已综合好的结构网表（nand g(y,a,b) 门实例）读进 dsynth.Netlist（与 drtl RTL 子集分工，汇合点同为 dsynth.Netlist），让 B3 干线 place→route→drc 能直接吃上一段输出。字节级往返双射（门按名排序吐回）+ 幂等；零数据丢失不变量（门实例/网名集合守恒）；未知语法必报错（未闭合/非法原语/升序向量/输出当输入/缺; 带位置）；多比特端口拆位（LSB first）+ 位选门引用；to_model→S1 Layout（坐标留 0，几何在布局阶段）；PHYSICALLY_MODELED={INV,NAND2}（其余原语物理链诚实跳过）。不综合不求值；非 foundry PDK；C 级自主纯标准库、LLM 不进判决路径。",
+        "capability": "S4 结构级 Verilog 子集解析器（B2/S3 · 门级网表入口）：把 ISCAS/EPFL 这类已综合好的结构网表（nand g(y,a,b) 门实例）读进 dsynth.Netlist（与 drtl RTL 子集分工，汇合点同为 dsynth.Netlist），让 B3 干线 place→route→drc 能直接吃上一段输出。字节级往返双射（门按名排序吐回）+ 幂等；零数据丢失不变量（门实例/网名集合守恒）；未知语法必报错（未闭合/非法原语/升序向量/输出当输入/缺; 带位置）；多比特端口拆位（LSB first）+ 位选门引用；to_model→S1 Layout（坐标留 0，几何在布局阶段）；PHYSICALLY_MODELED={INV,NAND2,NOR}（其余原语物理链诚实跳过）。不综合不求值；非 foundry PDK；C 级自主纯标准库、LLM 不进判决路径。",
         "module": "lda_l2.ecore.dverilog",
         "symbols": ["PHYSICALLY_MODELED", "SAMPLE_VERILOG", "VerilogSyntaxError",
                     "parse", "serialize", "to_model", "to_netlist"],

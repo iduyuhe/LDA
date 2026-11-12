@@ -74,8 +74,13 @@ from .ddetail import Shape
 # 几何常量（全部显式）
 # ═══════════════════════════════════════════════════════════════════════════
 #: 主链网表的单元名 → `dcells` 里已建模的类型（**显式映射**，不猜）
-#: 🔴 DFF 未建模（`dcells` 只有 INV/NAND2）⇒ 如实跳过并计数，不装作能布。
-CELL_MAP = {"INV": "INV_X1", "NAND2": "NAND2_X1"}
+#: 🔴 DFF 未建模（`dcells` 只有 INV/NAND2/NOR2）⇒ 如实跳过并计数，不装作能布。
+#: 🔴 v0.9.408：NOR 是**第一个两套命名不同名**的原语 ——
+#:   Verilog 入口（`dverilog`）给原语名 `NOR`，而 `dsta.build_chain_nl` 给单元名 `NOR2`
+#:   （它要拿这个名字去查 `dcell.CELLS`）。INV/NAND2 恰好两边同名，所以此前没暴露。
+#:   两个 key 都登记，指向同一张版图 —— 这一行就是「命名不一致」的唯一落点。
+CELL_MAP = {"INV": "INV_X1", "NAND2": "NAND2_X1",
+            "NOR": "NOR2_X1", "NOR2": "NOR2_X1"}
 
 #: 🔴 v0.9.351：M2 可承担「引脚 → 列」横向偏移后的**紧凑间距**（= **1 个节距**，
 #: 不再是节距整数倍 ⇒ 引脚相位会漂移，偏移由 M2 吸收而不是 M3 跳线）。
@@ -461,7 +466,12 @@ def net_pins(pl: dict, ports: dict = None) -> dict:
     pins = defaultdict(list)
     for inst in pl["insts"]:
         g = inst["gate"]
-        names = ["A", "B"] if inst["kind"] == "NAND2_X1" else ["A"]
+        # 🔴 v0.9.408：原来硬编码 `["A","B"] if kind == "NAND2_X1" else ["A"]` ——
+        #   NOR2 也是两输入，照抄会让它的 B 脚落空。
+        #   ⚠️ 不能用「pins 里除 VDD/VSS/Y 之外的全部」：**DFF 的引脚是 D/CLK/Q/QN**
+        #   （没有 Y），那样会把 Q/QN 当输入，直接改坏 DFF 的布线（E53 H7/H9 当场红）。
+        #   ⇒ 只按「有没有 B」判别，DFF 无 A/B ⇒ 退回 ["A"]，与旧行为逐位相同。
+        names = ["A", "B"] if "B" in inst["geom"].pins else ["A"]
         idx = {n: k for k, n in enumerate(names)}
         for p in pin_access_points(inst):
             if p["pin"] == "Y":

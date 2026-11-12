@@ -60,8 +60,10 @@ _PRIM_MAP = {
     "nand": "NAND2", "and": "AND", "or": "OR", "nor": "NOR",
     "xor": "XOR", "xnor": "XNOR",
 }
-# 物理链当前有真实几何的原语（dcell.CELLS 含 INV/NAND2）
-PHYSICALLY_MODELED = frozenset({"INV", "NAND2"})
+# 物理链当前有真实几何的原语（`dcells.CELLS` 含 INV_X1 / NAND2_X1 / NOR2_X1）
+#: 🔴 v0.9.408 加入 `NOR`：`dcells.build_nor2` 已给出 DRC/LVS=0 的版图，且尺寸
+#: （980×1950）**不超过** NAND2 ⇒ 布局器的行高/节距预算不变，主链口径逐位不动。
+PHYSICALLY_MODELED = frozenset({"INV", "NAND2", "NOR"})
 
 
 class VerilogSyntaxError(Exception):

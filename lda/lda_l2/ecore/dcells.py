@@ -91,12 +91,18 @@ RULES = {
 PINS_V2_NOTE = {
     "pad_nm": 240,
     "access_x_nm": {"INV_X1": {"A": 120, "Y": 480},
-                    "NAND2_X1": {"A": 120, "B": 480, "Y": 840}},
+                    "NAND2_X1": {"A": 120, "B": 480, "Y": 840},
+                    #: 🔴 NOR2 的 Y 在**中间段**（并联结构的输出），若沿用 NAND2 的
+                    #: 三格分配，Y 的绕行竖条必然穿过 B pad（实测短路）⇒ 改「A/B 同带
+                    #: 两侧、Y 下沉」：A 120 · B 720 · Y 120@y900。
+                    "NOR2_X1": {"A": 120, "B": 720, "Y": 120}},
     "need_pad_nm": 240,      # VIA 200 + 2×ENC 20
     "need_sep_um": 0.342,    # M3 pad 0.242 + S_MIN 0.10
     "before": {"INV_X1_min_sep_um": 0.0375, "NAND2_X1_min_sep_um": 0.0175,
                "pin_h_nm": (65, 75)},
-    "after": {"INV_X1_min_sep_um": 0.435, "NAND2_X1_min_sep_um": 0.360},
+    "after": {"INV_X1_min_sep_um": 0.435, "NAND2_X1_min_sep_um": 0.360,
+              #: NOR2：A↔B 同带 x 差 0.60 · A↔Y 同 x 纵向差 0.370 · B↔Y 两维都远
+              "NOR2_X1_min_sep_um": 0.370},
 }
 
 # ---- 方块电阻（Ω/□ · 教科书量级 · 一阶）----
@@ -187,19 +193,36 @@ class Cell:
 # ═══════════════════════════════════════════════════════════════════════════
 # ① 单元构建
 # ═══════════════════════════════════════════════════════════════════════════
-def _rails(w: int) -> list:
+def _rails(w: int, h: int | None = None) -> list:
+    """两根电源轨。`h` 给定时 VDD 轨跟着单元高度走（v0.9.408 反事实面积用）。"""
+    y_vdd = Y_VDD if h is None else (h - RAIL_H, h)
     return [R(L_M1, 0, Y_VSS[0], w, Y_VSS[1], role="rail"),
-            R(L_M1, 0, Y_VDD[0], w, Y_VDD[1], role="rail")]
+            R(L_M1, 0, y_vdd[0], w, y_vdd[1], role="rail")]
+
+
+def _cont_box(cx: float, cy: float, size: int | None = None) -> tuple:
+    """接触孔的**整数边界** `(x0, y0, x1, y1)`。
+
+    🔴 派生 M1 时必须用它，不能自己写 `round(cy) ± k`：孔的 y0 是
+    `int(round(cy − 22.5))`，而 `round(1227.5)=1228`、`round(1477.5)=1478`
+    （偶数舍入）—— 手工补偿量在两组孔上**不相等**，实测导致 `cont_enc_m1`
+    差 1nm（v0.9.408 首跑 2 条违例）。
+    """
+    s = size or RULES["cont_w"]
+    x0, y0 = int(round(cx - s / 2.0)), int(round(cy - s / 2.0))
+    return x0, y0, x0 + s, y0 + s
 
 
 def _cont(cx: float, cy: float, size: int | None = None, role: str = "cont") -> R:
-    s = size or RULES["cont_w"]
-    x0, y0 = int(round(cx - s / 2.0)), int(round(cy - s / 2.0))
-    return R(L_CONT, x0, y0, x0 + s, y0 + s, role=role)
+    x0, y0, x1, y1 = _cont_box(cx, cy, size)
+    return R(L_CONT, x0, y0, x1, y1, role=role)
 
 
-def build_inv() -> Cell:
+def build_inv(w_p_nm: int | None = None) -> Cell:
     """INV_X1：1 PMOS + 1 NMOS · 栅 A · 输出 Y（源漏各一接触孔）。
+
+    `w_p_nm`（v0.9.408）：**反事实宽度**，只用于算「p 侧退回 1:1 后面积是多少」。
+    默认 `None` ⇒ 用平衡宽度 `W_P`，几何与 v0.9.407 **逐位相同**（有判据守护）。
 
     布局（nm · x 向右 · y 向上）::
 
@@ -222,13 +245,16 @@ def build_inv() -> Cell:
     焊盘叠在一起 —— 这就是 E45 那 14 条残差的来源。
     """
     w = 620
-    rects = _rails(w)
-    rects.append(R(L_NWELL, 30, Y_NWELL[0], 590, Y_NWELL[1], role="nwell"))
+    wp = W_P if w_p_nm is None else int(w_p_nm)     # 反事实宽度（默认 = 平衡版 750）
+    y_p1 = Y_PDIFF[0] + wp                          # p-diff 顶 = 700 + W_p
+    h = y_p1 + 80 + 90 + RAIL_H                     # 与 H_ROW 同式 ⇒ wp=W_P 时恰为 1690
+    rects = _rails(w, h)
+    rects.append(R(L_NWELL, 30, Y_NWELL[0], 590, y_p1 + 80, role="nwell"))
     rects += [R(L_DIFF, 110, Y_NDIFF[0], 510, Y_NDIFF[1], role="diff"),
-              R(L_DIFF, 110, Y_PDIFF[0], 510, Y_PDIFF[1], role="diff")]
+              R(L_DIFF, 110, Y_PDIFF[0], 510, y_p1, role="diff")]
 
     gx0, gx1 = 290, 340                       # 栅（L = 50）
-    rects.append(R(L_POLY, gx0, Y_NDIFF[0] - 50, gx1, Y_PDIFF[1] + 50, role="gate"))
+    rects.append(R(L_POLY, gx0, Y_NDIFF[0] - 50, gx1, y_p1 + 50, role="gate"))
     # 栅接触处的 poly 焊盘：poly 条仅 50 宽，放不下 45 孔 + 15 包围 ⇒ 局部加宽（合法）
     rects.append(R(L_POLY, 225, 540, 335, 625, role="gate_pad"))
 
@@ -237,11 +263,11 @@ def build_inv() -> Cell:
     # 🔴 v0.9.404 pMOS 加宽：W=750 ⇒ 每个源漏沿宽度**均布 2 个孔**。
     #   单个 45nm 孔去承担 750nm 的沟道宽，扩展电阻不可忽略，也不是真实做法。
     #   y 取 1/3·W 与 2/3·W（两端各留 250nm 给 `cont_enc_diff`）。
-    for cy in (Y_PDIFF[0] + W_P / 3.0, Y_PDIFF[0] + 2.0 * W_P / 3.0):
+    for cy in (Y_PDIFF[0] + wp / 3.0, Y_PDIFF[0] + 2.0 * wp / 3.0):
         rects += [_cont(182.5, cy, role="cont_sd"), _cont(442.5, cy, role="cont_sd")]
     rects.append(_cont(267.5, 582.5, role="cont_gate"))   # 栅接触 → A
 
-    m_y = R(L_M1, 410, 280, 475, Y_PDIFF[1] - 50, role="strap")   # Y：漏↔漏（延到新 p-diff 顶）
+    m_y = R(L_M1, 410, 280, 475, y_p1 - 50, role="strap")   # Y：漏↔漏（延到新 p-diff 顶）
     rects += [R(L_M1, 150, Y_VSS[1], 215, 350, role="strap"),   # VSS → NMOS 源
               R(L_M1, 150, 740, 215, Y_VDD[0], role="strap"),   # VDD → PMOS 源
               m_y,
@@ -251,17 +277,19 @@ def build_inv() -> Cell:
               # Y：240×240 pin pad（中心 495 ⇒ 与 A 的 120 差 0.375µm）
               R(L_M1, 375, 850, 615, 1090, role="pin")]
 
-    pins = {"VDD": R(L_M1, 0, Y_VDD[0], w, Y_VDD[1], net="VDD"),
+    pins = {"VDD": R(L_M1, 0, h - RAIL_H, w, h, net="VDD"),
             "VSS": R(L_M1, 0, Y_VSS[0], w, Y_VSS[1], net="VSS"),
             "A": R(L_M1, 0, 415, 240, 655, net="A"),
             "Y": R(L_M1, 375, 850, 615, 1090, net="Y")}
-    devs = [("pmos", W_P, 50, "A", "VDD", "Y"),
+    devs = [("pmos", wp, 50, "A", "VDD", "Y"),
             ("nmos", W_N, 50, "A", "VSS", "Y")]
-    return Cell("INV_X1", w, H_ROW, rects, pins, devs)
+    return Cell("INV_X1", w, h, rects, pins, devs)
 
 
-def build_nand2() -> Cell:
+def build_nand2(w_p_nm: int | None = None) -> Cell:
     """NAND2_X1：2 串 NMOS + 2 并 PMOS（4 器件）。
+
+    `w_p_nm`：反事实宽度（见 `build_inv`），默认平衡版。
 
     拓扑（LVS 对照面）::
 
@@ -276,7 +304,8 @@ def build_nand2() -> Cell:
       ⇒ gap 至少 60+70+60+60+70+60 = 380，故 PMOS 行下移到 y=1000、单元高 1500。
     """
     w = 980
-    y_pdiff = (1000, 1000 + int(round(W_P)))     # pMOS 加宽：1000..1750
+    wp = W_P if w_p_nm is None else int(w_p_nm)
+    y_pdiff = (1000, 1000 + wp)                  # pMOS 加宽：1000..1750（默认）
     y_nwell = (y_pdiff[0] - 80, y_pdiff[1] + 80)
     y_vdd = (y_pdiff[1] + 130, y_pdiff[1] + 200)  # 1880..1950
     rects = [R(L_M1, 0, Y_VSS[0], w, Y_VSS[1], role="rail"),
@@ -295,7 +324,7 @@ def build_nand2() -> Cell:
     rects += [_cont(172.5, 312.5, role="cont_sd"),
               _cont(722.5, 312.5, role="cont_sd")]
     # 🔴 v0.9.404：pMOS 每个源漏沿 750nm 宽度均布 2 个孔（理由同 INV）
-    for cy in (y_pdiff[0] + W_P / 3.0, y_pdiff[0] + 2.0 * W_P / 3.0):
+    for cy in (y_pdiff[0] + wp / 3.0, y_pdiff[0] + 2.0 * wp / 3.0):
         for cx in (172.5, 422.5, 722.5):
             rects.append(_cont(cx, cy, role="cont_sd"))
     rects += [_cont(260.0, 585.0, role="cont_gate"),
@@ -322,14 +351,111 @@ def build_nand2() -> Cell:
             "A": R(L_M1, 0, 410, 240, 650, net="A"),
             "B": R(L_M1, 360, 410, 600, 650, net="B"),
             "Y": R(L_M1, 720, 780, 960, 1020, net="Y")}
-    devs = [("pmos", W_P, 50, "A", "Y", "VDD"),
-            ("pmos", W_P, 50, "B", "VDD", "Y"),
+    devs = [("pmos", wp, 50, "A", "Y", "VDD"),
+            ("pmos", wp, 50, "B", "VDD", "Y"),
             ("nmos", W_N, 50, "A", "VSS", "n1"),
             ("nmos", W_N, 50, "B", "n1", "Y")]
     return Cell("NAND2_X1", w, y_vdd[1], rects, pins, devs)
 
 
-CELLS = {"INV_X1": build_inv, "NAND2_X1": build_nand2}
+def build_nor2(w_p_nm: int | None = None) -> Cell:
+    """NOR2_X1：2 串 PMOS + 2 并 NMOS（4 器件）—— NAND2 的**对偶**。
+
+    拓扑（LVS 对照面）::
+
+        PMOS（串联）:  Y —|A|— p1 —|B|— VDD
+        NMOS（并联）:  VSS —|A|— Y —|B|— VSS
+
+    🔴 **为什么这一版的 pad / 段分配与 NAND2 不同**（v0.9.408，实测逼出来的）：
+    NAND2 的 Y 从**右端**引出（n 段 2 = Y），所以 Y pad 可以放在右侧 x=840，
+    A/B pad 占左侧两格。NOR2 的 Y 在 **n 段 1（中间）** —— 并联结构的中间节点才是输出。
+    若沿用 NAND2 的 pad 布局（A 120 / B 480 / Y 840），Y 的竖段（x≈422）必然穿过
+    B pad（360–600 @410–650）⇒ 实测**直接短路**。三格 pad 宽 240 + 间距 60 = 840，
+    在 980 宽的单元里只剩 140 余量，**放不下一条 65nm 宽的绕行竖条**。
+
+    ⇒ 本版换分配：**A(0–240) 与 B(600–840) 同带（y 410–650），Y(0–240) 下沉到 780–1020**。
+    Y 与 A 同 x 但纵向差 370nm（≥ 需要的 0.342），且 Y 的 p 侧引出点（x=172.5）正好在
+    Y pad 正上方 ⇒ **零绕行**；n 段的 Y（x=422.5）向上走 x 390–455、在 y 780–845
+    横折到 x=205 与 pad 相接 —— 这条路整段避开 A/B pad 的 x 区间。
+
+    🔴 **尺寸与 NAND2 完全相同（980×1950）**：这不是巧合，是**刻意约束** ——
+    `dpnr.row_height_um()` / `CELL_W_UM` 取 `CL.CELLS` 的最大值，新单元一旦超出，
+    主链（c17 的 9 个固定口径数字）全部作废。NOR2 落在包络内 ⇒ 主链逐位不动。
+    """
+    w = 980
+    wp = W_P if w_p_nm is None else int(w_p_nm)
+    y_pdiff = (1000, 1000 + wp)
+    y_nwell = (y_pdiff[0] - 80, y_pdiff[1] + 80)
+    y_vdd = (y_pdiff[1] + 130, y_pdiff[1] + 200)
+    rects = [R(L_M1, 0, Y_VSS[0], w, Y_VSS[1], role="rail"),
+             R(L_M1, 0, y_vdd[0], w, y_vdd[1], role="rail"),
+             R(L_NWELL, 30, y_nwell[0], 870, y_nwell[1], role="nwell"),
+             R(L_DIFF, 110, Y_NDIFF[0], 790, Y_NDIFF[1], role="diff"),
+             R(L_DIFF, 110, y_pdiff[0], 790, y_pdiff[1], role="diff")]
+
+    # 两条栅跨双有源。B 的焊盘只向左伸到 527（更左就会与 Y 的绕行竖条只剩 <60 间距）
+    rects += [R(L_POLY, 250, Y_NDIFF[0] - 50, 300, y_pdiff[1] + 10, role="gate"),
+              R(L_POLY, 560, Y_NDIFF[0] - 50, 610, y_pdiff[1] + 10, role="gate"),
+              R(L_POLY, 145, 545, 310, 660, role="gate_pad"),
+              R(L_POLY, 527, 545, 615, 660, role="gate_pad")]
+
+    # NMOS 并联：段0=VSS · 段1=Y · 段2=VSS（A、B 的源都接 VSS，漏都接 Y）
+    rects += [_cont(172.5, 312.5, role="cont_sd"),
+              _cont(422.5, 312.5, role="cont_sd"),
+              _cont(722.5, 312.5, role="cont_sd")]
+    # PMOS 串联：段0=Y · 段1=p1 · 段2=VDD（A: Y→p1，B: p1→VDD）
+    _cy1 = y_pdiff[0] + wp / 3.0
+    _cy2 = y_pdiff[0] + 2.0 * wp / 3.0
+    for cy in (_cy1, _cy2):
+        for cx in (172.5, 422.5, 722.5):
+            rects.append(_cont(cx, cy, role="cont_sd"))
+    rects += [_cont(260.0, 585.0, role="cont_gate"),
+              _cont(565.0, 585.0, role="cont_gate")]
+
+    # 两个 p 孔的**实际整数边界** —— M1 由它派生（见 `_cont_box` 的取整说明）
+    _pa = _cont_box(422.5, _cy1)[1]          # 上孔 y0
+    _pb = _cont_box(422.5, _cy2)[3]          # 下孔 y1
+    # M1。y 带：输入 pad 410–650 · Y pad 780–1020（与 NAND2 的「纵向差 0.37」同口径）
+    rects += [R(L_M1, 140, Y_VSS[1], 205, 345, role="strap"),        # VSS → n 段0
+              R(L_M1, 690, Y_VSS[1], 755, 345, role="strap"),        # VSS → n 段2
+              R(L_M1, 690, _pa - 10, 755, y_vdd[0], role="strap"),   # VDD → p 段2
+              # p1（内部节点）：一块 M1 同时盖住两个孔，上下各留 10 给 `cont_enc_m1`
+              R(L_M1, 390, _pa - 10, 455, _pb + 10, role="strap"),
+              # Y：p 段0（左）→ Y pad（同一 x ⇒ 直下）
+              R(L_M1, 140, 1020, 205, _pb + 10, role="strap"),
+              R(L_M1, 390, 280, 455, 780, role="strap"),             # Y：n 段1 上行
+              R(L_M1, 205, 780, 455, 845, role="strap"),             # Y 横带 → 左接 pad
+              R(L_M1, 0, 410, 240, 650, role="pin"),                 # A pad（x 中心 120）
+              R(L_M1, 226, 550, 294, 620, role="strap"),             # A pad → 栅接触
+              R(L_M1, 600, 410, 840, 650, role="pin"),               # B pad（x 中心 720）
+              R(L_M1, 530, 550, 640, 620, role="strap"),             # B pad → 栅接触
+              R(L_M1, 0, 780, 240, 1020, role="pin")]                # Y pad（x 中心 120）
+
+    pins = {"VDD": R(L_M1, 0, y_vdd[0], w, y_vdd[1], net="VDD"),
+            "VSS": R(L_M1, 0, Y_VSS[0], w, Y_VSS[1], net="VSS"),
+            "A": R(L_M1, 0, 410, 240, 650, net="A"),
+            "B": R(L_M1, 600, 410, 840, 650, net="B"),
+            "Y": R(L_M1, 0, 780, 240, 1020, net="Y")}
+    devs = [("pmos", wp, 50, "A", "Y", "p1"),
+            ("pmos", wp, 50, "B", "p1", "VDD"),
+            ("nmos", W_N, 50, "A", "VSS", "Y"),
+            ("nmos", W_N, 50, "B", "Y", "VSS")]
+    return Cell("NOR2_X1", w, y_vdd[1], rects, pins, devs)
+
+
+CELLS = {"INV_X1": build_inv, "NAND2_X1": build_nand2, "NOR2_X1": build_nor2}
+
+
+def cell_area_um2_at(kind: str, w_p_nm: int | None = None) -> float:
+    """单元面积（µm²）；`w_p_nm` 给定时算**反事实**版（p 侧退回该宽度）。
+
+    🔴 走**真几何**：真的调 `CELLS[kind](w_p_nm=...)` 重建单元再取 `area_um2`，
+    不用「高度 ≈ 常数 + W_p」外推。理由：外推虽然对当前三个单元都成立，但那是一条
+    **未机核的断言**；重建还能顺手跑 DRC/LVS（v0.9.408 判据两条都做）。
+
+    用途只有一个：把「面积代价」与「延时收益」放进同一个分母（见 `dsta.sizing_tradeoff`）。
+    """
+    return CELLS[kind](w_p_nm=w_p_nm).area_um2
 
 
 # ═══════════════════════════════════════════════════════════════════════════

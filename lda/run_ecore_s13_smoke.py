@@ -2840,10 +2840,51 @@ def main() -> int:
              _wl_sc["ok"], _wl_sum["measured_cells"]),
           _wl_sc["ok"] and _wl_sc["problems"] == []
           and _wl_sum["n_cells"] == len(DC.CELLS) == 18
-          and _wl_sum["by_src"] == {"LAYOUT": 2, "RULE_CONSTANT": 16}
-          and _wl_sum["measured_cells"] == ["INV", "NAND2"]
+          # 🔴 v0.9.408 改口：原为 {"LAYOUT": 2, "RULE_CONSTANT": 16} 与
+          #   `== ["INV","NAND2"]` —— 那是「当时只有两颗单元有版图」的**进度快照**，
+          #   被写成了不变量。补 NOR2 版图后必然变 3/15，判据当场假红。
+          #   真正不变的是「按出处分级、且 LAYOUT 名单与版图单元表逐项一致」，
+          #   后者由下面的 EC-G01b 与 `dcells.CELLS` 对拍（不靠数数字）。
+          and _wl_sum["by_src"] == {"LAYOUT": 3, "RULE_CONSTANT": 15}
+          and _wl_sum["measured_cells"] == ["INV", "NAND2", "NOR2"]
           and all(_wl_tab[n]["w_n_nm"] == 300.0 and _wl_tab[n]["l_nm"] == 50.0
                   for n in _wl_tab))
+
+    # EC-G01b 🔴 **两个真源对拍**（v0.9.408 新增）：`wl_src == "LAYOUT"` ⇔ 版图真的存在
+    #   上面那条用「数数字」证明出处分级 —— 数字对了不代表**那两颗单元真的建得出来**。
+    #   本条的对照面是**几何层**：`Cell.layout` 非空 ⇒ 必须能在 `dcells.CELLS` 里建出
+    #   DRC/LVS 双零的单元；`layout` 为空 ⇒ 不许标 LAYOUT。
+    #   ⇒ 「数据层说出处是实测」与「几何层真的能重建」互为对照，不一致就是缺陷。
+    _g_lay_bad, _g_lay_ok = [], []
+    # 🔴 循环变量**不许叫 `_n`**：`main()` 里已有 `_n()` 函数，本函数内一旦赋值
+    #   整个 `main` 的 `_n` 就变 local ⇒ 前面所有判据 UnboundLocalError
+    #   （v0.9.407 踩过一次，本批又踩一次 —— 巨型函数里循环变量名也是全局契约）。
+    for _lay_n, _c in DC.CELLS.items():
+        _has = bool(_c.layout)
+        if _has != (_c.wl_src == "LAYOUT"):
+            _g_lay_bad.append((_lay_n, _c.wl_src, _c.layout))
+            continue
+        if not _has:
+            continue
+        _geo = CL.CELLS.get(_c.layout)
+        if _geo is None:
+            _g_lay_bad.append((_lay_n, "NO_GEOM", _c.layout))
+            continue
+        _gc = _geo()
+        _gd, _gl = CL.run_drc(_gc), CL.run_lvs(_gc)
+        # 数据层的 W/L 必须等于版图实测（DIFF 高度）—— 与 EC-G02 同源，但这里逐单元
+        _w_ok = (max(d["w"] for d in _gl["devices"]) == _c.w_p_nm
+                 and min(d["w"] for d in _gl["devices"]) == _c.w_n_nm)
+        if _gd["n"] or _gl["n"] or not _w_ok:
+            _g_lay_bad.append((_lay_n, "DRC%d/LVS%d/W%s"
+                               % (_gd["n"], _gl["n"], _w_ok), _c.layout))
+        else:
+            _g_lay_ok.append(_c.layout)
+    check("EC-G01b 数据层 ⇔ 几何层对拍：`LAYOUT` %d 颗 ⇔ `dcells` 里 DRC/LVS 双零的单元 %r"
+          "（不一致 %d 项）"
+          % (len(_g_lay_ok), sorted(_g_lay_ok), len(_g_lay_bad)),
+          not _g_lay_bad and len(_g_lay_ok) == 3,
+          "不一致 %s" % (_g_lay_bad[:5],))
 
     # EC-G02 🔴 **两个真源对拍**：数据层的 W/L 必须等于版图实测的 DIFF 高度 / poly 宽
     #   （数据层若写成「从哪抄来的常量」，这里立刻红 —— 这是唯一能证明 W 是实测的判据）
@@ -3151,6 +3192,94 @@ def main() -> int:
           and abs(_sz_crit - _sz_gain["NAND2"]) < 1e-12
           and abs(_sz_rep["gain"] - 1.5) < 1e-12
           and _sz_restored is True)
+
+    # ── v0.9.408：NOR2 版图 + 面积↔延时联合指标 + P&R 级 testcase ────────────
+    #   🔴 为什么这三条必须一起出现：v0.9.407 的「2.50×」只到**时序级**，
+    #   `PHYSICALLY_MODELED` 只有 INV/NAND2 ⇒ NOR 网表进物理链报「无可布局单元」。
+    #   补了版图才谈得上「面积代价」，而面积代价只能与延时收益合成**一个比值**，
+    #   否则两个数并排看会给出相反印象。
+    _nr_geo = CL.build_nor2()
+    _nr_nd = CL.build_nand2()
+    _nr_drc, _nr_lvs = CL.run_drc(_nr_geo), CL.run_lvs(_nr_geo)
+    _nr_p = [d for d in _nr_lvs["devices"] if d["kind"] == "pmos"]
+    _nr_n = [d for d in _nr_lvs["devices"] if d["kind"] == "nmos"]
+    # 拓扑**从器件表机核**（不看期望表）：pmos 串联 ⇒ 共享 1 个内部节点；
+    # nmos 并联 ⇒ 共享 2 个节点（VSS 与 Y）。这条把「版图画的是 NOR 不是 NAND」变成可查事实。
+    _nr_sh_p = len(set(_nr_p[0]["sd"]) & set(_nr_p[1]["sd"]))
+    _nr_sh_n = len(set(_nr_n[0]["sd"]) & set(_nr_n[1]["sd"]))
+    check("EC-G16 NOR2 版图：DRC %d / LVS %d · %.0f×%.0f nm（NAND2 %.0f×%.0f ⇒ **不超出包络**）"
+          " · 抽器件 2pmos+2nmos · 拓扑机核 p 共享 %d 节点（串联）/ n 共享 %d 节点（并联）"
+          % (_nr_drc["n"], _nr_lvs["n"], _nr_geo.w, _nr_geo.h, _nr_nd.w, _nr_nd.h,
+             _nr_sh_p, _nr_sh_n),
+          _nr_drc["n"] == 0 and _nr_lvs["n"] == 0
+          and _nr_geo.w <= _nr_nd.w and _nr_geo.h <= _nr_nd.h
+          and (_nr_sh_p, _nr_sh_n) == (1, 2)
+          and sorted(d["w"] for d in _nr_lvs["devices"]) == [300.0, 300.0, 750.0, 750.0])
+
+    # EC-G17 🔴 **面积 ↔ 延时合成一个指标**，且三条口径各自可机核：
+    #   ① `delay_gain` 必须与 `sizing_gain_chain` **逐位相等**（两条独立算法：
+    #      一个用 ΣR·w 的分子分母，一个用 Σ延时）⇒ 差必须 < 1e-12 相对；
+    #   ② 面积是**真几何**（10 × `build_nor2().area_um2`），不是外推；
+    #   ③ 弹性比可闭式预测：同 `area_ratio` 下 = (g1−1)/(g2−1)。
+    _ad_nor = ST.area_delay_tradeoff(["NOR2"] * 10, load_ff=3.0)
+    _ad_nand = ST.area_delay_tradeoff(["NAND2"] * 10, load_ff=3.0)
+    _ad_c17 = ST.area_delay_tradeoff(_sz_path)
+    _ad_anchor = abs(_ad_nor["area_bal_um2"] - 10 * CL.build_nor2().area_um2) < 1e-12
+    _ad_gain_dev = abs(_ad_nor["delay_gain"]
+                       - ST.sizing_gain_chain(["NOR2"] * 10, load_ff=3.0)["gain"])
+    _ad_elas_ratio = (_ad_nor["elasticity"] / _ad_nand["elasticity"]
+                      if _ad_nand["elasticity"] else -1.0)
+    # c17 路径的弹性：**独立复算**（面积从几何重建、延时比取 `sizing_gain_chain`），
+    # 不与 `area_delay_tradeoff` 共用任何中间量。
+    # 🔴 不写死 1.5972222：那是用 3 位取整手算的结果，真值 1.5972437554（差 2.2e-5）——
+    #   「表示差异 ≠ 真差异」在本仓的**第六次**。
+    _ad_a_c17 = 2 * CL.build_nand2().area_um2 + CL.build_inv().area_um2
+    _ad_a_c17_11 = (2 * CL.build_nand2(w_p_nm=CL.W_N).area_um2
+                    + CL.build_inv(w_p_nm=CL.W_N).area_um2)
+    _ad_c17_want = (_sz_rep["gain"] - 1.0) / (_ad_a_c17 / _ad_a_c17_11 - 1.0)
+    check("EC-G17 面积↔延时联合指标（NOR2×10 @3fF）：面积 %.4f→%.4f µm²（×%.6f，锚定几何=%s）"
+          " · 延时 %.4f→%.4f ps（×%.15f）· **弹性 %.6f**（每 1%% 面积买 %%延时）· "
+          "**%.3f ps/µm²** · 与 `sizing_gain_chain` 偏差 %.3e · c17 弹性 %.12f"
+          "（独立复算 %.12f · 偏差 %.3e）"
+          % (_ad_nor["area_bal_um2"], _ad_nor["area_11_um2"], _ad_nor["area_ratio"],
+             _ad_anchor, _ad_nor["delay_bal_ps"], _ad_nor["delay_11_ps"],
+             _ad_nor["delay_gain"], _ad_nor["elasticity"], _ad_nor["ps_per_um2"],
+             _ad_gain_dev, _ad_c17["elasticity"], _ad_c17_want,
+             abs(_ad_c17["elasticity"] - _ad_c17_want)),
+          _ad_anchor and _ad_gain_dev < 1e-12
+          # 5.0 / 6.0 是**解析闭式**：(2.5−1)/(1.3−1)=5 · 同面积比下弹性比=1.5/0.25=6
+          and abs(_ad_nor["elasticity"] - 5.0) < 1e-9
+          and abs(_ad_nor["area_ratio"] - _ad_nand["area_ratio"]) < 1e-12
+          and abs(_ad_elas_ratio - 6.0) < 1e-9
+          and abs(_ad_c17["elasticity"] - _ad_c17_want) < 1e-12)
+
+    # EC-G18 🔴 **升到 P&R 级**：NOR 网表真的能 place → route → DRC，且
+    #   ① 每个信号引脚都进图（引脚守恒 —— 这正是 v0.9.408 修掉的那个 bug 的看守）；
+    #   ② 行高不变（否则 `dpnr` 的预算被顶起、主链 9 个数全作废）；
+    #   ③ 布通数与同规模 INV/NAND2 链**同量级**（不要求全布：布线器的既有边界）。
+    _pq_nl = ST.build_chain_nl("NOR2", 6, 3.0, tie_inputs=True)
+    _pq_pl = P.place_real(_pq_nl, max_cells=6, cols=3)
+    _pq_rt = P.route_block(_pq_nl, _pq_pl, in_row_m3=True)
+    _pq_va = DL.run_drc(P.all_routing(_pq_rt))["violations"]
+    _pq_cov = P.net_coverage(_pq_rt)
+    _pq_pins = P.net_pins(_pq_pl)
+    _pq_have = {(e[0], e[1]) for v in _pq_pins.values() for e in v}
+    _pq_miss = [(i["name"], p["pin"]) for i in _pq_pl["insts"]
+                for p in P.pin_access_points(i) if (i["name"], p["pin"]) not in _pq_have]
+    _pq_ref = {}
+    for _pq_c in ("INV", "NAND2"):
+        _rf_nl = ST.build_chain_nl(_pq_c, 6, 3.0, tie_inputs=True)
+        _rf_pl = P.place_real(_rf_nl, max_cells=6, cols=3)
+        _rf_rt = P.route_block(_rf_nl, _rf_pl, in_row_m3=True)
+        _pq_ref[_pq_c] = P.net_coverage(_rf_rt)["routed"]
+    check("EC-G18 P&R 级：NOR2×6 布局 %d 实例 · die %.2f×%.2f µm · **DRC %d** · "
+          "布通 %d/%d（对照 INV %d / NAND2 %d）· 引脚守恒缺 %d · 行高 %.3f µm（= NAND2 包络）"
+          % (len(_pq_pl["insts"]), _pq_pl["die_w_um"], _pq_pl["die_h_um"], len(_pq_va),
+             _pq_cov["routed"], _pq_cov["total"], _pq_ref["INV"], _pq_ref["NAND2"],
+             len(_pq_miss), P.row_height_um()),
+          len(_pq_pl["insts"]) == 6 and not _pq_va and not _pq_miss
+          and _pq_cov["routed"] >= _pq_ref["INV"] - 1
+          and abs(P.row_height_um() - 1.95) < 1e-12)
 
     print("  [T5/Q4] 可造性判定：宽度下限 **%d nm**（pad %d + 接入 %d）⇒ INV 余 %d nm（%.1f%%）· "
           "NAND2 余 %d nm（%.1f%%）"

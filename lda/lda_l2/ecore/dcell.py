@@ -131,6 +131,10 @@ class Cell:
     #: W/L 的**出处等级**（取值见 `WL_SRC`）。🔴 没有实测就必须写 `UNKNOWN`，
     #: 不允许用「推导出来的」冒充实测。
     wl_src: str = "UNKNOWN"
+    #: v0.9.408：**版图单元名**（`dcells.CELLS` 的键，即 `NOR2` → `NOR2_X1`）。
+    #: 空串 = 本单元还没有版图 ⇒ 面积代价不可算。这是「数据层说它有实测」
+    #: 与「几何层真的能建出来」之间唯一的那根线，两边必须机核对拍。
+    layout: str = ""
 
     @property
     def area_um2_est(self) -> float:
@@ -163,13 +167,16 @@ def _mk() -> dict:
     W_PM = 750.0
     #: 栅长 = `dcells.RULES["poly_w"]`（50 nm）。与 DIFF 高度不同量纲，不要混。
     L_NM = 50.0
-    #: 只有这两个单元有真实版图 ⇒ 它们的 W/L 是 **LAYOUT（实测）**；
-    #: 其余 16 个沿用同一构造常量，属 **RULE_CONSTANT（未验证）**。
-    LAYOUT_CELLS = ("INV", "NAND2")
+    #: 有真实版图的单元 ⇒ 它们的 W/L 是 **LAYOUT（实测）**；
+    #: 其余 15 个沿用同一构造常量，属 **RULE_CONSTANT（未验证）**。
+    #: 🔴 v0.9.408 加入 `NOR2`：它的版图是 `dcells.build_nor2`，与 NAND2 **同尺寸**
+    #: （980×1950）—— 这是刻意约束，超出就会把 `dpnr` 的行高预算顶上去、主链作废。
+    LAYOUT_CELLS = ("INV", "NAND2", "NOR2")
 
     def _wl(name, **kw):
         src = "LAYOUT" if name in LAYOUT_CELLS else "RULE_CONSTANT"
-        return dict(w_n_nm=W_NM, w_p_nm=W_PM, l_nm=L_NM, wl_src=src, **kw)
+        lay = ("%s_X1" % name) if name in LAYOUT_CELLS else ""
+        return dict(w_n_nm=W_NM, w_p_nm=W_PM, l_nm=L_NM, wl_src=src, layout=lay, **kw)
 
     # 单输入
     add("INV", 1, 2, (1, 0), n_series=1, k_drive=1.00, pins=("a",), family="inv",
@@ -257,7 +264,7 @@ def wl_table() -> dict:
 
 
 def wl_provenance_summary() -> dict:
-    """出处分布：`LAYOUT` 只有 2 个 —— 这个数必须如实，不能四舍五入成「都有」。"""
+    """出处分布：`LAYOUT` 只有 3 个 —— 这个数必须如实，不能四舍五入成「都有」。"""
     cnt = {}
     for c in CELLS.values():
         cnt[c.wl_src] = cnt.get(c.wl_src, 0) + 1
@@ -267,8 +274,8 @@ def wl_provenance_summary() -> dict:
         "n_measured": cnt.get("LAYOUT", 0),
         "measured_cells": sorted(n for n, c in CELLS.items() if c.wl_src == "LAYOUT"),
         "note": ("🔴 `LAYOUT` 之外一律**不是实测**：它们沿用同一构造常量，"
-                 "没有版图可对拍。所以「全库 W=300」这句话里只有 2 个单元是证据，"
-                 "另外 16 个是**规则外推**。"),
+                 "没有版图可对拍。所以「全库 W=300」这句话里只有 3 个单元是证据，"
+                 "另外 15 个是**规则外推**。"),
     }
 
 
@@ -425,7 +432,8 @@ def eval_cell(name: str, ins) -> int:
     return c.table[idx]
 
 
-def cell_delay_ps(name: str, load_ff: float, tech: Tech | None = None) -> float:
+def cell_delay_ps(name: str, load_ff: float, tech: Tech | None = None,
+                  w_p_nm: float | None = None) -> float:
     """一阶 RC 延时：`ln2 · R_cell · (C_self + C_load)` —— **两项都 ∝ R**。
 
     🔴 v0.9.406 **改口**（`t_intr` 几何化）。三步演进，每一步都只改一处、都必须有锚：
@@ -439,13 +447,18 @@ def cell_delay_ps(name: str, load_ff: float, tech: Tech | None = None) -> float:
     🔴 **标定锚不变**：`C_self` 由 `t_intr_ps` 反解（= 0.5771 fF），所以
     `t_intr(INV) = 2.0 ps` **逐位不变**，INV 的延时与 v0.9.405 **完全一致**。
     整个变化可归因到一件事：**k>1 的单元变慢了**（NAND2 +2 ps/级）。
+
+    🔴 `w_p_nm`（v0.9.408）：**反事实宽度**。给定时算「p 侧退回该宽度」的延时，
+    与 `cell_r_ohm` 的同一个参数同源 —— 反事实必须走**同一个公式**，
+    另写一份「1:1 版延时」的实现必然与主式漂。
     """
     # R5-fix：默认值在调用时取，不在 def 时绑定
     if tech is None:
         tech = DEFAULT_TECH
     # Ω × fF = 1e-15 s = 1e-3 ps ⇒ 直接乘换算因子，**不得再乘 1e3**
     # （E34 第一版在这里多乘了 1e3，INV@4fF 报 13864 ps ⇒ 整个 STA 偏大 1000×）
-    return LN2 * cell_r_ohm(name, tech) * (c_self_ff(tech) + load_ff) * OHM_FF_TO_PS
+    return (LN2 * cell_r_ohm(name, tech, w_p_nm)
+            * (c_self_ff(tech) + load_ff) * OHM_FF_TO_PS)
 
 
 def cell_area_um2(name: str, tech: Tech | None = None) -> float:
@@ -629,13 +642,15 @@ DCELL_DISCLOSURE = {
     "claimable_reason": "面积/功耗/延时均由一阶模型给出（area_per_tr / r_on / ileak 无可核语料）⇒ MODEL_ESTIMATE，不作签核、不对外比绝对值",
     "not_included": "无标准单元版图（LEF/GDS）· 无多角 PVT · 无 OCV/AOCV · 无噪声/串扰 · 无 EM/IR · 无低功耗单元（电源门控/多阈值）",
     "verifiable": "真值表长度 · n_tr 拓扑公式 · k_drive 与 n_series 同序 · 金标 0 级恰为 0 · "
-                  "W/L 出处分级（LAYOUT 的 2 个可与版图逐位对拍）",
+                  "W/L 出处分级（LAYOUT 的 3 个可与版图逐位对拍）",
     "wl_layer": {
         "added": "v0.9.403 · W/L 数据层（`w_n_nm` / `w_p_nm` / `l_nm` / `wl_src`）",
-        "measured": "INV / NAND2（源自 `dcells` 的 DIFF 实测：300nm × 300nm / L=50nm）",
-        "assumed": "其余 16 个沿用同一构造常量（`RULE_CONSTANT`，**未验证**）",
+        "measured": "INV / NAND2 / NOR2（源自 `dcells` 的 DIFF 实测：W_n=300nm、W_p=750nm、"
+                    "L=50nm，与版图矩形逐位对拍）",
+        "assumed": "其余 15 个沿用同一构造常量（`RULE_CONSTANT`，**未验证**）",
         "not_claimed": ("① 宽度是**布局决策**，不是拓扑必然 —— 补 W/L 不会让 k_drive 变得可算，"
-                        "只让它变得**可判**；② 全库 p/n = 1:1（**PMOS 未加宽**），"
-                        "这不是「平衡反相器」的尺寸，见 `dkdrive.ceiling_report`"),
+                        "只让它变得**可判**；② 全库 p/n = 2.5（平衡反相器尺寸），"
+                        "但 `ρ_p/ρ_n = 2.5` 本身是**教科书假设**、无器件测量"
+                        "（见 `dkdrive.implied_mu_report` 的反解区间）"),
     },
 }

@@ -582,8 +582,11 @@ def wl_self_check() -> Dict[str, Any]:
     # ① 数据完整：18 个单元全部有 W/L 出处
     if wl["n_cells"] != len(DC.CELLS):
         problems.append("wl_cells_%d_ne_%d" % (wl["n_cells"], len(DC.CELLS)))
-    if wl["n_measured"] != 2:
-        problems.append("measured_%d_ne_2" % wl["n_measured"])
+    if wl["n_measured"] < 2 or not {"INV", "NAND2"} <= set(wl["measured_cells"]):
+        # 🔴 v0.9.408 **改口**：原式是 `!= 2` —— 那是「当时只有 INV/NAND2 有版图」
+        #   的进度快照，被写成了不变量。补 NOR2 版图后该数**必然**变 3，判据当场假红。
+        #   真正不变的是「至少两个、且必须包含标定锚 INV 与并联基准 NAND2」。
+        problems.append("measured_%r" % (wl["measured_cells"],))
 
     # ② 上限定理**机核**（二维扫描不得越界）
     bc = ceiling_bound_check(n_mu=25, n_wp=18)

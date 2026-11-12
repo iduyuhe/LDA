@@ -40,7 +40,15 @@ T0 = time.time()
 AN_ELAPSED_MAX_S = 240.0
 
 CASE_N, CASE_COLS = 64, 8          # 主用例：64 单元 / 8 列（E49–E51 用的同一档）
-RATE_MIN_IN_ROW = 0.90             # 行内布线后 64 单元的布通率下限
+#: 🔴 v0.9.408 **下调 0.90 → 0.75** —— 这不是放宽门禁，是拆掉一个让旧值虚高的 bug。
+#: 证据（同批 `git worktree add HEAD` 复跑 + 端点普查）：旧 `net_pins` 用
+#: `["A","B"] if kind == "NAND2_X1" else ["A"]` 判输入脚，而 **HD 库的 kind 是
+#: `NAND2_X1_HD`** ⇒ 恒走 else ⇒ **41 个 NAND2 实例的 B 脚从未登记为端点**
+#: （实测每个 B 网只剩 1 个端点）。于是那些网被归入「单端点 ⇒ 布不了」，
+#: 分母缩小、旧值报出 100.0%。本版按引脚名判（有 B 即两输入）后 B 脚进图，
+#: 真值是 **57.4% → 76.5%**（提升幅度 +19.1pp，比旧的 +17.9pp **更大**）。
+#: ⇒ 旧 100% 不可复现也不该复现；阈值按真实能力重定，并由 H11「引脚守恒」长期看守。
+RATE_MIN_IN_ROW = 0.75             # 行内布线后 64 单元的布通率下限（真值 76.5%）
 _LADDER = (12, 64, 128, 256)
 
 
@@ -142,9 +150,11 @@ def main() -> int:
         r0, r1 = len(rt0["routed"]) / n0, len(rt1["routed"]) / n1
         n_in = rt1["n_in_row_m3"]
     check("H7 HD + 行内布线：%d 单元布通率 **%.1f%% → %.1f%%**（+%.1fpp，行内布了 %d 网），"
-          "两档 **DRC 均为 0**" % (CASE_N, 100 * r0, 100 * r1, 100 * (r1 - r0), n_in),
+          "两档 **DRC 均为 0**"
+          % (CASE_N, 100 * r0, 100 * r1, 100 * (r1 - r0), n_in),
           r1 >= RATE_MIN_IN_ROW and r1 > r0 + 0.15 and not va0 and not va1,
           "无行内 %d/%d (%.1f%%) DRC %d · 有行内 %d/%d (%.1f%%) DRC %d · 行内网 %d"
+          " ｜ v0.9.408 起 B 脚进图（旧 82.1%%→100.0%% 是漏布 41 个 B 脚换来的）"
           % (len(rt0["routed"]), n0, 100 * r0, len(va0),
              len(rt1["routed"]), n1, 100 * r1, len(va1), n_in))
 
@@ -164,6 +174,11 @@ def main() -> int:
           "档位 (单元, 布通, 内部网, DRC) = %s" % (ladder,))
 
     # ── H9 双反向探针：间隙规则与冲突退回**各自有牙** ────────────────
+    #   🔴 v0.9.408 **改口**：旧断言是「严格规则 + 关掉退回 ⇒ DRC 0（规则本身够用）」。
+    #   B 脚进图后布线负载变重，严格规则**不再能单独清零**（实测 22 条），必须靠
+    #   冲突退回兜底。这不是规则失效 —— 放开规则后违例**更多**（24 > 22），
+    #   说明严格规则仍在减少违例。⇒ 主张改为相对序：`loose > strict > 0`，且
+    #   「严格 + 退回」必须清零。旧主张（strict == 0）建立在漏布之上，不成立。
     with PR.use("DEMO28", lib=HD):
         PN.IN_ROW_STRICT = True
         _p, _r, va_strict, _n = _route(nl, True, check_on=False)
@@ -171,11 +186,11 @@ def main() -> int:
         _p2, _r2, va_loose, _n2 = _route(nl, True, check_on=False)
         PN.IN_ROW_STRICT = True
         _p3, _r3, va_fb, _n3 = _route(nl, True, check_on=True)
-    check("H9 双探针：① 严格间隙规则 + **关掉**冲突退回 ⇒ DRC **%d**（规则本身够用）；"
-          "② 放开间隙规则 + 关掉退回 ⇒ DRC **%d**（规则不是摆设）；"
-          "③ 严格 + 退回 ⇒ DRC **%d**（兜底也有效）"
+    check("H9 双探针：① 严格间隙规则 + **关掉**冲突退回 ⇒ DRC **%d**；"
+          "② 放开间隙规则 + 关掉退回 ⇒ DRC **%d**（更多 ⇒ 规则有牙）；"
+          "③ 严格 + 退回 ⇒ DRC **%d**（兜底清零）"
           % (len(va_strict), len(va_loose), len(va_fb)),
-          len(va_strict) == 0 and len(va_loose) > 0 and len(va_fb) == 0,
+          len(va_loose) > len(va_strict) > 0 and len(va_fb) == 0,
           "strict/no-fallback %d · loose/no-fallback %d · strict/fallback %d"
           % (len(va_strict), len(va_loose), len(va_fb)))
 
@@ -190,6 +205,28 @@ def main() -> int:
                         tuple(sorted(rt["in_row_assign"].items()))))
     check("H10 确定性：两次跑的 形状数/布通数/DRC 数/行内分配 逐位一致",
           sig[0] == sig[1], "%s vs %s" % (sig[0][:3], sig[1][:3]))
+
+    # ── H11 引脚守恒（v0.9.408 新增 · 长期看守 net_pins 的判定口径）────
+    #   🔴 为什么必须有这一条：v0.9.408 发现 `net_pins` 用 **cell 名**判输入脚
+    #   （`kind == "NAND2_X1"`），而切换库后 kind 变成 `NAND2_X1_HD` ⇒ 恒走单输入分支
+    #   ⇒ 41 个 B 脚从未进图，布通率被虚报成 100%。这个 bug 活了若干个版本都没被发现，
+    #   因为**没有任何判据问过「引脚是不是都在图里」**。
+    #   本条把「每个实例的每个信号引脚都必须是某条网的端点」变成可机核的守恒量。
+    with PR.use("DEMO28", lib=HD):
+        _pl = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS, truncate_ok=True)
+        _pins = PN.net_pins(_pl)
+        _have = {(e[0], e[1]) for v in _pins.values() for e in v}
+        _miss = []
+        _n_pin = 0
+        for _inst in _pl["insts"]:
+            for _p in PN.pin_access_points(_inst):
+                _n_pin += 1
+                if (_inst["name"], _p["pin"]) not in _have:
+                    _miss.append((_inst["name"], _p["pin"]))
+    check("H11 引脚守恒：%d 实例 / %d 个信号引脚**全部**登记为端点（缺 %d）"
+          % (len(_pl["insts"]), _n_pin, len(_miss)),
+          _n_pin > 0 and not _miss,
+          "缺项 %s" % (_miss[:6],))
 
     dt = time.time() - T0
     check("H0 门禁耗时 %.2f s < %.0f s（阈值留余量）" % (dt, AN_ELAPSED_MAX_S),

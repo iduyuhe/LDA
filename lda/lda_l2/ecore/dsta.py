@@ -632,13 +632,7 @@ def sizing_gain_chain(cells, load_ff=None, tech=None) -> dict:
     「ΣR 比」而是逐级加权，两者在该退化的地方必须**逐位**相等（门禁侧有断言）。
     """
     tech = tech or DC.DEFAULT_TECH
-    seq = []
-    for item in cells:
-        if isinstance(item, (tuple, list)):
-            seq.append((item[0], (float(item[1]) if item[1] is not None
-                                 else self_load_default(load_ff, tech))))
-        else:
-            seq.append((item, self_load_default(load_ff, tech)))
+    seq = _normalize_chain(cells, load_ff, tech)
 
     cs = DC.c_self_ff(tech)
     rows = []
@@ -680,16 +674,129 @@ def self_load_default(load_ff, tech=None):
     return (FO_TARGET * tech.cin_ff) if load_ff is None else float(load_ff)
 
 
-def build_chain_nl(cell: str, n_stage: int, load_ff: float, name="chain"):
-    """造一条 N 级同构串联链的门级网表（用于金标对拍）。"""
+def _normalize_chain(cells, load_ff, tech):
+    """把 `cells` 归一成 `[(name, load_ff)]`。
+
+    🔴 `sizing_gain_chain` 与 `area_delay_tradeoff` **共用这一份**：
+    「路径上的负载怎么定」如果两处各写一次，一个改了另一个不改就会给出
+    「延时收益按 A 口径、面积代价按 B 口径」的合成指标 —— 那比没有指标更坏。
+    """
+    seq = []
+    for item in cells:
+        if isinstance(item, (tuple, list)):
+            seq.append((item[0], (float(item[1]) if item[1] is not None
+                                 else self_load_default(load_ff, tech))))
+        else:
+            seq.append((item, self_load_default(load_ff, tech)))
+    return seq
+
+
+def area_delay_tradeoff(cells, load_ff=None, tech=None) -> dict:
+    """**面积 ↔ 延时联合指标**（v0.9.408）—— 把两笔账放进同一个分母。
+
+    ═══════════════════════════════════════════════════════════════════════
+    为什么必须合成一个数
+    ───────────────────────────────────────────────────────────────────────
+    v0.9.404 报「面积 +13.0%」，v0.9.407 报「延时 2.50×」—— 两个数**并排看**
+    读者会得到相反印象：悲观的人说「贵了 13%」，乐观的人说「快了 2.5 倍」。
+    真正的问题是「这份面积买回了多少延时」，它只能是一个比值。
+
+    ═══════════════════════════════════════════════════════════════════════
+    两个指标（互补，不能用其中一个代替另一个）
+    ───────────────────────────────────────────────────────────────────────
+    · `elasticity`（无量纲）= `(延时收益 − 1) / (面积比 − 1)`
+      = **每花 1% 面积，买回百分之几的延时**。跨规模、跨路径可比。
+    · `ps_per_um2`（有量纲）= `(延时差 ps) / (面积差 µm²)`
+      = **每多 1 µm² 省下多少 ps**。坪效，可与其他设计直接比。
+
+    ═══════════════════════════════════════════════════════════════════════
+    🔴 三个口径必须分开记，混起来就是系统性高估
+    ───────────────────────────────────────────────────────────────────────
+    ① **瓦片面积**（本函数）= Σ 各级单元的 `w×h`。不含布线通道、不含单元间隙。
+    ② **布局面积**（主链 59.202 µm²）= `dpnr.place_real` 的 die，含通道与间隙 ——
+       它比瓦片面积大，两者**不可互相引用**。
+    ③ **反事实面积**：把 p 侧退回 `W_n`（1:1）后**重建版图**再量 ——
+       走真几何（`dcells.cell_area_um2_at` → `build_*(w_p_nm=)`），不是高度外推。
+
+    ═══════════════════════════════════════════════════════════════════════
+    ⚠️ 谁的面积不变就没指标
+    ───────────────────────────────────────────────────────────────────────
+    纯下拉主导的单元（NAND3/AND3）加宽 p 侧**不改变** `max(R_pd, R_pu)`，
+    也不改变单元高度（高度由 p-diff 宽度决定，但它不是瓶颈）…… 具体地：
+    `area_ratio == 1` 时分母为零 ⇒ `elasticity = None`。
+    **这一条是特性不是缺陷**：它如实说「这笔改动在这个单元上没有可报的收益」。
+    """
+    from . import dcells as CL
+    tech = tech or DC.DEFAULT_TECH
+    seq = _normalize_chain(cells, load_ff, tech)
+    rows = []
+    a_bal = a_11 = d_bal = d_11 = 0.0
+    for name, lf in seq:
+        c = DC.CELLS[name]
+        if not c.layout:
+            raise ValueError(
+                "单元 %s 没有版图（`Cell.layout` 为空）⇒ 面积代价不可算。"
+                "合成指标拒绝用「面积未知」去配「延时已知」。" % name)
+        a_b = CL.cell_area_um2_at(c.layout)
+        a_1 = CL.cell_area_um2_at(c.layout, w_p_nm=c.w_n_nm)
+        # 🔴 延时走**同一个** `cell_delay_ps`（只多一个 `w_p_nm`），不另写 1:1 公式
+        d_b = DC.cell_delay_ps(name, lf, tech)
+        d_1 = DC.cell_delay_ps(name, lf, tech, w_p_nm=c.w_n_nm)
+        a_bal += a_b
+        a_11 += a_1
+        d_bal += d_b
+        d_11 += d_1
+        rows.append({"cell": name, "layout": c.layout, "load_ff": lf,
+                     "area_bal_um2": a_b, "area_11_um2": a_1,
+                     "delay_bal_ps": d_b, "delay_11_ps": d_1,
+                     "cell_area_ratio": (a_b / a_1) if a_1 else None,
+                     "cell_delay_gain": (d_1 / d_b) if d_b else None,
+                     "dominance": DC.sizing_dominance(c, tech)})
+    if not rows or a_bal <= 0.0 or d_bal <= 0.0:
+        raise ValueError("空路径或零面积/零延时，算不出联合指标")
+    area_ratio = a_bal / a_11
+    delay_gain = d_11 / d_bal
+    da, dd = a_bal - a_11, d_11 - d_bal
+    return {
+        "n_gates": len(rows),
+        "area_bal_um2": a_bal, "area_11_um2": a_11, "area_ratio": area_ratio,
+        "delay_bal_ps": d_bal, "delay_11_ps": d_11, "delay_gain": delay_gain,
+        #: 每 1% 面积买回的 % 延时（无量纲 · 跨规模可比）
+        "elasticity": (delay_gain - 1.0) / (area_ratio - 1.0)
+                      if abs(area_ratio - 1.0) > 1e-12 else None,
+        #: 每多 1 µm² 省下的 ps（有量纲 · 坪效）
+        "ps_per_um2": (dd / da) if abs(da) > 1e-12 else None,
+        "uniform_load": len({round(r["load_ff"], 12) for r in rows}) == 1,
+        "area_basis": "TILE（Σ w×h · 不含通道/间隙 · 不是主链的布局面积）",
+        "cells": rows,
+    }
+
+
+def build_chain_nl(cell: str, n_stage: int, load_ff: float, name="chain",
+                   tie_inputs: bool = False):
+    """造一条 N 级同构串联链的门级网表（用于金标对拍）。
+
+    🔴 `tie_inputs`（v0.9.408）：多输入单元的**其余输入共接**到一条输入网 `in_tie_0`。
+
+    为什么必须补：本函数原来无条件只连一个脚（`Gate(nm, cell, (prev,), nm)`）。
+    对 INV 正确，对 NAND2/NOR2 却是**悬空脚** —— 网表在物理链上非法（布线器看到
+    单端点脚，LVS 也对不上），于是「NOR 链能跑 P&R」这件事根本测不了。
+    默认 `False` ⇒ 与旧行为**逐位相同**（金标对拍那批判据不受影响）。
+    """
     from .dsynth import Gate, Netlist
     nl = Netlist(name=name)
+    prev = "in_a_0"
     nl.inputs = (("a", 1),)
     nl.in_nets = {("a", 0): "in_a_0"}
-    prev = "in_a_0"
+    extra = 0
+    if tie_inputs:
+        extra = max(0, DC.CELLS[cell].n_in - 1)
+        if extra:
+            nl.inputs = (("a", 1), ("tie", 1))
+            nl.in_nets[("tie", 0)] = "in_tie_0"
     for k in range(n_stage):
         nm = "x%d" % k
-        nl.gates.append(Gate(nm, cell, (prev,), nm))
+        nl.gates.append(Gate(nm, cell, (prev,) + ("in_tie_0",) * extra, nm))
         prev = nm
     nl.outputs = {"y": (prev,)}
     return nl

@@ -79,6 +79,27 @@ v0.9.407 测出「上拉主导链 2.50×」，但 `PHYSICALLY_MODELED` 只有 `I
    （1.53× 行高）⇒ 会顶起 `dpnr` 的行高预算、主链 9 数全变，需单独立项（`double-height` 支持）。
 3. 绝对延时/面积仍 `claimable=False`；`ρ_p/ρ_n = 2.5` 是教科书假设，无器件测量。
 
+### 验收
+
+全量首跑 **405 PASS / 0 SKIP / 1 FAIL**（`run_reachability_smoke.py`），唯一失败项是本次重构引入的**假红**：
+
+```
+R1 零引用集合 == 登记基线（新增 1 / 消失 0）→ 新增：lda/lda_l2/ecore/dsta.py::self_load_default
+R2 基线计数 == 现算计数（101 == 102）
+```
+
+根因（读 `lda_harness/reachability.py`）：引用图的边**只连公开函数**
+（`edges = {t for t in ids_in(node) if t in funcs}`，`funcs = public_funcs` 不含下划线开头）
+⇒ **私有 helper 对它是透明的**。本批把「路径归一化」抽成私有 `_normalize_chain` 后，
+`self_load_default` 的全部引用都落进私有函数体 ⇒ 公开图里没人指向它 ⇒ 判死。
+
+修法：`_normalize_chain` → **`normalize_chain`**（公开）。它被 `sizing_gain_chain` 与
+`area_delay_tradeoff` 两个公开 API 共用，公开是**真实的可见性**；改名让引用图如实反映调用关系。
+**不扩 `DEAD_BASELINE`**（纪律：reachability 处置 = 删自己的零引用函数）。
+反向教训已写进该函数 docstring：**把公开函数重构成私有 helper 会触发 reachability 假红**。
+
+二次全量：**406 PASS / 0 SKIP / 0 FAIL · 11191.94 s** —— 全绿。
+
 ### 文件
 
 `dcells.py`（`build_nor2` / `_cont_box` / `cell_area_um2_at` / 三个 build 参数化 `w_p_nm`）·

@@ -59,11 +59,18 @@ def diff(before: dict, after: dict = None) -> list:
 
 
 @contextlib.contextmanager
-def use(node, channel_um: float = None, cell_gap_um: float = None, lib=None):
+def use(node, channel_um: float = None, cell_gap_um: float = None, lib=None,
+        cell_map: dict = None):
     """在上下文内把布线/DRC 规则切到 `node`（`dnode.Node` 或其名字）。
 
     · `channel_um`：行间通道高度，默认按节点节距取 `4 × pitch`（给足 4–5 条轨道）；
-    · `cell_gap_um`：单元间距，默认 `1 × pitch`（行内布线之后不再需要靠间隙换可达性）。
+    · `cell_gap_um`：单元间距，默认 `1 × pitch`（行内布线之后不再需要靠间隙换可达性）；
+    · `lib`：替换 `dpnr.CL` 单元库，并默认把 `dpnr.CELL_MAP` 换成该库的 `CELL_MAP`；
+    · `cell_map`：**显式**指定网表单元名 → 版图单元名的映射，优先于 `lib.CELL_MAP`。
+      🔴 为什么必须显式（F2 实测）：HD 库默认映射只含 INV/NAND2，E53/E54/E55 与
+      F1 的 `E53_STYLE` 口径都依赖它；把 DFF/BUF 直接塞进默认表会**换掉实验网表的组成**。
+      要让控制壳的 DFF 进 place，传 `dhdlib.CELL_MAP_FULL`，不传则不启用。
+      退出时 `CELL_MAP` 与 `CL` 一并逐项还原。
     """
     nd = DN.get(node) if isinstance(node, str) else node
     r = nd.route_rules()
@@ -81,6 +88,8 @@ def use(node, channel_um: float = None, cell_gap_um: float = None, lib=None):
         if lib is not None:
             PN.CL = lib
             PN.CELL_MAP = dict(lib.CELL_MAP)
+        if cell_map is not None:
+            PN.CELL_MAP = dict(cell_map)
         DD.W_ROUTE, DD.VIA, DD.TRACK_PITCH = w, via, pitch
         DL.S_MIN, DL.ENC, DL.W_MIN = s, enc, w
         PN.PITCH, PN.W = pitch, w

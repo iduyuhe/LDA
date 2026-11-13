@@ -72,6 +72,7 @@ from lda_harness.smoke_kit import make_check  # noqa: E402
 from lda_l2.ecore import db3_trunk as B3        # noqa: E402
 from lda_l2.ecore import dbench as DB           # noqa: E402
 from lda_l2.ecore import dcell as DC           # noqa: E402
+from lda_l2.ecore import dctrl as CT           # noqa: E402
 from lda_l2.ecore import dhdlib as DHD         # noqa: E402
 from lda_l2.ecore import dcells as CL         # noqa: E402
 from lda_l2.ecore import ddef as DF            # noqa: E402
@@ -3482,6 +3483,80 @@ def main() -> int:
           and _f1_st["route"]["nets_with_segments"] == 10
           and _f1_st["route"]["nets_touched"] == 11,
           "stages=%r" % ([n for n, _ in _f1_rep["stages"]],))
+
+    # ── F2 · 单元库接线（DFF/BUF 不再被 place 跳过）────────────────────────
+    _f2_nl = CT.build()["netlist"]
+    _f2_n_total = len(_f2_nl.gates)
+    _f2_n_dff = sum(1 for g in _f2_nl.gates if g.cell == "DFF")
+    with DP.use("DEMO28", lib=DHD, cell_map=DHD.CELL_MAP_FULL):
+        _f2_on = P.place_real(_f2_nl, max_cells=_f2_n_total)
+    _f2_sk_on = dict(_f2_on["skipped_cells"])
+    check("EC-G27 控制壳 **place 层守恒**：%d 门 = %d 组合 + %d DFF，显式完整映射后 "
+          "picked=%d / skipped={}；默认映射仍只含 %d 项（E53/F1 的 E53_STYLE 口径不被污染）"
+          % (_f2_n_total, _f2_n_total - _f2_n_dff, _f2_n_dff,
+             _f2_on["n_picked"], len(DHD.CELL_MAP)),
+          _f2_n_total == 1340 and _f2_n_dff == 56
+          and _f2_on["n_picked"] == _f2_n_total and not _f2_sk_on
+          and _f2_on["n_truncated"] == 0
+          and DHD.CELL_MAP_FULL.get("DFF") == "DFF_X1_HD"
+          and DHD.CELL_MAP_FULL.get("BUF") == "BUF_X1_HD"
+          and all(v in DHD.CELLS for v in DHD.CELL_MAP_FULL.values())
+          and len(DHD.CELL_MAP) == 2 and "DFF" not in DHD.CELL_MAP,
+          "picked=%d skipped=%r n_truncated=%d（🔴 边界：net_pins 只认 A/B/Y，"
+          "D/CLK/Q/QN 尚未进布线图 ⇒ 本批只补 place 层）"
+          % (_f2_on["n_picked"], _f2_sk_on, _f2_on["n_truncated"]))
+
+    # 🔴 真实破坏测试：换回**默认组合映射**再跑一遍（不是只改参数自证）。
+    with DP.use("DEMO28", lib=DHD, cell_map=DHD.CELL_MAP):
+        _f2_off = P.place_real(_f2_nl, max_cells=_f2_n_total)
+    _f2_sk_off = dict(_f2_off["skipped_cells"])
+    _f2_map_after = dict(P.CELL_MAP)
+    check("EC-G28 **接线因果**：默认映射 picked 回落 %d → %d、skipped 重现 {'DFF': %d}；"
+          "退出上下文后 `dpnr.CELL_MAP` 逐项还原为 %d 项 ⇒ 提升来自显式完整映射本身"
+          % (_f2_on["n_picked"], _f2_off["n_picked"], _f2_n_dff, len(_f2_map_after)),
+          _f2_off["n_picked"] == 1284 and _f2_sk_off == {"DFF": 56}
+          and _f2_on["n_picked"] == _f2_off["n_picked"] + _f2_n_dff
+          and _f2_map_after == {"INV": "INV_X1", "NAND2": "NAND2_X1",
+                                "NOR": "NOR2_X1", "NOR2": "NOR2_X1"},
+          "off_picked=%d off_skipped=%r restored=%r" % (_f2_off["n_picked"], _f2_sk_off,
+                                                         _f2_map_after))
+
+    _f2_buf = DHD.build_buf_hd()
+    _f2_bdrc = CL.run_drc(_f2_buf, DHD.HD_RULES)
+    _f2_blvs = CL.run_lvs(_f2_buf)
+    _f2_devs = _f2_buf.devices_expected
+    _f2_n1_sd = sum(1 for d in _f2_devs if "n1" in (d[4], d[5]))
+    _f2_n1_gate = sum(1 for d in _f2_devs if d[3] == "n1")
+    check("EC-G29 BUF_X1_HD：%d×%d nm · %d/%d 器件 · DRC %d / LVS %d · "
+          "中间网 n1 恰好是**第一级输出 + 第二级输入**（2 sd / 2 gate）⇒ 两级 INV 串联恒等"
+          % (_f2_buf.w, _f2_buf.h, len(_f2_devs), len(CL.extract_devices(_f2_buf)),
+             _f2_bdrc["n"], _f2_blvs["n"]),
+          _f2_buf.w == 560 and _f2_buf.h == DHD.H_ROW_HD
+          and len(_f2_devs) == 4 and len(CL.extract_devices(_f2_buf)) == 4
+          and _f2_bdrc["n"] == 0 and _f2_blvs["n"] == 0
+          and _f2_n1_sd == 2 and _f2_n1_gate == 2
+          and max(f().w for f in DHD.CELLS.values()) == 2500,
+          "n1_sd=%d n1_gate=%d hd_max_w=%d" % (_f2_n1_sd, _f2_n1_gate,
+                                               max(f().w for f in DHD.CELLS.values())))
+
+    _f2_env = {k: (f().w, f().h) for k, f in CL.CELLS.items()}
+    _f2_wl = DC.wl_provenance_summary()
+    _f2_before = (P.CELL_W_UM, round(P.CELL_GAP_UM, 9), P.row_height_um())
+    with DP.use("DEMO28", lib=DHD):
+        _f2_under = (P.CELL_W_UM, round(P.CELL_GAP_UM, 9), P.row_height_um())
+    _f2_after = (P.CELL_W_UM, round(P.CELL_GAP_UM, 9), P.row_height_um())
+    check("EC-G30 主链包络**逐位不动**：CELL_W_UM %.2f / row_height %.2f / dcell %d 单元 / "
+          "LAYOUT %d 颗；切库口径显式登记（%r → %r → %r）：`CELL_W_UM` 不跟随是既有历史口径，"
+          "本批不改行为，改动须受控改口 + 全量"
+          % (P.CELL_W_UM, P.row_height_um(), len(DC.CELLS), _f2_wl["n_measured"],
+             _f2_before, _f2_under, _f2_after),
+          all(w <= 980 and h <= 1950 for w, h in _f2_env.values())
+          and P.CELL_W_UM == 0.98 and P.row_height_um() == 1.95
+          and len(DC.CELLS) == 18 and _f2_wl["n_measured"] == 3
+          and _f2_before == _f2_after
+          and _f2_under[0] == 0.98 and abs(_f2_under[1] + 0.42) < 1e-9
+          and _f2_under[2] == 1.0,
+          "env=%r" % (_f2_env,))
 
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)

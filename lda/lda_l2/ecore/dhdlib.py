@@ -439,11 +439,64 @@ def build_dff_hd(route: dict = None) -> Cell:  # noqa: ARG001  (签名与其它�
     return Cell("DFF_X1_HD", DFF_W, H_ROW_HD, rects, pins, devs)
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# ④b BUF（2×INV 串联 · 4T）—— CTS 缓冲器（F2 接线批次）
+# ═══════════════════════════════════════════════════════════════════════════
+def build_buf_hd(route: dict = None) -> Cell:
+    """BUF_X1_HD：A → n1 → Y，两级 INV 串联 ⇒ 输出恒等于 A。
+
+    🔴 **不重画几何**：两颗 `build_inv_hd` 的现成矩形按 x 平移 280nm 后复用，
+    中间网 `n1` 用一条 M1 竖带把「第一级 Y pad」与「第二级 A pad」接起来 ——
+    与本模块「规则集 / 判定器不重写、只描述几何」的既有约定一致。
+    网名重命名（第一级 `Y→n1`、第二级 `A→n1`）保证 LVS 内部节点是**同一个**网。
+    """
+    from dataclasses import replace
+    inv = build_inv_hd(route)
+    w = 280
+
+    def shifted(r, dx, ren):
+        return replace(r, x0=r.x0 + dx, x1=r.x1 + dx,
+                       net=ren.get(r.net, r.net))
+
+    rects = [shifted(r, 0, {"Y": "n1"}) for r in inv.rects]
+    rects += [shifted(r, w, {"A": "n1"}) for r in inv.rects]
+    # 第一级 Y pad (210..280, 640..710) ↔ 第二级 A pad (280..350, 270..340)；
+    # x 端在 280 边界相接、同网名 ⇒ 同层间距规则不判异网，DRC 0。
+    rects.append(R(L_M1, 280, 270, 345, 710, net="n1", role="link"))
+    pins = {
+        "VDD": replace(inv.pins["VDD"], x1=2 * w),
+        "VSS": replace(inv.pins["VSS"], x1=2 * w),
+        "A": shifted(inv.pins["A"], 0, {}),
+        "Y": shifted(inv.pins["Y"], w, {}),
+    }
+    devs = [
+        ("pmos", W_DEV_HD, L_GATE_HD, "A", "VDD", "n1"),
+        ("nmos", W_DEV_HD, L_GATE_HD, "A", "VSS", "n1"),
+        ("pmos", W_DEV_HD, L_GATE_HD, "n1", "VDD", "Y"),
+        ("nmos", W_DEV_HD, L_GATE_HD, "n1", "VSS", "Y"),
+    ]
+    return Cell("BUF_X1_HD", 2 * w, H_ROW_HD, rects, pins, devs)
+
+
 CELLS = {"INV_X1_HD": build_inv_hd, "NAND2_X1_HD": build_nand2_hd,
-         "DFF_X1_HD": build_dff_hd}
+         "DFF_X1_HD": build_dff_hd, "BUF_X1_HD": build_buf_hd}
 
 #: 网表单元名 → HD 库单元名（键与 `dpnr.CELL_MAP` 同口径：网表里是 `INV`/`NAND2`）
+#: 🔴 **默认只到组合单元**：E53/E54/E55 与 F1 的 `E53_STYLE` 口径都以这张表为准
+#: （控制壳截断网表里 DFF 被如实跳过）。实测教训：把 DFF/BUF 塞进**默认表**会让
+#: E53 的 H7 布通率与 H11 引脚守恒当场变红 —— 不是阈值问题，是**实验网表组成被换了**
+#: （F1 的 256 档 191/267=71.5% 也不再可复现）。⇒ 完整映射必须**显式启用**。
 CELL_MAP = {"INV": "INV_X1_HD", "NAND2": "NAND2_X1_HD"}
+
+#: 🆕 **完整映射（显式启用）**：控制壳 `dsynth` 生成的 `DFF`（`ins=(D,"CLK")`）
+#: 与 `dcell.CELLS` 的 `BUF`。用 `dproc.use(..., cell_map=CELL_MAP_FULL)` 启用 ⇒
+#: `place_real` 的 `picked 1284 → 1340`、`skipped {'DFF':56} → {}`，且
+#: **不动 `dcells.CELLS`** ⇒ 主链 `CELL_W_UM=0.98` / `row_height_um()=1.95` 与 9 数逐位不动。
+#: 🔴 诚实边界：`dpnr.net_pins` 只认 A/B/Y，**DFF 的 D/CLK/Q/QN 尚未进布线图**
+#: （.408 注释已显式承认；H11 完整映射下缺 8 个引脚即此）。本批只补 **place 层**，
+#: 布线层接线需单独立项，不得把「能摆」说成「能布」。
+CELL_MAP_FULL = {"INV": "INV_X1_HD", "NAND2": "NAND2_X1_HD",
+                 "DFF": "DFF_X1_HD", "BUF": "BUF_X1_HD"}
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -1,5 +1,63 @@
 # Changelog
 
+## v0.9.411（2026-11-13 · **F2 第一批：单元库接线** · 净增 0 锚 · CI core **406**）
+
+### 一句话
+
+立项前只读测算先推翻规划 F2 的 **5 条**验收条件，最实质的一条是
+「**DFF 的 22T 版图早已存在，缺的是接线**」⇒ 本批不重画几何，只把控制壳的
+56 个 DFF 接进 place，并守住主链 9 数与 E53 既有口径。
+
+### 测算推翻了什么
+
+| 规划 / 审计原文 | 实测事实 |
+|---|---|
+| F2-3「**1327 门**控制壳」 | **1340 = 1284 组合 + 56 DFF** |
+| F2-3「`dverilog.PHYSICALLY_MODELED` 加 DFF」 | **错落点**：那是 Verilog 原语名集合；DFF 由 `dctrl` RTL → `dsynth` 生成 |
+| F2-1「新画 `dcells.build_dff` 22T」 | `dhdlib.build_dff_hd` **已有** 22/22 器件 · DRC 0 / LVS 0 · 11 列 · 6 道判据守护 |
+| F2-2「加 `row_height_um(lib=)` 才不顶主链」 | `row_height_um()` 本就运行时跟随 `PN.CL`；真缺陷是 `CELL_W_UM` 为 import 期常量 |
+| 审计 A-1「DFF 必须进另一个集合」 | `dhdlib.CELLS` 天然独立，`dproc.use(lib=)` 已切库 |
+
+### 本批实现（只接线，不改主链数字）
+
+- `dhdlib.build_buf_hd`：**复用两颗 `build_inv_hd` 矩形平移 280 nm**，中间网 `n1`
+  用一条 M1 竖带连成同一网 ⇒ `560×1000` · 4/4 器件 · DRC 0 / LVS 0 · 两级 INV 恒等。
+- `dhdlib.CELL_MAP_FULL`（**显式启用**）：`DFF → DFF_X1_HD`、`BUF → BUF_X1_HD`；
+  `dproc.use(..., cell_map=)` 新增参数，退出时 `CL` / `CELL_MAP` 逐项还原。
+  控制壳 `place_real`：`picked 1284 → 1340`、`skipped {'DFF':56} → {}`。
+- 🔴 **默认 `CELL_MAP` 保持 INV/NAND2 两项不变**：实测把 DFF/BUF 塞进默认表会让
+  E53 的 H7 布通率与 H11 引脚守恒当场变红 —— 根因是**实验网表组成被换掉**
+  （截断到 64/256 时 DFF 混了进来），不是阈值问题；且 F1 的 `E53_STYLE`
+  256 档 `191/267 = 71.5%` 不再可复现 ⇒ 完整映射必须显式启用。
+- `s13` 新增 **EC-G27~G30 四条判据**（227 → **231**）：place 守恒、真实破坏测试
+  （换回默认映射 ⇒ picked 回落 1284 + `CELL_MAP` 还原）、BUF 版图双零与中间网结构、
+  主链包络与切库口径显式登记。
+
+### 🔴 诚实边界（不把「能摆」说成「能布」）
+
+- `dpnr.net_pins` 只认 `A/B/Y`，**DFF 的 D/CLK/Q/QN 尚未进布线图**
+  （v0.9.408 注释已显式承认；完整映射下 H11 会缺 8 个引脚）⇒ 本批只补 **place 层**，
+  布线层接线需单独立项。
+- 主链 DEMO45 交付链**仍无 DFF 版图**；DFF/BUF 只在 DEMO28 实验库可用。
+  按用户拍板「先接线后补版图」，DEMO45 `CELLS_DH` 单独立项评估。
+- `dcell.CELLS` 数据层 18 单元 / 3 个 LAYOUT **一字未动** ⇒ 几何层 DH 与数据层
+  仍为 SYMBOLIC 口径，归一排 F5（改它会撞 EC-G01/G01b/G19/K01/L04/G12 六条判据）。
+- 切库时 `CELL_W_UM` 不跟随、`CELL_GAP_UM` 被改写为 −0.42，是**既有历史口径**
+  （E53/E55 的数字基于它），本批不改行为，只机核登记；改动须受控改口 + 全量。
+
+### 回归与边界
+
+- 主链 **9 数逐位未动**：59.202 µm² · 10/11 · DRC 0 · 46.657 / 92.398 ps ·
+  DEF 575 B · EM 151.661× · `claimable=False` · `m1_exit.ok=True`。
+- E53 逐位回到既有口径：64 档 **57.4% → 76.5%** · 256 档 **191/267 = 71.5%** · H11 缺 0。
+- **core-fast 351 PASS / 0 SKIP / 0 FAIL · 835.09 s**；
+  **全量 core 406 PASS / 0 SKIP / 0 FAIL · 11128.48 s**（一次绿，无首跑假红）。
+- 12 道相关门禁全绿（棘轮三件套 + s13 / e34 / e53 / e54 / e55 / case / guard / reuse）
+  + WebUI 顶行格式两道；台账 k4 / dashboard / k0 重生 rc=0 且零漂移。
+- 全量写脏的 `ecosystem_d98.json` / `verification_report.json` / `verification_report.md`
+  已按纪律还原；本批只保留 `k0_audit.json` 的版本改动。
+- 净增 0 锚 · 账本 546 / strict 524 / 独立率 95.97% / CI core **406** · 端点 **160**。
+
 ## v0.9.410（2026-11-12 · **F1 规模真值 · `.bench` 入口** · 净增 0 锚 · CI core **406**）
 
 ### 一句话

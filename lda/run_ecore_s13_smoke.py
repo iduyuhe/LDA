@@ -3847,6 +3847,100 @@ def main() -> int:
           and not (set(DC.CELLS) & set(CL.CELLS_DH)),
           "note=%r h=%r" % (_g39_note, _g39_h))
 
+    # ── A2 · 双库 `place_real` 显式启用（v0.9.414）────────────────────────
+    # 默认 `dh_lib=None` ⇒ 走原路径、返回键集恰 17 个；传 `CELLS_DH` 才启用双库。
+    # 🔴 不改全局 `CELL_W_UM` / `row_height_um()` / `CELL_MAP`（B 批已实证：
+    #    默认映射一动，E53 实验网表组成就换掉）。
+    import inspect as _inspect                                  # noqa: E402
+    from lda_l2.ecore.dsynth import Gate as _A2Gate             # noqa: E402
+    from lda_l2.ecore.dsynth import Netlist as _A2Netlist       # noqa: E402
+
+    _a2_gates = ([_A2Gate("u%d" % i, "DFF", (), "q%d" % i) for i in range(4)] +
+                 [_A2Gate("g%d" % i, "INV", ("q%d" % (i % 4),), "n%d" % i)
+                  for i in range(4)])
+    _a2_nl = _A2Netlist(name="a2_dh_case", gates=_a2_gates)
+    _a2_def = P.place_real(_a2_nl, max_cells=16)
+    _a2_empty = P.place_real(_a2_nl, max_cells=16, dh_lib={})
+    _a2_dual = P.place_real(_a2_nl, max_cells=16, dh_lib=CL.CELLS_DH)
+    _a2_keys = {"insts", "rows", "cols", "die_w_um", "pitch_x_um", "n_channels",
+                "cell_gap_um", "die_h_um", "h_row_um", "row_pitch_um", "ch_um",
+                "t_tracks", "skipped_cells", "n_picked", "n_gates_total",
+                "truncated", "n_truncated"}
+    _a2_global = (P.CELL_W_UM, P.row_height_um(), "DFF" in P.CELL_MAP)
+    _a2_a = _json.dumps(B3.run_trunk(_g31_c17), sort_keys=True, default=str)
+    _a2_b = _json.dumps(B3.run_trunk(_g31_c17), sort_keys=True, default=str)
+    _a2_sig = _inspect.signature(P.place_real).parameters
+    check("EC-G40 **默认零漂移（真实反事实）**：不传 `dh_lib` 与传空表时返回键集恰 %d 个、"
+          "`dh_*` 一个都不出现、DFF 仍被跳过（%r）；`dh_lib` 形参默认值为 `None`；"
+          "同进程 A/B `run_trunk(c17)` 全报告逐字节相同（%d B）"
+          % (len(_a2_keys), _a2_def["skipped_cells"], len(_a2_a)),
+          set(_a2_def) == _a2_keys and set(_a2_empty) == _a2_keys
+          and not any(k.startswith("dh_") for k in _a2_def)
+          and _a2_def["skipped_cells"] == {"DFF": 4} and _a2_def["n_picked"] == 4
+          and "dh_lib" in _a2_sig and _a2_sig["dh_lib"].default is None
+          and _a2_a == _a2_b,
+          "keys=%d sig=%r equal=%r" % (len(_a2_def), _a2_sig["dh_lib"].default,
+                                       _a2_a == _a2_b))
+
+    _a2_pitch = _a2_dual["pitch_x_um"]
+    _a2_pos_ok = all(abs(i["x0"] - i["c"] * _a2_pitch) < 1e-9
+                     and abs(i["y0"] - i["r"] * _a2_dual["row_pitch_um"]) < 1e-9
+                     for i in _a2_dual["insts"])
+    _a2_dff = [i for i in _a2_dual["insts"] if i["kind"] == "DFF_X1_DH"]
+    _a2_saved_map = CL.CELL_MAP_DH
+    CL.CELL_MAP_DH = {}
+    try:
+        _a2_broken = P.place_real(_a2_nl, max_cells=16, dh_lib=CL.CELLS_DH)
+    finally:
+        CL.CELL_MAP_DH = _a2_saved_map
+    check("EC-G41 **双库显式启用**：8 门 testcase ⇒ picked %d / skipped %r、"
+          "`pitch_x` %.3f（= %.3f + gap）、`h_row` %.3f、`dh_pitch_x` %.3f、`dh_h_row` %.3f；"
+          "%d 个 DFF 实例 %s×%s 且逐实例落在 (c·pitch, r·row_pitch) 网格；"
+          "全局 `CELL_W_UM`/`row_height_um()`/`CELL_MAP` 未变 %r；"
+          "拿掉 `CELL_MAP_DH` ⇒ DFF 又被跳过（%r）"
+          % (_a2_dual["n_picked"], _a2_dual["skipped_cells"], _a2_pitch,
+             _a2_dual["dh_pitch_x_um"], _a2_dual["h_row_um"],
+             _a2_dual["dh_pitch_x_um"], _a2_dual["dh_h_row_um"], len(_a2_dff),
+             _a2_dff[0]["w"] if _a2_dff else None,
+             _a2_dff[0]["h"] if _a2_dff else None,
+             _a2_global, _a2_broken["skipped_cells"]),
+          _a2_dual["n_picked"] == 8 and _a2_dual["skipped_cells"] == {}
+          and abs(_a2_pitch - 4.43) < 1e-9
+          and abs(_a2_dual["h_row_um"] - 4.37) < 1e-9
+          and abs(_a2_dual["dh_pitch_x_um"] - 4.01) < 1e-9
+          and abs(_a2_dual["dh_h_row_um"] - 4.37) < 1e-9
+          and len(_a2_dff) == 4
+          and all(abs(i["w"] - 4.01) < 1e-9 and abs(i["h"] - 4.37) < 1e-9
+                  for i in _a2_dff)
+          and _a2_pos_ok
+          and _a2_global == (0.98, 1.95, False)
+          and _a2_broken["skipped_cells"] == {"DFF": 4}
+          and CL.CELL_MAP_DH is _a2_saved_map,
+          "dual=%r global=%r broken=%r"
+          % ({k: _a2_dual[k] for k in ("n_picked", "skipped_cells",
+                                       "pitch_x_um", "h_row_um")},
+             _a2_global, _a2_broken["skipped_cells"]))
+
+    _a2_half = P.place_real(_a2_nl, max_cells=16,
+                            dh_lib={"BUF_X1_DH": CL.build_buf_dh})
+    _a2_c = _json.dumps(B3.run_trunk(_g31_c17), sort_keys=True, default=str)
+    check("EC-G42 **包络不串味（三种反事实）**：空表 == 未启用（键集 %d、DFF 仍跳过 %r）；"
+          "只给 BUF 的半表也不算启用（%d picked / %r）；两库交集为空 %r；"
+          "跑过双库后默认路径 `run_trunk(c17)` 逐字节回到基线（%r）"
+          % (len(_a2_empty), _a2_empty["skipped_cells"], _a2_half["n_picked"],
+             _a2_half["skipped_cells"], not (set(CL.CELLS) & set(CL.CELLS_DH)),
+             _a2_c == _a2_a),
+          _a2_empty["n_picked"] == 4
+          and _a2_empty["skipped_cells"] == {"DFF": 4}
+          and not any(k.startswith("dh_") for k in _a2_empty)
+          and _a2_half["n_picked"] == 4
+          and _a2_half["skipped_cells"] == {"DFF": 4}
+          and not (set(CL.CELLS) & set(CL.CELLS_DH))
+          and _a2_c == _a2_a,
+          "empty=%r half=%r equal=%r"
+          % (_a2_empty["skipped_cells"], _a2_half["skipped_cells"],
+             _a2_c == _a2_a))
+
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)
 

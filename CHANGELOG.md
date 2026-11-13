@@ -1,5 +1,56 @@
 # Changelog
 
+## v0.9.414（2026-11-13 · **F2 后续 A2：双库布局显式启用** · 净增 0 锚 · CI core **406**）
+
+### 一句话
+
+让时序单元**真的进布局**：新增 `CELL_MAP_DH`（DFF/BUF → DH 单元）+ `place_real(..., dh_lib=)`
+**显式启用**双库。默认路径返回键集恰 17 个、`dh_*` 一个不出现 ⇒ 零漂移；
+启用后行高/列节距取两库实际 max 并**单独返回**，不写回全局。
+
+### 立项前只读测算（4 条规划未覆盖的事实）
+
+| # | 实测 | 处置 |
+|---|---|---|
+| 1 | 控壳网表 1340 门 = `INV 230 / NAND2 1054 / DFF 56`，**`BUF` 不出现** | 不宣称「BUF 已接入布局」；`BUF_X1_DH` 保留供 testcase/后续 |
+| 2 | `dcells` **没有** `CELL_MAP`；`dpnr.CELL_MAP` 只有 INV/NAND2/NOR/NOR2，`DFF`/`BUF` 均缺 | 新增 `dcells.CELL_MAP_DH`，**绝不并入全局 `CELL_MAP`** |
+| 3 | 统一网格取 max ⇒ `pitch_x=4.430`、`h_row=4.370`；1340 门 die ≈ **34,600 µm²**（仅组合库 5,964，**5.8×**） | 面积后果如实登记，**不作效率宣称**；真实设计应「组合行 + 时序行分行」 |
+| 4 | 1340 实例 ≈ 34 万矩形，`run_drc` 是 O(n²) | 验收只用可控 testcase（8 门），**不宣称「1340 门全布」** |
+
+### 实现
+
+- `dcells.CELL_MAP_DH = {"DFF": "DFF_X1_DH", "BUF": "BUF_X1_DH"}`。
+- `dpnr.place_real(..., dh_lib=None)`：`dh_lib` 非空才启用；`kind` 查找在 `CELL_MAP`
+  命中失败后再查 `CELL_MAP_DH`；`kind` 必须落在 `CELLS ∪ dh_lib` 内，否则仍计入 `skipped`；
+  行高/列节距取两库实际 max；返回新增 `dh_enabled` / `dh_cells` / `dh_pitch_x_um` /
+  `dh_h_row_um` 四键（**仅启用时**）。
+- 🔴 **不写回** `CELL_W_UM` / `row_height_um()` / `CELL_MAP`：写回会让主链 c17 的 9 个
+  固定口径数字全废（B 批已实证默认映射一动、E53 实验网表组成就换掉）。
+- `s13` 新增 **3 条判据**（240 → **243**，AST 实测）：默认零漂移（17 键 + 形参默认
+  `None` + 同进程 A/B）· 双库显式启用（8 门 testcase 的绝对量级 + 网格位置 + 全局不串味
+  + 拿掉映射的真实破坏测试）· 包络不串味（空表 / 半表都不算启用 + 跑过双库后默认路径
+  逐字节回到基线）。
+
+### 🔴 诚实边界
+
+- 本批**只到布局层**：不布线、不做全片 DRC、**不宣称时序单元能布通**。
+- 统一网格取 max 是**显式选择**，面积 5.8× 是物理后果、不是效率结论；
+  「组合行 + 时序行分行」属另一批结构性改动。
+- 规则集仍是自建 LDA-DEMO45（**非 foundry PDK**）、不是 SPICE、`claimable=False`。
+- 主链 9 数逐位未动；`CL.CELLS` 仍 3 项、`dcell.CELLS` 18/3 一字未动。
+
+### 验收
+
+- 门禁：`run_ecore_s13_smoke` **243 判据**全绿（3.53 s < 180 s）；
+  pyflakes / timeout_budget / helper_dup / capability_guard / reachability /
+  webui_pm_render_path / count_consistency / report_determinism / ecore_case /
+  e53 / e45 共 12 道全绿。
+- core-fast：**351 PASS / 0 SKIP / 0 FAIL · 857.21 s**。
+- 全量 `--tag core`：**406 PASS / 0 SKIP / 0 FAIL · 11717.77 s = 3.25 h · 一次绿**，
+  完整 core 凭证已写 `green`。
+- 全量写脏的 `ecosystem_d98.json` / `verification_report.json` / `verification_report.md`
+  已还原，只保留 `k0_audit.json` 的版本改动。
+
 ## v0.9.413（2026-11-13 · **F2 后续 A1：DEMO45 规则下的时序单元可查版图** · 净增 0 锚 · CI core **406**）
 
 ### 一句话

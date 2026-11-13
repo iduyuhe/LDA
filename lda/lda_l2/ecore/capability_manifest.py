@@ -793,7 +793,16 @@ ECORE_CAPABILITY_MANIFEST = [
                       "⚠️ 诚实边界同 B1：自建 LDA-DEMO45 规则集、非 foundry PDK、非 SPICE、"
                       "`claimable=False`；DFF 面积 4010×4370=17.52 µm² 只作物理后果披露，"
                       "**不作效率/性能/制造宣称**；本批仅交付可查版图，"
-                      "**不宣称 DFF 已在主链可布通**，下游消费者由后续双库布局显式启用",
+                      "**不宣称 DFF 已在主链可布通**，下游消费者由后续双库布局显式启用"
+                      "✅ **v0.9.414 A2 接入**：新增 `CELL_MAP_DH`（`DFF→DFF_X1_DH` /"
+                      "`BUF→BUF_X1_DH`），由 `dpnr.place_real(..., dh_lib=CELLS_DH)` **显式启用**；"
+                      "🔴 **绝不并入 `dpnr.CELL_MAP`**（那是全局默认映射，一动就换掉默认路径的 "
+                      "`skipped` 集合，B 批已实证 H7/H11 当场红）。双库路径行高/列节距取"
+                      "「两库实际 max」（4.370 / 4.430 = 4.010+gap）并**单独返回** "
+                      "`dh_pitch_x_um` / `dh_h_row_um`，**不写回** `CELL_W_UM` / `row_height_um()`；"
+                      "默认路径返回键集恰 17 个、`dh_*` 一个不出现。⚠️ 统一网格取 max 的面积后果"
+                      "（1340 门 ≈ 34,600 µm²，是仅组合库的 5.8×）**如实登记、不作效率宣称**；"
+                      "真实设计应「组合行 + 时序行分行」，属另一批结构性改动",
         "module": "lda_l2.ecore.dcells",
         "symbols": ["build_inv", "build_nand2", "build_nor2", "cell_area_um2_at",
                     "CELLS", "RULES", "RSH", "R_CONTACT",
@@ -801,7 +810,7 @@ ECORE_CAPABILITY_MANIFEST = [
                     "run_lvs", "extract_r", "gate_r", "cell_self_check", "B1_DISCLOSURE",
                     "PINS_V2_NOTE",
                     "build_dff_dh", "build_buf_dh", "CELLS_DH", "DH_DFF_COLS",
-                    "DH_LEVEL_NET", "DH_NET_LEVELS", "DH_BASIS_NOTE"],
+                    "DH_LEVEL_NET", "DH_NET_LEVELS", "DH_BASIS_NOTE", "CELL_MAP_DH"],
         "introduced_by": "D-233 (B1)", "guard": "run_ecore_e40_smoke.py",
     },
     {

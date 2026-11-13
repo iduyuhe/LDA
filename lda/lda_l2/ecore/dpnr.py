@@ -160,7 +160,7 @@ def tracks_in_channel(ch_um: float = None) -> int:
 # ① 布局（用 B1 的真实单元宽度，不用面积模型反推）
 # ═══════════════════════════════════════════════════════════════════════════
 def place_real(nl, max_cells: int = 32, cols: int = None, cell_gap: float = None,
-               truncate_ok: bool = False) -> dict:
+               truncate_ok: bool = False, dh_lib=None) -> dict:
     """行式布局：单元按 `dcells` 真实宽度排进行，行高 = 1.50µm。
 
     只用 `dcells` 里有的单元类型；遇到未建模类型（如 DFF）**跳过并计数**（披露 ①）。
@@ -173,9 +173,24 @@ def place_real(nl, max_cells: int = 32, cols: int = None, cell_gap: float = None
     为什么必须改：旧代码 `break` 一下就把剩下的门**丢掉**，返回的 `n_picked` 看起来
     是"布了这么多"，而实际网表有更多门 ⇒ 规模实验会得到**假绿灯**（布通率分子分母
     一起缩，看起来正常）。这是本仓反复出现的同型缺陷：「静默降级冒充成功」。
+
+    🔴 **A2（v0.9.414）`dh_lib=` 显式启用双库**：默认 `None` ⇒ 走原路径、返回键集
+    一个不增（17 键）；传入 `dcells.CELLS_DH` 时，`kind` 查找在 `CELL_MAP` 命中失败
+    后再查 `dcells.CELL_MAP_DH`，行高与列节距取 `CELLS ∪ dh_lib` 的**实际 max**，
+    并**单独返回** `dh_pitch_x_um` / `dh_h_row_um`。
+    🔴 **绝不写回** `CELL_W_UM` / `row_height_um()`（它们仍只读 `CELLS`）：写回会让
+    主链 c17 的 9 个固定口径数字全废。两库单元不等高（1950 / 4370），统一网格取 max
+    是**显式选择**，面积后果如实登记、不作效率宣称。
     """
     gap = CELL_GAP_UM if cell_gap is None else float(cell_gap)
-    h_row = row_height_um()
+    #: 🔴 空表 == 未启用（`bool({})` 为 False）⇒ 传 `dh_lib={}` 仍走默认路径，
+    #: 且不会因 `max([])` 抛错。EC-G42 用这条做「传了 ≠ 有库」的破坏测试。
+    dh_on = bool(dh_lib)
+    if dh_on:
+        h_row = max([f().h for f in CL.CELLS.values()] +
+                    [f().h for f in dh_lib.values()]) / 1000.0
+    else:
+        h_row = row_height_um()
     row_pitch = h_row + CH_UM
     #: 🔴 通道数 == 行数：每行**上方**各有一条通道（v0.9.349 修）。
     #: 旧版只给 rows−1 条，最后一行只能往**下**接到上面那条通道 ⇒ 它的 M4 竖段
@@ -185,7 +200,10 @@ def place_real(nl, max_cells: int = 32, cols: int = None, cell_gap: float = None
     truncated = 0
     for g in nl.gates:
         kind = CELL_MAP.get(g.cell)
-        if kind is None or kind not in CL.CELLS:
+        if kind is None and dh_on:
+            kind = CL.CELL_MAP_DH.get(g.cell)
+        ok = kind is not None and (kind in CL.CELLS or (dh_on and kind in dh_lib))
+        if not ok:
             skipped[g.cell] += 1
             continue
         if len(picked) >= max_cells:
@@ -206,24 +224,37 @@ def place_real(nl, max_cells: int = 32, cols: int = None, cell_gap: float = None
     rows = int(math.ceil(len(picked) / cols))
     n_ch = rows
     insts = []
-    pitch_x = max(f().w for f in CL.CELLS.values()) / 1000.0 + gap
+    if dh_on:
+        pitch_x = max([f().w for f in CL.CELLS.values()] +
+                      [f().w for f in dh_lib.values()]) / 1000.0 + gap
+    else:
+        pitch_x = max(f().w for f in CL.CELLS.values()) / 1000.0 + gap
     for k, (g, kind) in enumerate(picked):
         r, c = divmod(k, cols)
-        cell = CL.CELLS[kind]()
+        builder = CL.CELLS.get(kind) or dh_lib[kind]
+        cell = builder()
         insts.append({"name": g.name, "cell": g.cell, "kind": kind, "gate": g,
                       "r": r, "c": c, "x0": c * pitch_x, "y0": r * row_pitch,
                       "w": cell.w / 1000.0, "h": cell.h / 1000.0, "geom": cell})
 
     die_w = max((i["x0"] + i["w"] for i in insts)) + gap
     die_h = rows * row_pitch + CH_UM          # 含最上一行的通道
-    return {"insts": insts, "rows": rows, "cols": cols, "die_w_um": die_w,
-            "pitch_x_um": pitch_x, "n_channels": n_ch, "cell_gap_um": gap,
-            "die_h_um": die_h, "h_row_um": h_row, "row_pitch_um": row_pitch,
-            "ch_um": CH_UM, "t_tracks": tracks_in_channel(CH_UM),
-            "skipped_cells": dict(skipped), "n_picked": len(picked),
-            "n_gates_total": len(nl.gates),
-            # 🔴 T5/S3：截断必须**出现在返回值里**，不能只在日志里
-            "truncated": bool(truncated), "n_truncated": int(truncated)}
+    out = {"insts": insts, "rows": rows, "cols": cols, "die_w_um": die_w,
+           "pitch_x_um": pitch_x, "n_channels": n_ch, "cell_gap_um": gap,
+           "die_h_um": die_h, "h_row_um": h_row, "row_pitch_um": row_pitch,
+           "ch_um": CH_UM, "t_tracks": tracks_in_channel(CH_UM),
+           "skipped_cells": dict(skipped), "n_picked": len(picked),
+           "n_gates_total": len(nl.gates),
+           # 🔴 T5/S3：截断必须**出现在返回值里**，不能只在日志里
+           "truncated": bool(truncated), "n_truncated": int(truncated)}
+    if dh_on:
+        # 🔴 双库专属键**只在启用时出现** ⇒ 默认路径键集恰 17 个（EC-G40）。
+        out["dh_enabled"] = True
+        out["dh_cells"] = sorted(dh_lib)
+        #: 单元**原始宽/高**（4.010 / 4.370）；含 gap 的列节距在 `pitch_x_um`（4.430）。
+        out["dh_pitch_x_um"] = round(max(f().w for f in dh_lib.values()) / 1000.0, 4)
+        out["dh_h_row_um"] = round(max(f().h for f in dh_lib.values()) / 1000.0, 4)
+    return out
 
 
 def channel_y(pl: dict, r: int) -> float:

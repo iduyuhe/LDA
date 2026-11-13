@@ -1434,6 +1434,12 @@ def build_buf_dh() -> Cell:
 #: 行高与 pitch_x 必须单独返回并取实际 max，不得复用 `CELL_W_UM=0.98`。
 CELLS_DH = {"DFF_X1_DH": build_dff_dh, "BUF_X1_DH": build_buf_dh}
 
+#: 时序/缓冲原语名 → DH 单元名（A2 / v0.9.414）。
+#: 🔴 **绝不并入 `dpnr.CELL_MAP`**：那是全局默认映射，一动就会换掉默认路径的
+#: `skipped` 集合（B 批已实证：E53 实验网表组成跟着变、H7/H11 当场红）。
+#: 双库路径由 `dpnr.place_real(..., dh_lib=)` **显式启用**时才查这张表。
+CELL_MAP_DH = {"DFF": "DFF_X1_DH", "BUF": "BUF_X1_DH"}
+
 #: 口径声明（EC-G39 机核）：几何层 DH，不与数据层 `LAYOUT` 混称；
 #: 规则集仍是自建 LDA-DEMO45，非 foundry PDK。
 DH_BASIS_NOTE = {

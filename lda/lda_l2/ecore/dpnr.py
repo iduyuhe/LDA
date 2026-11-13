@@ -457,32 +457,58 @@ def _pad_shapes(ports: dict, hv: float) -> list:
     return out
 
 
-def net_pins(pl: dict, ports: dict = None) -> dict:
+#: 引脚名 → (网表角色, 索引)。role ∈ {"in", "out", "nc"}。
+#: 🔴 v0.9.412（F2 第二批）：此前 `net_pins` 用 `"B" in geom.pins` 猜输入脚，
+#:   DFF 的 `D/CLK/Q/QN` 无 A/B ⇒ 全部静默丢弃（全控制壳 224 个信号脚零进图）。
+#:   改为**按名声明**：组合单元 A/B/Y 逐位退化为旧行为；时序单元 D/CLK/Q 接网表，
+#:   `QN` 因网表 `Gate.out` 是单值、无对应网 ⇒ 显式声明未接（nc），由本函数推导，
+#:   **不是白名单**（判据用「版图信号脚 − 已登记端点」独立复算对拍）。
+#: 🔴 未知引脚名一律 fail-closed 抛错，绝不退回 `["A"]` —— 那正是 v0.9.408
+#:   换库后静默漏掉 41 个 B 脚的同型缺陷。
+PIN_ROLE = {
+    "A": ("in", 0), "B": ("in", 1), "Y": ("out", 0),
+    "D": ("in", 0), "CLK": ("in", 1),
+    "Q": ("out", 0), "QN": ("nc", None),
+}
+
+
+def net_pins(pl: dict, ports: dict = None, with_nc: bool = False):
     """net → [(inst_name, pin, x, y)]，**逐引脚独立**（不塌缩到单元中心）。
 
     `ports` 给定时把 **pad 落点**也算作该网的端点（2 端点 ⇒ 才布得通）。
-    不传时行为与 v0.9.379 逐位相同（这是回归判据：加 pad 必须是**可选**的）。
+    不传时行为与 v0.9.379 / .411 逐位相同（这是回归判据：`PIN_ROLE` 的组合单元
+    必须退化为旧实现，见 EC-G31）。
+
+    `with_nc=True` 时返回 `(pins, nc)`：`nc` 为「版图有该信号脚、但网表无对应端」
+    的 `(inst_name, pin)` 列表（如 DFF 的 QN）。🔴 该列表由本函数**遍历推导**，
+    不新增公开函数（reachability 引用图只连公开函数，新增只被判据调用的函数会判死）。
     """
     pins = defaultdict(list)
+    nc = []
     for inst in pl["insts"]:
         g = inst["gate"]
-        # 🔴 v0.9.408：原来硬编码 `["A","B"] if kind == "NAND2_X1" else ["A"]` ——
-        #   NOR2 也是两输入，照抄会让它的 B 脚落空。
-        #   ⚠️ 不能用「pins 里除 VDD/VSS/Y 之外的全部」：**DFF 的引脚是 D/CLK/Q/QN**
-        #   （没有 Y），那样会把 Q/QN 当输入，直接改坏 DFF 的布线（E53 H7/H9 当场红）。
-        #   ⇒ 只按「有没有 B」判别，DFF 无 A/B ⇒ 退回 ["A"]，与旧行为逐位相同。
-        names = ["A", "B"] if "B" in inst["geom"].pins else ["A"]
-        idx = {n: k for k, n in enumerate(names)}
         for p in pin_access_points(inst):
-            if p["pin"] == "Y":
-                pins[g.out].append((inst["name"], "Y", p["x"], p["y"]))
-            elif p["pin"] in idx:
-                k = idx[p["pin"]]
+            pname = p["pin"]
+            role, k = PIN_ROLE.get(pname, (None, None))
+            if role is None:
+                raise ValueError(
+                    "net_pins 拒绝未声明的引脚名 %r（单元 %s / %s）："
+                    "请登记进 PIN_ROLE，绝不静默丢弃" % (pname, inst["name"], inst["kind"]))
+            if role == "in":
                 if k < len(g.ins):
-                    pins[g.ins[k]].append((inst["name"], p["pin"], p["x"], p["y"]))
+                    pins[g.ins[k]].append((inst["name"], pname, p["x"], p["y"]))
+                else:
+                    # 多输入单元未 tie_inputs 时如实的「无网可接」，不伪装成端点
+                    nc.append((inst["name"], pname))
+            elif role == "out":
+                pins[g.out].append((inst["name"], pname, p["x"], p["y"]))
+            else:                                            # role == "nc"
+                nc.append((inst["name"], pname))
     if ports:
         for net, meta in (ports.get("pads") or {}).items():
             pins[net].append((meta["name"], "P", meta["x"], meta["y"]))
+    if with_nc:
+        return dict(pins), nc
     return dict(pins)
 
 

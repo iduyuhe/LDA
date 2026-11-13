@@ -3558,6 +3558,146 @@ def main() -> int:
           and _f2_under[2] == 1.0,
           "env=%r" % (_f2_env,))
 
+    # ── F2 第二批 · 时序引脚接线（v0.9.412）────────────────────────────────
+    # 同进程 A/B 对照用的**旧实现**（函数内私有 helper，不进 reachability 引用图）
+    def _g31_old_net_pins(pl, ports=None, with_nc=False):
+        import collections as _c
+        pins = _c.defaultdict(list)
+        for inst in pl["insts"]:
+            g = inst["gate"]
+            names = ["A", "B"] if "B" in inst["geom"].pins else ["A"]
+            idx = {n: k for k, n in enumerate(names)}
+            for p in P.pin_access_points(inst):
+                if p["pin"] == "Y":
+                    pins[g.out].append((inst["name"], "Y", p["x"], p["y"]))
+                elif p["pin"] in idx:
+                    k = idx[p["pin"]]
+                    if k < len(g.ins):
+                        pins[g.ins[k]].append((inst["name"], p["pin"], p["x"], p["y"]))
+        if ports:
+            for net, meta in (ports.get("pads") or {}).items():
+                pins[net].append((meta["name"], "P", meta["x"], meta["y"]))
+        if with_nc:
+            return dict(pins), []
+        return dict(pins)
+
+    def _g31_sig(d):
+        return {k: sorted(v) for k, v in d.items()}
+
+    _g31_nl = CT.build()["netlist"]
+    _g31_same = []
+    for _n_cells in (64, 256):
+        with DP.use("DEMO28", lib=DHD):
+            _g31_pl = P.place_real(_g31_nl, max_cells=_n_cells, cols=8, truncate_ok=True)
+        _g31_same.append(_g31_sig(_g31_old_net_pins(_g31_pl))
+                         == _g31_sig(P.net_pins(_g31_pl)))
+    _g31_c17 = V.parse(V.SAMPLE_VERILOG)
+    with DP.use("DEMO45"):
+        _g31_pl_c17 = P.place_real(_g31_c17, max_cells=32)
+    _g31_same.append(_g31_sig(_g31_old_net_pins(_g31_pl_c17))
+                     == _g31_sig(P.net_pins(_g31_pl_c17)))
+
+    import json as _json
+    _g31_saved = P.net_pins
+    P.net_pins = _g31_old_net_pins
+    try:
+        _g31_a = _json.dumps(B3.run_trunk(_g31_c17), sort_keys=True, default=str)
+    finally:
+        P.net_pins = _g31_saved
+    _g31_b = _json.dumps(B3.run_trunk(_g31_c17), sort_keys=True, default=str)
+    check("EC-G31 **通式退化**：默认库 64/256 档 + 主链 c17 的 `net_pins` 同进程 A/B 对照逐位相同；"
+          "`run_trunk(c17)` 全报告序列化后逐字节相同（%d B）⇒ `PIN_ROLE` 组合单元退化为旧行为"
+          % len(_g31_b),
+          all(_g31_same) and _g31_a == _g31_b and P.net_pins is _g31_saved,
+          "same=%r bytes=%d/%d" % (_g31_same, len(_g31_a), len(_g31_b)))
+
+    with DP.use("DEMO28", lib=DHD, cell_map=DHD.CELL_MAP_FULL):
+        _g32_pl = P.place_real(_g31_nl, max_cells=2000)
+    _g32_pins, _g32_nc = P.net_pins(_g32_pl, with_nc=True)
+    _g32_have = {(e[0], e[1]) for v in _g32_pins.values() for e in v}
+    _g32_dff = [i for i in _g32_pl["insts"] if i["cell"] == "DFF"]
+    _g32_roles = {pn: sum(1 for i in _g32_dff if (i["name"], pn) in _g32_have)
+                  for pn in ("D", "CLK", "Q")}
+    _g32_nc_qn = sum(1 for _n, pn in _g32_nc if pn == "QN")
+    _g32_all = {(i["name"], p["pin"]) for i in _g32_pl["insts"]
+                for p in P.pin_access_points(i)}
+    check("EC-G32 **时序引脚守恒**：%d 个 DFF 的 D/CLK/Q 各 %d/%d/%d 个端点、QN %d 条 NC；"
+          "全控制壳端点 %d / NC %d ⇒ %d 个信号脚全部有归宿（端点或显式声明）"
+          % (len(_g32_dff), _g32_roles["D"], _g32_roles["CLK"], _g32_roles["Q"],
+             _g32_nc_qn, sum(len(v) for v in _g32_pins.values()),
+             len(_g32_nc), len(_g32_all)),
+          len(_g32_dff) == 56 and _g32_roles == {"D": 56, "CLK": 56, "Q": 56}
+          and _g32_nc_qn == 56 and len(_g32_nc) == 56
+          and _g32_have | set(_g32_nc) == _g32_all
+          and not (_g32_have & set(_g32_nc)),
+          "roles=%r nc=%d all=%d" % (_g32_roles, len(_g32_nc), len(_g32_all)))
+
+    _g33_expected = _g32_all - _g32_have
+
+    def _g33_no_qn():
+        c = DHD.build_dff_hd()
+        c.pins = {k: v for k, v in c.pins.items() if k != "QN"}
+        return c
+
+    _g33_saved = DHD.CELLS["DFF_X1_HD"]
+    DHD.CELLS["DFF_X1_HD"] = _g33_no_qn
+    try:
+        with DP.use("DEMO28", lib=DHD, cell_map=DHD.CELL_MAP_FULL):
+            _g33_pl = P.place_real(_g31_nl, max_cells=2000)
+        _g33_pins, _g33_nc = P.net_pins(_g33_pl, with_nc=True)
+    finally:
+        DHD.CELLS["DFF_X1_HD"] = _g33_saved
+    check("EC-G33 **NC 独立复算 + 真实破坏测试**：NC 集合恰等于「版图信号脚 − 已登记端点」"
+          "（%d 条，非白名单）；真的从 DFF 版图删掉 QN pad 后 NC 归零（%d）且库已还原"
+          % (len(_g32_nc), len(_g33_nc)),
+          set(_g32_nc) == _g33_expected and len(_g33_nc) == 0
+          and DHD.CELLS["DFF_X1_HD"] is _g33_saved
+          and all(pn != "QN" for _n, pn in _g33_nc),
+          "nc_diff=%r broken_nc=%r" % (sorted(set(_g32_nc) ^ _g33_expected)[:4],
+                                       _g33_nc[:4]))
+
+    _g34_saved = P.PIN_ROLE["D"]
+    P.PIN_ROLE["D"] = ("nc", None)
+    try:
+        _g34_pins, _g34_nc = P.net_pins(_g32_pl, with_nc=True)
+    finally:
+        P.PIN_ROLE["D"] = _g34_saved
+    _g34_after, _g34_nc_after = P.net_pins(_g32_pl, with_nc=True)
+    check("EC-G34 **接线因果（真实破坏测试）**：把 `PIN_ROLE['D']` 改成 NC ⇒ 端点少 %d、NC 多 %d；"
+          "恢复声明后端点/NC 逐位回到原值 ⇒ DFF 进图来自映射本身，不是别的改动"
+          % (sum(len(v) for v in _g32_pins.values()) - sum(len(v) for v in _g34_pins.values()),
+             len(_g34_nc) - len(_g32_nc)),
+          sum(len(v) for v in _g32_pins.values()) - sum(len(v) for v in _g34_pins.values()) == 56
+          and len(_g34_nc) - len(_g32_nc) == 56
+          and _g31_sig(_g34_after) == _g31_sig(_g32_pins)
+          and set(_g34_nc_after) == set(_g32_nc)
+          and P.PIN_ROLE["D"] == ("in", 0),
+          "broken_endpoints=%d restored=%r" % (sum(len(v) for v in _g34_pins.values()),
+                                               P.PIN_ROLE["D"]))
+
+    with DP.use("DEMO28", lib=DHD, cell_map=DHD.CELL_MAP_FULL):
+        _g35_pl = P.place_real(_g31_nl, max_cells=64, cols=8, truncate_ok=True)
+    _g35_saved = P.net_pins
+    P.net_pins = _g31_old_net_pins
+    try:
+        _g35_old = P.route_block(_g31_nl, _g35_pl, in_row_m3=True, in_row_check=True)
+    finally:
+        P.net_pins = _g35_saved
+    _g35_new = P.route_block(_g31_nl, _g35_pl, in_row_m3=True, in_row_check=True)
+
+    def _g35_cov(rt):
+        c = rt["coverage"]
+        return (c["routed"], c["skipped_port"], c["failed"], c["total"])
+
+    _g35_o, _g35_n = _g35_cov(_g35_old), _g35_cov(_g35_new)
+    check("EC-G35 **账本诚实性**：补引脚前后 `routed+skipped+failed==total` 均守恒；分母 "
+          "%d→%d 不减（原本被隐藏的网进账）⇒ failed 上升 %d 是账本变完整，不是能力退步"
+          % (_g35_o[3], _g35_n[3], _g35_n[2] - _g35_o[2]),
+          _g35_o[0] + _g35_o[1] + _g35_o[2] == _g35_o[3]
+          and _g35_n[0] + _g35_n[1] + _g35_n[2] == _g35_n[3]
+          and _g35_n[3] >= _g35_o[3] and _g35_n[0] >= _g35_o[0],
+          "old=%r new=%r" % (_g35_o, _g35_n))
+
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)
 

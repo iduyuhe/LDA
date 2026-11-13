@@ -905,6 +905,7 @@ ECORE_CAPABILITY_MANIFEST = [
         "module": "lda_l2.ecore.dpnr",
         "symbols": ["place_real", "cell_shapes", "pin_points", "pin_access_points",
                     "pin_legality", "pin_access_conflicts", "pin_stub", "net_pins",
+                    "PIN_ROLE",
                     "route_block", "net_coverage", "pins_for_lvs", "lvs_scoped", "LVS_ADAPTER_NOTE", "route_baseline",
                     "cell_drc_lvs", "routing_only", "access_only", "all_routing",
                     "net_components_rt", "CELL_GAP_UM", "CELL_GAP_TIGHT_UM", "M2_JOG_MAX",

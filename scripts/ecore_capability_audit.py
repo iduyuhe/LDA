@@ -365,6 +365,80 @@ def e14():
     return out
 
 
+# ── E15 时序引脚进图（F2 第二批 · 只度量，不做阶段决策）──────────────────
+@evidence("E15", "时序引脚进图：默认口径零漂移 + 完整映射下 D/CLK/Q/QN 的归宿")
+def e15():
+    """只度量两件事，不含阈值、不放行任何阶段结论。
+
+    · `default_drift`：默认库口径下 `net_pins` 是否与 v0.9.411 逐位相同；
+    · `full_map`：显式完整映射下时序引脚是否全部有归宿（端点 or 显式 NC）。
+    🔴 诚实边界：QN 在网表无对应网 ⇒ 显式 NC；CLK 是 56 端点单网，
+    其布通能力属 F3 CTS，本项**不做判定**，也不宣称「DFF 已能布通」。
+    """
+    import collections as _c
+    from lda_l2.ecore import dctrl as CT
+    from lda_l2.ecore import dhdlib as HD
+    from lda_l2.ecore import dpnr as PN
+    from lda_l2.ecore import dproc as PR
+
+    def old_net_pins(pl, ports=None, with_nc=False):
+        pins = _c.defaultdict(list)
+        for inst in pl["insts"]:
+            g = inst["gate"]
+            names = ["A", "B"] if "B" in inst["geom"].pins else ["A"]
+            idx = {n: k for k, n in enumerate(names)}
+            for p in PN.pin_access_points(inst):
+                if p["pin"] == "Y":
+                    pins[g.out].append((inst["name"], "Y", p["x"], p["y"]))
+                elif p["pin"] in idx:
+                    k = idx[p["pin"]]
+                    if k < len(g.ins):
+                        pins[g.ins[k]].append((inst["name"], p["pin"], p["x"], p["y"]))
+        if ports:
+            for net, meta in (ports.get("pads") or {}).items():
+                pins[net].append((meta["name"], "P", meta["x"], meta["y"]))
+        if with_nc:
+            return dict(pins), []
+        return dict(pins)
+
+    def sig(d):
+        return {k: sorted(v) for k, v in d.items()}
+
+    nl = CT.build()["netlist"]
+    drift = {}
+    for n in (64, 256):
+        with PR.use("DEMO28", lib=HD):
+            pl = PN.place_real(nl, max_cells=n, cols=8, truncate_ok=True)
+        new = PN.net_pins(pl)
+        drift["default_%d" % n] = {
+            "n_insts": pl["n_picked"],
+            "n_endpoints": sum(len(v) for v in new.values()),
+            "identical_to_v0411": sig(old_net_pins(pl)) == sig(new),
+        }
+    with PR.use("DEMO28", lib=HD, cell_map=HD.CELL_MAP_FULL):
+        pl2 = PN.place_real(nl, max_cells=2000)
+    pins, nc = PN.net_pins(pl2, with_nc=True)
+    dff = [i for i in pl2["insts"] if i["cell"] == "DFF"]
+    have = {(e[0], e[1]) for v in pins.values() for e in v}
+    all_pins = {(i["name"], p["pin"]) for i in pl2["insts"]
+                for p in PN.pin_access_points(i)}
+    return {
+        "pin_role": {k: list(v) for k, v in sorted(PN.PIN_ROLE.items())},
+        "default_drift": drift,
+        "full_map": {
+            "n_picked": pl2["n_picked"], "n_dff": len(dff),
+            "n_endpoints": sum(len(v) for v in pins.values()),
+            "n_nc": len(nc), "nc_pin_names": sorted({p for _n, p in nc}),
+            "d_clk_q_endpoints": {p: sum(1 for i in dff if (i["name"], p) in have)
+                                  for p in ("D", "CLK", "Q")},
+            "n_signal_pins": len(all_pins),
+            "all_pins_accounted": (have | set(nc)) == all_pins,
+            "clk_net_endpoints": len(pins.get("CLK", [])),
+        },
+        "boundary": "QN 无网 ⇒ 显式 NC；CLK 56 端点高扇出网布通归 F3；本项不判定阶段",
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default=None, help="只跑某一项，如 E07")

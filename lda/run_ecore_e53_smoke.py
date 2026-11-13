@@ -212,10 +212,18 @@ def main() -> int:
     #   ⇒ 41 个 B 脚从未进图，布通率被虚报成 100%。这个 bug 活了若干个版本都没被发现，
     #   因为**没有任何判据问过「引脚是不是都在图里」**。
     #   本条把「每个实例的每个信号引脚都必须是某条网的端点」变成可机核的守恒量。
+    #   🔴 v0.9.412 订正（先举证再改，见 F2 后续两批立项论证 §2.4 / 规划 §2.5）：
+    #   旧不变量「全部登记为端点」在 DFF 场景**不可满足** —— 版图有 QN pad 而
+    #   网表 `Gate.out` 是单值、无 QN 网（基线 worktree 7c4cdc9 在 CELL_MAP_FULL
+    #   64 档实测缺 8 = 2 DFF × 4 脚）。故改为「端点 **or** 显式 NC」，
+    #   且 NC 必须由「版图信号脚 − 已登记端点」独立复算 ⇒ **更严而非更松**。
     with PR.use("DEMO28", lib=HD):
         _pl = PN.place_real(nl, max_cells=CASE_N, cols=CASE_COLS, truncate_ok=True)
-        _pins = PN.net_pins(_pl)
+        _pins, _nc = PN.net_pins(_pl, with_nc=True)
         _have = {(e[0], e[1]) for v in _pins.values() for e in v}
+        _ncset = set(_nc)
+        _all_pins = {(i["name"], p["pin"])
+                     for i in _pl["insts"] for p in PN.pin_access_points(i)}
         _miss = []
         _n_pin = 0
         for _inst in _pl["insts"]:
@@ -223,10 +231,16 @@ def main() -> int:
                 _n_pin += 1
                 if (_inst["name"], _p["pin"]) not in _have:
                     _miss.append((_inst["name"], _p["pin"]))
-    check("H11 引脚守恒：%d 实例 / %d 个信号引脚**全部**登记为端点（缺 %d）"
-          % (len(_pl["insts"]), _n_pin, len(_miss)),
-          _n_pin > 0 and not _miss,
-          "缺项 %s" % (_miss[:6],))
+    # 独立复算：NC 集合必须恰等于「没进图的脚」，不许硬编码白名单
+    _nc_expected = _all_pins - _have
+    check("H11 引脚守恒：%d 实例 / %d 个信号引脚**全部**为端点或显式 NC（缺 %d）；"
+          "NC %d 条由「版图脚 − 端点」独立复算一致 ⇒ 旧不变量在时序单元下被订正得更严"
+          % (len(_pl["insts"]), _n_pin,
+             sum(1 for m in _miss if m not in _ncset), len(_nc)),
+          _n_pin > 0 and all(m in _ncset for m in _miss)
+          and set(_nc) == _nc_expected and len(_nc) == len(set(_nc)),
+          "非NC缺项 %s · nc_diff %s" % ([m for m in _miss if m not in _ncset][:6],
+                                       sorted(set(_nc) ^ _nc_expected)[:6]))
 
     dt = time.time() - T0
     check("H0 门禁耗时 %.2f s < %.0f s（阈值留余量）" % (dt, AN_ELAPSED_MAX_S),

@@ -123,7 +123,11 @@ NEW_MODULES = ("dliberty", "dlef", "dverilog", "ddef", "db3_trunk", "dxcheck",
                "dkdrive",
                #: v0.9.410（F1）：非门禁下游 = `db3_trunk.run_trunk_from_bench`（产品链入口）
                #: 与 `scripts/ecore_capability_audit.py` 的 E14（规模真值证据）
-               "dbench")
+               "dbench",
+               #: v0.9.415（F3）：非门禁下游 = `dctrl.build()` 的 `clock` 段（控壳网表 56 DFF）。
+               #: 🔴 用 `run_trunk` 不行：1340 门控壳网表在 `place_real` 按纪律拒绝截断，
+               #: 那条路径根本跑不到 ⇒ 若接在 `run_trunk` 里就是**假下游**（永不执行）。
+               "dcts")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

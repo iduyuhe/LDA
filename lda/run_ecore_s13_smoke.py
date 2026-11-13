@@ -1667,10 +1667,41 @@ def main() -> int:
     def _v_facts_from_source(dsta_src, dpvt_src, prod_src):
         """门禁侧事实：只吃源码文本，不 import / 不调用任何产品函数（V05 机核）。"""
         tree = ast.parse(dsta_src)
-        hold_false = any(
-            isinstance(kw.value, ast.Constant) and kw.value.value is False
-            for node in ast.walk(tree) if isinstance(node, ast.Call)
-            for kw in node.keywords if kw.arg == "hold_checked")
+        # 🔴 v0.9.415（F3-2）改口：原判据找「`hold_checked=<False 常量>` 的 Call 关键字」，
+        #   证明的是「它写着没检」。F3-2 之后 `hold_checked` 由 `skew_ps` 决定（有 skew 才检），
+        #   字面量消失 ⇒ 旧判据失效。**改口后更严**：机核「`if skew_ps is not None:` 分支里
+        #   `hold_checked = True`」的**因果**，再要求 `skew_ps` 的默认值是 `None`。
+        #   ⇒ 断言从「它声明没检」升级为「没检由无 skew 决定、有 skew 才检」。
+        hold_false = False
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.If):
+                continue
+            t = node.test
+            if not (isinstance(t, ast.Compare) and isinstance(t.left, ast.Name)
+                    and t.left.id == "skew_ps"
+                    and any(isinstance(op, ast.IsNot) for op in t.ops)):
+                continue
+            for sub in ast.walk(node):
+                if (isinstance(sub, ast.Assign)
+                        and any(isinstance(x, ast.Name) and x.id == "hold_checked"
+                                for x in sub.targets)
+                        and isinstance(sub.value, ast.Constant)
+                        and sub.value.value is True):
+                    hold_false = True
+        # `skew_ps` 的默认值必须是 `None`（默认值挂在 `node.args.defaults` 尾部，
+        # 不在 `ast.arg` 上 —— 首版写 `a.default` 直接 AttributeError）
+        skew_default_none = False
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.FunctionDef):
+                continue
+            _al = list(node.args.args)
+            _dl = list(node.args.defaults)
+            _off = len(_al) - len(_dl)
+            for _i, _a in enumerate(_al):
+                if _a.arg == "skew_ps" and _i >= _off:
+                    _dv = _dl[_i - _off]
+                    if isinstance(_dv, ast.Constant) and _dv.value is None:
+                        skew_default_none = True
         # 🔴 必须取 `not_included` **字典值**本身，不能只查全文含「无串扰」：
         #    :261 的注释也含该词，会兜住删措辞的毒化 ⇒ 探针失靶（≠ 直通）。
         not_included_text = []
@@ -1683,7 +1714,7 @@ def main() -> int:
                         not_included_text.append(v.value)
         return {
             "dsta.py": {
-                "no_crosstalk": (hold_false
+                "no_crosstalk": (hold_false and skew_default_none
                                  and "无串扰" in "\n".join(not_included_text)),
             },
             "dpvt.py": {
@@ -1712,9 +1743,11 @@ def main() -> int:
           and sum(1 for x in _u_pairs if "evidence_status" in x) == 4)
 
     _v_ct = next((x for x in _v_und if x.get("name") == "耦合电容→时序"), None)
-    check("EC-V02 🔴 K2 证据机核：门禁 AST 独立取 `hold_checked=False` + 文本独立取 "
+    check("EC-V02 🔴 K2 证据机核：门禁 AST 独立取「`if skew_ps is not None:` ⇒ "
+          "`hold_checked = True`」的**因果** + `skew_ps` 默认 `None` + 文本独立取 "
           "`not_included` 含「无串扰」∧ 该对声明 VERIFIED 且指向 dsta.py ∧ "
-          "source 不再写「未核实」",
+          "source 不再写「未核实」（v0.9.415 改口：旧判据找 `hold_checked=False` 字面量，"
+          "F3-2 后该字面量消失 ⇒ 改为机核「没检由无 skew 决定」——更严非更松）",
           _v_ct is not None
           and _v_facts["dsta.py"]["no_crosstalk"] is True
           and _v_ct.get("evidence_status") == "VERIFIED"
@@ -3940,6 +3973,135 @@ def main() -> int:
           "empty=%r half=%r equal=%r"
           % (_a2_empty["skipped_cells"], _a2_half["skipped_cells"],
              _a2_c == _a2_a))
+
+    # ── F3 · 时序闭环（v0.9.415）──────────────────────────────────────────
+    # D8 已拍板：硬判据卡 **skew**，insertion delay 独立披露、不设 5% 上限。
+    # 🔴 EC-G45 的核心不是「skew 达标」，而是**证明旧写法（5% 卡插入延迟）不可满足** ——
+    #    否则改判据就只是「放宽门槛换绿」。
+    from lda_l2.ecore import dcts as CTS                        # noqa: E402
+
+    _f3_b = CT.build()
+    _f3_nl = _f3_b["netlist"]
+    _f3_tref = _f3_b["timing"].t_clk_min_ps
+    _f3 = CTS.build_clock_tree(_f3_nl, t_ref_ps=_f3_tref)
+    _f3_n = _f3["n_sinks"]
+    _f3_budget = _f3["budget_5pct_ps"]
+
+    # 门禁侧**独立复算**：用 dcell.cell_delay_ps 现算，不读 CTS 的常量
+    _f3_best = None
+    _f3_any_fits_5pct = False
+    for _lv in range(CTS.TOPO_LV_RANGE[0], CTS.TOPO_LV_RANGE[1] + 1):
+        for _fo in range(CTS.TOPO_FO_RANGE[0], CTS.TOPO_FO_RANGE[1] + 1):
+            if _fo ** _lv < _f3_n:
+                continue
+            _tot = DC.cell_delay_ps("BUF", _fo * 1.0) * _lv
+            if _tot <= _f3_budget + 1e-12:
+                _f3_any_fits_5pct = True
+            if _f3_best is None or _tot < _f3_best[0] - 1e-12:
+                _f3_best = (_tot, _lv, _fo)
+    _f3_per_ok = all(abs(p - DC.cell_delay_ps("BUF", _f3["fanout"] * 1.0)) < 1e-9
+                     for p in _f3["per_level_ps"])
+    check("EC-G43 **拓扑最优性（双路径）**：%d 端点的最优拓扑 = %d 级 × %d 扇出；"
+          "产品侧（常量搜索）与门禁侧（`cell_delay_ps` 现算）选出同一 `(lv, fanout)`、"
+          "总延迟 %.6f vs %.6f ps；每级延迟与现算逐位相等（%r）"
+          % (_f3_n, _f3["lv"], _f3["fanout"], _f3["delay_ps"], _f3_best[0], _f3_per_ok),
+          (_f3["lv"], _f3["fanout"]) == (_f3_best[1], _f3_best[2])
+          and abs(_f3["delay_ps"] - _f3_best[0]) < 1e-6
+          and _f3_per_ok
+          and (_f3["lv"], _f3["fanout"]) == (3, 4)
+          and _f3["levels"][-1] == _f3_n
+          and _f3["n_buf"] == sum(_f3["levels"][:-1]),
+          "best=%r tree=%r per=%r"
+          % (_f3_best, (_f3["lv"], _f3["fanout"]), _f3["per_level_ps"]))
+
+    # D7 三条 fail-closed：全部必须抛 ValueError（不返回空树/不默认同源）
+    _f3_raises = []
+    for _kw in ({"source_port": "nope_port"}, {"sink_net": "NOPE_NET"},
+                {"source_port": ""}):
+        try:
+            CTS.build_clock_tree(_f3_nl, **_kw)
+            _f3_raises.append(False)
+        except ValueError:
+            _f3_raises.append(True)
+    _f3_one = _A2Netlist(name="one_dff", inputs=(("a", 1),),
+                         gates=[_A2Gate("u0", "DFF", ("a", "CLK"), "q0")])
+    try:
+        CTS.build_clock_tree(_f3_one)
+        _f3_one_raises = False
+    except ValueError:
+        _f3_one_raises = True
+    check("EC-G44 **D7 三条 fail-closed（真实破坏测试）**：源端口不存在 / 汇网无端点 / "
+          "源端口为空 ⇒ 全部抛 `ValueError`（%r）；单端点网表 ⇒ 也抛（%r）；"
+          "正常网表 ⇒ %d 端点、`bridged=%r`、源 %r / 汇 %r **显式登记为两个网**"
+          % (_f3_raises, _f3_one_raises, _f3["n_sinks"], _f3["bridged"],
+             _f3["source_port"], _f3["sink_net"]),
+          all(_f3_raises) and _f3_one_raises
+          and _f3["n_sinks"] == 56 and _f3["bridged"] is True
+          and _f3["source_port"] != _f3["sink_net"]
+          and "不改网表" in _f3["bridge_note"],
+          "raises=%r one=%r meta=%r"
+          % (_f3_raises, _f3_one_raises,
+             (_f3["source_port"], _f3["sink_net"])))
+
+    check("EC-G45 **D8 新口径 + 旧写法不可满足的机核**：skew %.6f ps ≤ 5%% 预算 %.6f ps"
+          "（%r）；而 insertion delay %.6f ps **> 预算**（旧写法要求 ≤ 5%%，"
+          "实测 %.2f×）⇒ 旧判据**不是难，是不可满足**；枚举 %d×%d 个拓扑，"
+          "**没有任何一个**能把插入延迟压进 5%%（%r）"
+          % (_f3["skew_ps"], _f3_budget, _f3["skew_ok"], _f3["delay_ps"],
+             _f3["delay_ps"] / _f3_budget,
+             len(range(CTS.TOPO_LV_RANGE[0], CTS.TOPO_LV_RANGE[1] + 1)),
+             len(range(CTS.TOPO_FO_RANGE[0], CTS.TOPO_FO_RANGE[1] + 1)),
+             _f3_any_fits_5pct),
+          _f3["skew_ok"] is True and _f3["skew_ps"] <= _f3_budget
+          and _f3["delay_ps"] > _f3_budget
+          and _f3_any_fits_5pct is False
+          and _f3["delay_is_displayed"] is True,
+          "skew=%.6f delay=%.6f budget=%.6f ratio=%.3f"
+          % (_f3["skew_ps"], _f3["delay_ps"], _f3_budget,
+             _f3["delay_ps"] / _f3_budget))
+
+    _f3_t0 = ST.sta(_f3_nl)
+    _f3_dn = [g.ins[0] for g in _f3_nl.gates if g.cell == "DFF" and g.ins]
+    _f3_dmin = min(_f3_t0.arrival_ps.get(n, 0.0) for n in _f3_dn)
+    _f3_t1 = ST.sta(_f3_nl, skew_ps=_f3_dmin - 1e-6)
+    _f3_t2 = ST.sta(_f3_nl, skew_ps=_f3_dmin + 1e-6)
+    check("EC-G46 **hold 真检（真实破坏测试）**：不给 skew ⇒ `hold_checked=%r`、"
+          "`hold_time_is_assumption=%r`（没用到假设）；给 skew ⇒ 两者翻 %r/%r；"
+          "🔴 用**现算的 D 端最小到达 %.6f ps** 做翻转点：skew 略小 ⇒ `hold_ok=%r`、"
+          "略大 ⇒ `hold_ok=%r`；被排除端点 %d 个（56 个 D 端全部参与）"
+          % (_f3_t0.hold_checked, _f3_t0.hold_time_is_assumption,
+             _f3_t1.hold_checked, _f3_t1.hold_time_is_assumption, _f3_dmin,
+             _f3_t1.hold_ok, _f3_t2.hold_ok, _f3_t1.n_hold_excluded),
+          _f3_t0.hold_checked is False
+          and _f3_t0.hold_time_is_assumption is False
+          and _f3_t1.hold_checked is True and _f3_t2.hold_checked is True
+          and _f3_t1.hold_time_is_assumption is True
+          and _f3_t1.hold_ok is True and _f3_t2.hold_ok is False
+          and _f3_t1.n_hold_excluded == 0
+          and _f3_t1.clock_skew_ps == _f3_dmin - 1e-6,
+          "dmin=%.6f t1=%r t2=%r excl=%d"
+          % (_f3_dmin, _f3_t1.hold_ok, _f3_t2.hold_ok, _f3_t1.n_hold_excluded))
+
+    _f3_ext = ST.sta(_f3_nl, t_clk_ps=500.0)
+    _f3_c17_rep = B3.run_trunk(_g31_c17)
+    check("EC-G47 **外部时钟 spec + c17 不加键**：`sta(t_clk_ps=500.0)` ⇒ "
+          "`t_clk_min_ps=%.1f` / `fmax=%.1f` / `t_clk_source=%r`；不传 ⇒ "
+          "`t_clk_source=%r` 且 `t_clk_min_ps` 与基线逐位相同（%r）；"
+          "🔴 `run_trunk(c17)` **没有** `clock` 键（%r）⇒ c17 报告逐字节不变；"
+          "控壳 `CT.build()` 有 `clock` 键（%r，`dcts` 的非门禁下游）"
+          % (_f3_ext.t_clk_min_ps, _f3_ext.fmax_mhz, _f3_ext.t_clk_source,
+             _f3_t0.t_clk_source, _f3_t0.t_clk_min_ps == _f3_tref,
+             "clock" in _f3_c17_rep, "clock" in _f3_b),
+          _f3_ext.t_clk_min_ps == 500.0
+          and abs(_f3_ext.fmax_mhz - 2000.0) < 1e-9
+          and _f3_ext.t_clk_source == "external"
+          and _f3_t0.t_clk_source == "topology"
+          and _f3_t0.t_clk_min_ps == _f3_tref
+          and "clock" not in _f3_c17_rep
+          and "clock" in _f3_b and _f3_b["clock"]["n_sinks"] == 56,
+          "ext=%r base=%r c17_clock=%r ctrl_clock=%r"
+          % (_f3_ext.t_clk_min_ps, _f3_tref, "clock" in _f3_c17_rep,
+             "clock" in _f3_b))
 
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)

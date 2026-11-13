@@ -1638,8 +1638,8 @@ def case_card(repo_root: Optional[str] = None) -> Dict[str, Any]:
             # v0.9.401（P5）：`dcelltpl` 进包 ⇒ 模块数 80→81、能力条目 82→83。
             # v0.9.402（P2）：`dkdrive` 进包 ⇒ 模块数 81→82、能力条目 83→84。
             # v0.9.410（F1）：`dbench` 进包 ⇒ 模块数 82→83、能力条目 84→85。
-            "modules": 83,               # ecore 包内模块数（不含 __init__.py；F1 新增 dbench）
-            "capability_modules": 85,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力条目数
+            "modules": 84,               # ecore 包内模块数（不含 __init__.py；F1 dbench · F3 dcts）
+            "capability_modules": 86,    # 登记进 ECORE_CAPABILITY_MANIFEST 的能力条目数
             "entrypoints": 75,           # 常驻门禁数（lda/run_ecore_*_smoke.py，含 S2–S13 + 复用度量）
                                          # 🔴 这三个数由 `run_ecore_case_smoke` B6c 与
                                          #   **文件系统 + manifest 独立对拍**（此前是硬编码对硬编码）。

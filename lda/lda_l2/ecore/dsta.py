@@ -60,6 +60,11 @@ class Timing:
     lib_used: bool = False              # 本次是否用了 Liberty 表
     lib_fallback_cells: tuple = ()      # 库里查不到/无表 ⇒ 回落闭式的单元名
     lib_clamped: int = 0                # 插值越界被**钳位**的次数（不外插）
+    # ── v0.9.415（F3）：时钟口径三件事必须显式 ──
+    t_clk_source: str = "topology"      # "topology"（派生）| "external"（外部 spec）
+    hold_time_is_assumption: bool = False   # True ⇒ `hold_time_ps` 是假设不是测量
+    n_hold_excluded: int = 0            # D 端到达 ≤0（由 primary input 直驱）⇒ 不参与 hold
+    clock_skew_ps: object = None        # None = 没给 skew（未真检）；数 = 已用该 skew 判 hold
 
 
 def loads_of(nl, port_load_ff: float = 0.0, tech=None,
@@ -187,7 +192,9 @@ def _delay_from_lib(lib_tables, cell: str, load_ff: float, slew_ps: float):
 
 def sta(nl, tech=None, port_load_ff: float = 0.0,
         wire_load_ff: dict = None, lib=None, slew_ps: float = None,
-        topo_sort: bool = False) -> Timing:
+        topo_sort: bool = False,
+        skew_ps: float = None, t_clk_ps: float = None,
+        hold_time_ps: float = 0.0) -> Timing:
     """静态时序（一阶）。`lib` 给 LibertyLibrary 时延时改查 NLDM 表，否则走闭式。
 
     🔴 **保护性约束**：`lib=None` 时走的是与历史**完全相同**的表达式
@@ -199,6 +206,19 @@ def sta(nl, tech=None, port_load_ff: float = 0.0,
     既有调用与 E34/E35 金标**逐位不变**。`topo_sort=True` 时先用
     `dsynth.topo_order` 排序再传播 —— 供源文件顺序不保证拓扑序的网表（如 c17）使用；
     有组合环会直接抛错（fail-closed），不静默用旧值。
+
+    🔴 **F3（v0.9.415）三个时钟口径参数**，全部默认 `None`/`0` ⇒ 既有调用逐位不变：
+
+    · `t_clk_ps`：外部时钟 spec。给定时**直接用**（`t_clk_source="external"`），
+      不再由 `@d` 端口 + `t_setup` 派生；`fmax` 跟着重算。
+    · `skew_ps`：时钟偏斜。给定 ⇒ `hold_checked=True` 且 hold 按
+      `min(D 端到达) > skew + hold_time` 真检；`None` ⇒ `hold_checked=False`（历史行为）。
+      🔴 `hold_checked=True` 的含义**只是**「skew 已占用的窗口之外还有余量」，
+      **不是**「与真库 hold 时间比对通过」。
+    · `hold_time_ps`：hold 时间。**本仓没有任何 hold 数据** ⇒ 默认 `0.0` 是**假设**，
+      由 `hold_time_is_assumption=True` 显式标注（`skew_ps=None` 时为 `False`，因为没用到）。
+    · D 端到达 ≤0 的端点（由 primary input 直驱）**不参与** hold 判定，
+      计入 `n_hold_excluded` —— 不用 `> 0` 硬凑成「恒真」。
     """
     # 🔴 R5-fix（v0.9.394）：默认值必须**在调用时**取，不在 `def` 时绑定。
     #   原签名 `tech=DC.DEFAULT_TECH` 在 import 时求值一次 ⇒ 之后换 Tech 实例
@@ -262,6 +282,12 @@ def sta(nl, tech=None, port_load_ff: float = 0.0,
         for p in d_bits:
             for n in nl.outputs[p]:
                 t_clk_min = max(t_clk_min, arr.get(n, 0.0) + tech.t_setup_ps)
+    # 🔴 F3-3：外部时钟 spec 优先（给了就**不派生**）—— 默认 None ⇒ 逐位不变
+    if t_clk_ps is not None:
+        t_clk_min = float(t_clk_ps)
+        t_clk_source = "external"
+    else:
+        t_clk_source = "topology"
     fmax = (1e6 / t_clk_min) if (t_clk_min and t_clk_min > 0) else None
 
     # ---- 组合延时（对外输出端口的最晚到达）----
@@ -285,6 +311,19 @@ def sta(nl, tech=None, port_load_ff: float = 0.0,
     else:
         crit, crit_from = (), "none"
 
+    # ---- hold 真检（F3-2）：只有给了 skew 才检；不给 ⇒ 历史行为逐位不变 ----
+    hold_ok = True
+    hold_checked = False
+    n_hold_excluded = 0
+    if skew_ps is not None:
+        hold_checked = True
+        d_nets = [g.ins[0] for g in nl.gates if g.cell == "DFF" and g.ins]
+        vals = [arr.get(n, 0.0) for n in d_nets]
+        active = [v for v in vals if v > 0.0]
+        n_hold_excluded = len(vals) - len(active)
+        # 🔴 只对「真有到达时间」的端点判；被排除的端点不参与（不用 >0 硬凑恒真）
+        hold_ok = all(v > float(skew_ps) + float(hold_time_ps) for v in active)
+
     return Timing(
         load_ff=load,
         arrival_ps=arr,
@@ -297,11 +336,15 @@ def sta(nl, tech=None, port_load_ff: float = 0.0,
         n_dff=nl.n_dff(),
         area_um2=nl.area_um2(tech),
         leak_nw=nl.leak_nw(tech),
-        hold_ok=True,            # 单角零偏斜下形式上成立 —— 见 hold_checked
-        hold_checked=False,      # 🔴 **没有真正检验**（无偏斜/无角/无串扰）
+        hold_ok=hold_ok,
+        hold_checked=hold_checked,
         lib_used=lib_tables is not None,
         lib_fallback_cells=tuple(sorted(set(fallback))),
         lib_clamped=clamped,
+        t_clk_source=t_clk_source,
+        hold_time_is_assumption=(skew_ps is not None),
+        n_hold_excluded=n_hold_excluded,
+        clock_skew_ps=skew_ps,
     )
 
 

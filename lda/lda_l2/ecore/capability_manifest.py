@@ -1211,6 +1211,39 @@ ECORE_CAPABILITY_MANIFEST = [
         "introduced_by": "F1 (v0.9.410)",
         "guard": "run_ecore_s13_smoke.py",
     },
+    {
+        "capability": "**F3 时钟树综合（CTS）一阶模型（v0.9.415）**：把「时钟有几级、每级多大扇出、"
+                      "端到端多少延迟、端点之间差多少」变成**可枚举可复算**的量。"
+                      "✅ **拓扑是穷尽的**：搜索空间 1–8 级 × 2–16 扇出共 **120 个组合**，"
+                      "可行性判据是 `leaves >= n_sinks`（不要求恰好相等）；"
+                      "56 个时钟端点 ⇒ 最优 **3 级 × 4 扇出**，`levels=[1,4,14,56]`、"
+                      "实际缓冲 **19** 个（满树上界 21）、总延迟 **47.588831 ps**、"
+                      "**skew 3.465736 ps**（最后一级 14 个父节点里 2 个驱动 4、2 个驱动 3 ⇒ "
+                      "`fanout_spread=1` 造成的差）。"
+                      "🔴🔴 **本批最重要的一条是「旧判据不可满足」而不是「skew 达标」**："
+                      "`T_ref(cim_ctrl)=715.024 ps` ⇒ 5% 预算 **35.751204 ps**；"
+                      "而插入延迟的**闭式下界就是 47.588831 ps = 1.33× 预算** —— "
+                      "枚举全部 120 个拓扑**没有任何一个**能把插入延迟压进 5%"
+                      "（根因：`t_intr=2.0 ps`/级 + `cin=1.0 fF`）。"
+                      "⇒ 原规划把「5%」同时卡在 skew 与 insertion delay 上，后者是**不可满足的判据**；"
+                      "用户拍板 D8：**硬判据卡 skew**，insertion delay 独立披露。"
+                      "判据 EC-G45 机核「旧写法不可满足」本身，防「放宽门槛换绿」。"
+                      "🔴 **时钟负载自算**：`dsta.loads_of` 刻意 `continue` 掉 DFF 与 `CLK`"
+                      "（时钟不计入组合负载）⇒ 复用它会得到「时钟网负载恒 0」的假象。"
+                      "🔴 **D7 源与汇是两个网名**：`nl.clocks=('clk',)`（primary input）而 DFF 的"
+                      "时钟脚接大写 `'CLK'`、`'CLK'` 无驱动源 ⇒ `_validate_clock` 三条 fail-closed"
+                      "（源非 primary input / 汇无端点 / 源为空 全部抛错）后**显式登记 `bridged=True`**，"
+                      "**不改网表**。"
+                      "⚠️ 诚实边界：`wire_modeled=False` —— **叶段线载未建模**（只给公式与参数，"
+                      "不给结果数字）；不做真布线/PVT/串扰/多时钟域/门控；"
+                      "`claimable=False`；非门禁下游 = `dctrl.build()` 的 `clock` 段"
+                      "（`run_trunk` 不行：1340 门控壳网表在 `place_real` 按纪律拒绝截断）",
+        "module": "lda_l2.ecore.dcts",
+        "symbols": ["build_clock_tree", "TOPO_LV_RANGE", "TOPO_FO_RANGE",
+                    "CIN_FF", "C_WIRE_FF_PER_UM", "DCTS_DISCLOSURE"],
+        "introduced_by": "F3 (v0.9.415)",
+        "guard": "run_ecore_s13_smoke.py",
+    },
 ]
 
 

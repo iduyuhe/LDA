@@ -174,12 +174,24 @@ endmodule
 # 构建链
 # ---------------------------------------------------------------------------
 def build(src: str = None) -> dict:
-    """一行源码 → 前端 → 综合 → 真实性 → 时序。"""
+    """一行源码 → 前端 → 综合 → 真实性 → 时序（+ F3 时钟树摘要）。"""
     m = RT.parse(src or CIM_CTRL_SRC)
     nl = SY.synth(m)
     au = SY.netlist_authenticity(nl, m)
     tm = ST.sta(nl)
-    return {"module": m, "netlist": nl, "authenticity": au, "timing": tm}
+    out = {"module": m, "netlist": nl, "authenticity": au, "timing": tm}
+    # 🔴 F3（v0.9.415）：时钟树摘要 —— 🔴 **只在有 DFF 时加入该键**（无 DFF ⇒ 键不出现）。
+    #   这也是 `dcts` 的**非门禁下游**：所有既有消费者都只用 `["netlist"]`，
+    #   没有键集断言 ⇒ 加键安全。用 `run_trunk` 不行：1340 门的控壳网表在
+    #   `place_real` 就按纪律拒绝截断（`max_cells=32`），那条路径根本跑不到。
+    if nl.n_dff() > 0:
+        from . import dcts as DCTS                             # 延迟导入
+        try:
+            out["clock"] = DCTS.build_clock_tree(nl, t_ref_ps=tm.t_clk_min_ps)
+        except ValueError as exc:
+            # `dcts` 自己 fail-closed（抛错）；调用方**显式登记不可用**，不静默吞掉
+            out["clock"] = {"available": False, "reason": str(exc)}
+    return out
 
 
 def stimulus(n_row: int = ROW_N, adc_latency: int = 2):

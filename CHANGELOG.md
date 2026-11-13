@@ -1,5 +1,77 @@
 # Changelog
 
+## v0.9.415（2026-11-14 · **F3：时钟树综合与 hold 真检** · 净增 0 锚 · CI core **406**）
+
+### 一句话
+
+新增 `dcts`：把「时钟有几级、每级多大扇出、端到端多少延迟、端点之间差多少」变成
+**可枚举、可复算**的量；`dsta` 的 hold 从「声明没检」升级为**真检**，`T_ref` 支持外部 spec。
+主链 9 数逐位未动，c17 报告里根本不出现时钟键。
+
+### 🔴 立项前测算推翻了规划里预先注册的验收判据（本批最重要的一条）
+
+规划同时写了两句：
+- 主判据：**skew ≤ 5% × `T_ref`**
+- 推翻条件：**若 CTS 自身延迟 > 5% `T_ref`，则判「树不可用」而非放宽阈值**
+
+实测（`T_ref(cim_ctrl) = 715.024 ps` ⇒ 5% 预算 **35.751204 ps**）：
+
+| 量 | 实测 |
+|---|---|
+| 56 端点的时钟树插入延迟**闭式下界** | **47.588831 ps = 1.33× 预算**（3 级 × 4 扇出） |
+| 枚举 1–8 级 × 2–16 扇出（120 个拓扑） | **没有一个**能把插入延迟压进 5% |
+| 根因 | `t_intr = 2.0 ps`/级 + `cin = 1.0 fF`，与实现优劣无关 |
+| skew（端点到达差） | **3.465736 ps**（只占预算 9.7%） |
+
+⇒ **「5% 卡插入延迟」是不可满足的判据，不是「难」。** 用户拍板 **D8**：
+**硬判据改为卡 skew**，插入延迟**独立披露**、不设 5% 上限。
+判据 EC-G45 **机核「旧写法不可满足」本身**（枚举 + 闭式下界），
+防止把这次改口做成「放宽门槛换绿」。
+
+### 实现
+
+- 新模块 `dcts`（只暴露一个公开入口 `build_clock_tree`，其余私有 ⇒ 不对引用图判死）：
+  拓扑枚举 → 最优树 + 每级缓冲数 + 闭式延迟 + **每端点到达时间 → skew**；
+  负载**自算**（`dsta.loads_of` 刻意 `continue` 掉 DFF 与 `CLK`，复用会得到负载恒 0 的假象）。
+- **D7 源与汇是两个网名**：`nl.clocks=('clk',)` 而 DFF 接大写 `'CLK'`（无驱动源）⇒
+  三条 fail-closed（源非 primary input / 汇无端点 / 源为空）+ 显式登记 `bridged=True`，
+  **不改网表**。
+- `dsta.sta(..., skew_ps=, t_clk_ps=, hold_time_ps=)`：hold 真检（`hold_checked` 由
+  `skew_ps` 决定）、外部时钟 spec（`t_clk_source`）、`hold_time_ps=0.0` 显式标为**假设**、
+  D 端到达 ≤0 的端点计入 `n_hold_excluded` 不参与判定。
+- `dctrl.build()` 增加 `clock` 段（`dcts` 的**非门禁下游**）。
+  🔴 不用 `run_trunk`：1340 门控壳网表在 `place_real` 按纪律拒绝截断，那条路径**跑不到**，
+  接在那里就是假下游。
+- `s13` 新增 **5 条判据**（243 → **248**，AST 实测）：
+  EC-G43 拓扑最优性（产品侧常量搜索 vs 门禁侧 `cell_delay_ps` 现算，两条路径必须同解）·
+  EC-G44 D7 三条 fail-closed + 单端点也抛错 · EC-G45 D8 新口径 + **旧写法不可满足的机核** ·
+  EC-G46 hold 真检（现算 D 端最早到达做翻转点）· EC-G47 外部 spec + **`c17 无 clock 键`**。
+- 🔴 同时改口 EC-V02：原判据找 `hold_checked=False` 字面量，F3-2 后该字面量消失 ⇒
+  改为机核「`if skew_ps is not None:` ⇒ `hold_checked = True`」的**因果** + `skew_ps` 默认
+  `None`。**改口后更严**（从「它声明没检」升级为「没检由无 skew 决定」）。
+
+### 🔴 诚实边界
+
+- **叶段线载未建模**（`wire_modeled=False`）⇒ skew 结论只覆盖门延迟；
+  `wire_note` 只给公式与参数，**不给结果数字**（避免编数）。
+- **不宣称时序闭环已闭合**：本批闭合的是「时钟可算 + hold 有真检」；
+  端到端布通仍归后续（`failed` 上升是账本诚实化，不是能力退步）。
+- 不做真布线 / PVT / 串扰 / 多时钟域 / 门控；规则集仍是自建 LDA-DEMO45（**非 foundry PDK**）、
+  `claimable=False`。
+- 主链 9 数逐位未动；`run_trunk(c17)` 全报告 32073 B 逐字节相同；`"clock" not in` c17 报告。
+
+### 验收
+
+- 门禁：`run_ecore_s13_smoke` **248 判据**全绿（3.52 s < 180 s）；
+  capability_guard / reachability / reuse_metrics / ecore_case / pyflakes /
+  timeout_budget / helper_dup / webui_pm_render_path / count_consistency /
+  report_determinism / s5 / s6 / s12 共 13 道全绿。
+- core-fast：**351 PASS / 0 SKIP / 0 FAIL · 877.12 s**。
+- 全量 `--tag core`：**406 PASS / 0 SKIP / 0 FAIL · 12586.35 s = 3.50 h · 一次绿**，
+  完整 core 凭证已写 `green`。
+- 全量写脏的 `ecosystem_d98.json` / `verification_report.json` / `verification_report.md`
+  已还原，只保留 `k0_audit.json` 的版本改动。
+
 ## v0.9.414（2026-11-13 · **F2 后续 A2：双库布局显式启用** · 净增 0 锚 · CI core **406**）
 
 ### 一句话

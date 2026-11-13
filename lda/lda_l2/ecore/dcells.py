@@ -1200,3 +1200,248 @@ B1_DISCLOSURE = {
         "无流片实测 ⇒ 只把 design-period 签核的**几何/连通/寄生**三件事机器化，"
         "不构成 signoff-grade 结论（B3 才谈多角/IR/EM）。"),
 }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ⑥ A1（v0.9.413）：DEMO45 规则下的时序单元版图 `CELLS_DH`
+# ═══════════════════════════════════════════════════════════════════════════
+#: 🔴 **独立集合，绝不并入 `CELLS`**：`dpnr.CELL_W_UM` / `row_height_um()` 只取
+#: `CELLS` 三项的最大宽高；把 DH 单元并进去会顶起主链 c17 的 9 个固定口径数字。
+#: 双库布局由 A2 的 `place_real(..., dh_lib=)` 显式启用，pitch_x / 行高单独返回。
+#:
+#: 🔴 **为什么自带一份拓扑表而不 import `dhdlib.DFF_COLS`**：`dhdlib` 顶层
+#: `from .dcells import ...`，反向 import 会形成循环。两处声明由 s13 的 EC-G36
+#: 用「多重集逐项一致」机核守护，不是静默的第二份真源。
+#:
+#: 🔴 **LVS 口径（D6 已拍板）**：22T 有大量无名内部节点，通用 `run_lvs` 的
+#: `device_set` 集合比对必然报 1 条（电路其实是对的，`dhdlib.py:590` 已登记）；
+#: 拓扑等价改由 `dhdlib.run_lvs_pos` 的几何序 + 单值双射判定。**报 LVS 必须写清
+#: 是哪一套**，不得笼统写「LVS 0」。DRC 一律走本模块的 `run_drc(cell, RULES)`，
+#: 绝不另写一套检查器。
+DH_DFF_COLS = (
+    ("inv", "CLK", "ckb", None, None),
+    ("inv", "ckb", "ckbb", None, None),
+    ("tg", "D", "m", "ckbb", "ckb"),
+    ("inv", "m", "mb", None, None),
+    ("inv", "mb", "m", None, None),
+    ("tg", "m", "s", "ckb", "ckbb"),
+    ("inv", "s", "sb", None, None),
+    ("inv", "sb", "s", None, None),
+    ("inv", "s", "q1", None, None),
+    ("inv", "q1", "Q", None, None),
+    ("inv", "Q", "QN", None, None),
+)
+
+#: 几何常量（nm）。闭式来源见 `LDA_电子域_F2_A1-1_几何可行性测算_2026-11-13.md`：
+#: `gate_cont 40` ⇒ 岛内两孔距 ≥175；`cont_enc_diff 15` ⇒ 岛宽 ≥250；
+#: `diff_s 100` ⇒ 节距 ≥350。11 列 ⇒ `80 + 11×350 + 80 = 4010`。
+DH_X0, DH_PITCH, DH_ISL, DH_NCOL = 80, 350, 250, 11
+DH_W_DFF = DH_X0 + DH_NCOL * DH_PITCH + 80        # 4010
+DH_W_BUF = DH_X0 + 2 * DH_PITCH + 80              # 860
+DH_H_DFF, DH_H_BUF = 4370, 1950
+DH_N_DIFF, DH_P_DIFF = (180, 480), (3400, 4150)
+DH_N_CY, DH_P_CY = 330, 3775
+DH_NSEG_TOP, DH_PSEG_BOT, DH_POLY_TOP = 900, 1050, 4200
+DH_VSS, DH_VDD = (0, 70), (4300, 4370)
+DH_NWELL = (3320, 4230)
+DH_Y0, DH_PLV = 620, 215
+
+#: 13 条全宽 M1 总线电平：`ckb` / `ckbb` 各占低/高两条，由该网自身的
+#: 全高 M2 竖带在两个电平各打 VIA1 自然连通（不需要额外 M2 link）。
+DH_LEVEL_NET = {
+    0: "ckb", 1: "ckbb", 2: "D", 3: "m", 4: "mb", 5: "s", 6: "sb",
+    7: "Q", 8: "q1", 9: "CLK", 10: "QN", 11: "ckb", 12: "ckbb",
+}
+DH_NET_LEVELS = {
+    "ckb": [0, 11], "ckbb": [1, 12], "CLK": [9], "D": [2], "m": [3],
+    "mb": [4], "s": [5], "sb": [6], "q1": [8], "Q": [7], "QN": [10],
+}
+DH_TG_NG_LEVEL = {2: 0, 5: 1}
+DH_TG_PG_LEVEL = {2: 12, 5: 11}
+DH_PIN_LEVEL = {"D": 2, "CLK": 9, "Q": 7, "QN": 10}
+
+
+def _dh_ylv(k: int) -> int:
+    return DH_Y0 + DH_PLV * k
+
+
+def _dh_x0(i: int) -> int:
+    return DH_X0 + i * DH_PITCH
+
+
+def _dh_lx(i: float) -> float:
+    return _dh_x0(i) + 37.5
+
+
+def _dh_rx(i: float) -> float:
+    return _dh_x0(i) + 212.5
+
+
+def _dh_gx(i: float) -> float:
+    return _dh_x0(i) + 125.0
+
+
+def _dh_cont(cx, cy, role: str) -> R:
+    return R(L_CONT, *_cont_box(cx, cy), role=role)
+
+
+def _dh_m1pad(cx, cy) -> R:
+    a, b, c, d = _cont_box(cx, cy)
+    return R(L_M1, a - 10, b - 10, c + 10, d + 10, role="pad")
+
+
+def _dh_polypad(cx, cy) -> R:
+    a, b, c, d = _cont_box(cx, cy)
+    return R(L_POLY, a - 15, b - 15, c + 15, d + 15, role="gate_pad")
+
+
+def _dh_strap_x(cx) -> tuple:
+    a, _b, c, _d = _cont_box(cx, DH_N_CY)
+    return a - 8, c + 8
+
+
+def _dh_via(cx, cy) -> R:
+    a, b, c, d = _cont_box(cx, cy)
+    return R(L_VIA1, a - 8, b - 8, c + 8, d + 8, role="via1")
+
+
+def build_dff_dh() -> Cell:
+    """DFF_X1_DH：DEMO45 规则下的 22T 主从 DFF（11 列独立岛）。
+
+    与 `dhdlib.DFF_COLS` 的开关级拓扑同构；几何按 LDA-DEMO45 规则放大：
+    每列一对独立 DIFF 岛（250 宽 / 350 节距）、栅宽 50、孔 45；
+    M1 只做 13 条全宽水平总线，M2 只做全高竖带，VIA1 在两层间跨接。
+    W=4010 / H=4370；22 器件；`run_drc(RULES)=0`、`run_lvs_pos=0`。
+    """
+    W, H = DH_W_DFF, DH_H_DFF
+    rects = [R(L_M1, 0, DH_VSS[0], W, DH_VSS[1], role="rail"),
+             R(L_M1, 0, DH_VDD[0], W, DH_VDD[1], role="rail"),
+             R(L_NWELL, 0, DH_NWELL[0], W, DH_NWELL[1], role="nwell")]
+    for k in DH_LEVEL_NET:
+        y = _dh_ylv(k)
+        rects.append(R(L_M1, 0, y - 30, W, y + 30, role="bus"))
+
+    devs = []
+    for i, (kind, a, b, pg, ng) in enumerate(DH_DFF_COLS):
+        X = _dh_x0(i)
+        gxl, gxr = X + 100, X + 150
+        rects += [R(L_DIFF, X, DH_N_DIFF[0], X + DH_ISL, DH_N_DIFF[1], role="diff"),
+                  R(L_DIFF, X, DH_P_DIFF[0], X + DH_ISL, DH_P_DIFF[1], role="diff")]
+        if kind == "inv":
+            rects.append(R(L_POLY, gxl, 130, gxr, DH_POLY_TOP, role="gate"))
+        else:
+            rects += [R(L_POLY, gxl, 130, gxr, DH_NSEG_TOP, role="gate_n"),
+                      R(L_POLY, gxl, DH_PSEG_BOT, gxr, DH_POLY_TOP, role="gate_p")]
+        for cy in (DH_N_CY, DH_P_CY):
+            for cx in (_dh_lx(i), _dh_rx(i)):
+                rects += [_dh_cont(cx, cy, "cont_sd"), _dh_m1pad(cx, cy)]
+        if kind == "inv":
+            k = DH_NET_LEVELS[a][0]
+            rects += [_dh_cont(_dh_gx(i), _dh_ylv(k), "cont_gate"),
+                      _dh_polypad(_dh_gx(i), _dh_ylv(k)),
+                      _dh_m1pad(_dh_gx(i), _dh_ylv(k))]
+        else:
+            for k in (DH_TG_NG_LEVEL[i], DH_TG_PG_LEVEL[i]):
+                rects += [_dh_cont(_dh_gx(i), _dh_ylv(k), "cont_gate"),
+                          _dh_polypad(_dh_gx(i), _dh_ylv(k)),
+                          _dh_m1pad(_dh_gx(i), _dh_ylv(k))]
+        if kind == "inv":
+            rects += [R(L_M1, X + 5, DH_VSS[1], X + 70, DH_N_CY + 33, role="strap"),
+                      R(L_M1, X + 5, DH_P_CY - 33, X + 70, DH_VDD[0], role="strap")]
+        # 声明顺序 = 每列 (pmos, nmos) 交错；run_lvs_pos 按 kind 稳定重排后与几何序一致
+        if kind == "inv":
+            devs += [("pmos", 750, 50, a, "VDD", b), ("nmos", 300, 50, a, "VSS", b)]
+        else:
+            devs += [("pmos", 750, 50, pg, a, b), ("nmos", 300, 50, ng, a, b)]
+
+    for i, (kind, a, b, _pg, _ng) in enumerate(DH_DFF_COLS):
+        pairs = [(_dh_rx(i), b)] if kind == "inv" else [(_dh_lx(i), a), (_dh_rx(i), b)]
+        for cx, net in pairs:
+            sx0, sx1 = _dh_strap_x(cx)
+            rects.append(R(L_M2, sx0, 280, sx1, 3820, role="m2"))
+            rects += [_dh_via(cx, DH_N_CY), _dh_via(cx, DH_P_CY)]
+            for k in DH_NET_LEVELS[net]:
+                rects.append(_dh_via(cx, _dh_ylv(k)))
+
+    d_pad = R(L_M1, 0, _dh_ylv(DH_PIN_LEVEL["D"]) - 120, 240,
+              _dh_ylv(DH_PIN_LEVEL["D"]) + 120, net="D", role="pin")
+    clk_pad = R(L_M1, 0, _dh_ylv(DH_PIN_LEVEL["CLK"]) - 120, 240,
+                _dh_ylv(DH_PIN_LEVEL["CLK"]) + 120, net="CLK", role="pin")
+    q_pad = R(L_M1, W - 240, _dh_ylv(DH_PIN_LEVEL["Q"]) - 120, W,
+              _dh_ylv(DH_PIN_LEVEL["Q"]) + 120, net="Q", role="pin")
+    qn_pad = R(L_M1, W - 240, _dh_ylv(DH_PIN_LEVEL["QN"]) - 120, W,
+               _dh_ylv(DH_PIN_LEVEL["QN"]) + 120, net="QN", role="pin")
+    rects += [d_pad, clk_pad, q_pad, qn_pad]
+    pins = {"VDD": R(L_M1, 0, DH_VDD[0], W, DH_VDD[1], net="VDD"),
+            "VSS": R(L_M1, 0, DH_VSS[0], W, DH_VSS[1], net="VSS"),
+            "D": d_pad, "CLK": clk_pad, "Q": q_pad, "QN": qn_pad}
+    return Cell("DFF_X1_DH", W, H, rects, pins, devs)
+
+
+def build_buf_dh() -> Cell:
+    """BUF_X1_DH：两级 INV 串联（4T），DEMO45 规则下的独立岛几何。
+
+    与 `dhdlib.build_buf_hd` 电路同构（A → n1 → Y）。W=860 / H=1950；
+    4 器件；`run_drc(RULES)=0`、`run_lvs_pos=0`、`run_lvs=0`。
+    """
+    W, H = DH_W_BUF, DH_H_BUF
+    py0, py1 = 1000, 1750
+    pcy = 1375
+    rects = [R(L_NWELL, 0, 920, W, 1830, role="nwell"),
+             R(L_M1, 0, 0, W, 70, role="rail"),
+             R(L_M1, 0, 1880, W, 1950, role="rail")]
+    for i in range(2):
+        X = _dh_x0(i)
+        gxl, gxr = X + 100, X + 150
+        rects += [R(L_DIFF, X, DH_N_DIFF[0], X + DH_ISL, DH_N_DIFF[1], role="diff"),
+                  R(L_DIFF, X, py0, X + DH_ISL, py1, role="diff"),
+                  R(L_POLY, gxl, 130, gxr, 1800, role="gate")]
+        for cy in (DH_N_CY, pcy):
+            for cx in (_dh_lx(i), _dh_rx(i)):
+                rects += [_dh_cont(cx, cy, "cont_sd"), _dh_m1pad(cx, cy)]
+        lx = _dh_lx(i)
+        a, b, c, d = _cont_box(lx, DH_N_CY)
+        rects.append(R(L_M1, a - 10, 70, c + 10, d + 10, role="strap_vss"))
+        a, b, c, d = _cont_box(lx, pcy)
+        rects.append(R(L_M1, a - 10, b - 10, c + 10, 1880, role="strap_vdd"))
+    for i, yb in enumerate((800, 930)):
+        cx = _dh_rx(i)
+        sx0, sx1 = _dh_strap_x(cx)
+        rects.append(R(L_M2, sx0, 300, sx1, 1400, role="m2"))
+        for cy in (DH_N_CY, pcy, yb):
+            rects.append(_dh_via(cx, cy))
+    for i, cy in enumerate((560, 800)):
+        gx = _dh_gx(i)
+        rects += [_dh_polypad(gx, cy), _dh_cont(gx, cy, "cont_gate"),
+                  _dh_m1pad(gx, cy)]
+    c0r, c1g, c1r = _dh_rx(0), _dh_gx(1), _dh_rx(1)
+    rects += [R(L_M1, c0r - 32.5, 770, c1g + 32.5, 830, role="bus"),
+              R(L_M1, c1r - 32.5, 900, W, 960, role="bus")]
+    pa = R(L_M1, 0, 430, 240, 670, net="A", role="pin")
+    py = R(L_M1, 620, 900, 860, 1140, net="Y", role="pin")
+    rects += [pa, py]
+    pins = {"VDD": R(L_M1, 0, 1880, W, 1950, net="VDD"),
+            "VSS": R(L_M1, 0, 0, W, 70, net="VSS"), "A": pa, "Y": py}
+    devs = [("nmos", 300, 50, "A", "VSS", "n1"),
+            ("nmos", 300, 50, "n1", "VSS", "Y"),
+            ("pmos", 750, 50, "A", "VDD", "n1"),
+            ("pmos", 750, 50, "n1", "VDD", "Y")]
+    return Cell("BUF_X1_DH", W, H, rects, pins, devs)
+
+
+#: 🔴 **独立集合**：绝不并入 `CELLS`；`dcell.CELLS` 18/3 数据层一字不动。
+#: 两单元**不等高**（DFF 4370 / BUF 1950）是显式登记边界，A2 双库路径的
+#: 行高与 pitch_x 必须单独返回并取实际 max，不得复用 `CELL_W_UM=0.98`。
+CELLS_DH = {"DFF_X1_DH": build_dff_dh, "BUF_X1_DH": build_buf_dh}
+
+#: 口径声明（EC-G39 机核）：几何层 DH，不与数据层 `LAYOUT` 混称；
+#: 规则集仍是自建 LDA-DEMO45，非 foundry PDK。
+DH_BASIS_NOTE = {
+    "basis": "GEOMETRY_DH",
+    "ruleset": "LDA-DEMO45（自建 · 非 foundry PDK）",
+    "drc": "dcells.run_drc(cell, RULES)",
+    "lvs_topology": "dhdlib.run_lvs_pos（几何序 + 单值双射）",
+    "lvs_generic_boundary": "dcells.run_lvs 的 device_set 对无名内部节点不适用，差异显式登记",
+    "claimable": False,
+    "not_equal_height": True,
+}

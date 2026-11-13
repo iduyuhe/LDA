@@ -3698,6 +3698,155 @@ def main() -> int:
           and _g35_n[3] >= _g35_o[3] and _g35_n[0] >= _g35_o[0],
           "old=%r new=%r" % (_g35_o, _g35_n))
 
+    # ── A1 · DEMO45 时序单元版图 `CELLS_DH`（v0.9.413）─────────────────────
+    # D6 已拍板「口径分层 + 复用既有判定器」：DRC 一律走本模块 `run_drc(cell, rules=)`；
+    # 拓扑等价**直接引用**既有 `DHD.run_lvs_pos`（不复制实现、不改通用 `run_lvs`）；
+    # 通用 `run_lvs` 只要求 short/floating_pin 皆 0，`device_set` 差异必须被显式登记。
+    import collections as _collections                         # noqa: E402
+    import copy as _copy                                        # noqa: E402
+
+    _g36_expect = {"DFF_X1_DH": (4010, 4370, 22), "BUF_X1_DH": (860, 1950, 4)}
+    _g36_rows = {}
+    for _a1nm, _a1fn in sorted(CL.CELLS_DH.items()):
+        _a1cell = _a1fn()
+        _a1drc = CL.run_drc(_a1cell, CL.RULES)
+        _a1lv = CL.run_lvs(_a1cell)
+        _a1pos = DHD.run_lvs_pos(_a1cell)
+        _a1bad = [m[0] for m in _a1lv["mismatches"]]
+        _g36_rows[_a1nm] = {
+            "drc": _a1drc["n"], "devs": len(CL.extract_devices(_a1cell)),
+            "lvs_pos": _a1pos["n"], "nodes": _a1pos.get("nodes"),
+            "short": _a1bad.count("short"), "floating": _a1bad.count("floating_pin"),
+            "device_set": _a1bad.count("device_set"),
+            "w": _a1cell.w, "h": _a1cell.h,
+            "sig_pins": sorted(k for k in _a1cell.pins if k not in ("VDD", "VSS")),
+        }
+    # 真实破坏测试：删一条 M2 竖带 ⇒ 拓扑判定必须变红（DRC 仍 0，说明是连通性破坏）
+    _g36_d = CL.build_dff_dh()
+    _g36_broken = _copy.deepcopy(_g36_d)
+    _g36_broken.rects.pop(next(i for i, r in enumerate(_g36_broken.rects)
+                               if r.role == "m2"))
+    _g36_bpos = DHD.run_lvs_pos(_g36_broken)
+    _g36_pl = P.pin_legality(cells={n: f() for n, f in CL.CELLS_DH.items()})
+    check("EC-G36 **版图真值·分层口径**：`CELLS_DH` %d 单元 DRC 全 0 / 抽取 %s / "
+          "`run_lvs_pos` 全 0（DFF %d 节点）；通用 `run_lvs` 的 short+floating_pin 皆 0，"
+          "DFF 仅余 device_set 且已被 `DH_BASIS_NOTE` 显式登记（BUF 4T 对照组恰 0）；"
+          "W/H=%d×%d 与 %d×%d、`pin_legality.ok=True`；删一条 M2 竖带 ⇒ `run_lvs_pos` %d>0"
+          % (len(_g36_rows),
+             "/".join(str(_g36_rows[n]["devs"]) for n in sorted(_g36_rows)),
+             _g36_rows["DFF_X1_DH"]["nodes"],
+             _g36_rows["DFF_X1_DH"]["w"], _g36_rows["DFF_X1_DH"]["h"],
+             _g36_rows["BUF_X1_DH"]["w"], _g36_rows["BUF_X1_DH"]["h"],
+             _g36_bpos["n"]),
+          set(_g36_rows) == set(_g36_expect)
+          and all(_g36_rows[n]["drc"] == 0
+                  and _g36_rows[n]["devs"] == e[2]
+                  and _g36_rows[n]["lvs_pos"] == 0
+                  and _g36_rows[n]["short"] == 0
+                  and _g36_rows[n]["floating"] == 0
+                  and (_g36_rows[n]["w"], _g36_rows[n]["h"]) == (e[0], e[1])
+                  for n, e in _g36_expect.items())
+          and _g36_rows["DFF_X1_DH"]["device_set"] == 1
+          and _g36_rows["BUF_X1_DH"]["device_set"] == 0
+          and _g36_rows["DFF_X1_DH"]["nodes"] == 13
+          and _g36_rows["DFF_X1_DH"]["sig_pins"] == ["CLK", "D", "Q", "QN"]
+          and _g36_rows["BUF_X1_DH"]["sig_pins"] == ["A", "Y"]
+          and "device_set" in CL.DH_BASIS_NOTE["lvs_generic_boundary"]
+          and "run_lvs_pos" in CL.DH_BASIS_NOTE["lvs_topology"]
+          and _g36_pl["ok"] is True and _g36_pl["n_violations"] == 0
+          and _g36_bpos["n"] > 0,
+          "rows=%r broken=%r" % (_g36_rows, _g36_bpos["mismatches"][:2]))
+
+    _g37_env = {k: (f().w, f().h) for k, f in CL.CELLS.items()}
+    _g37_disjoint = not (set(CL.CELLS) & set(CL.CELLS_DH))
+    # 反事实 ①：强行并入 CL.CELLS ⇒ row_height 被顶起（证明独立集合是物理必需）
+    _g37_saved_cells = dict(CL.CELLS)
+    CL.CELLS.update({n: f for n, f in CL.CELLS_DH.items()})
+    try:
+        _g37_inflated = P.row_height_um()
+        _g37_early = P.CELL_W_UM
+    finally:
+        CL.CELLS.clear()
+        CL.CELLS.update(_g37_saved_cells)
+    _g37_restored = P.row_height_um()
+    # 反事实 ②：置空 CELLS_DH 前后主链全报告逐字节相同（同进程 A/B，不硬编码字节数）
+    _g37_a = _json.dumps(B3.run_trunk(_g31_c17), sort_keys=True, default=str)
+    _g37_saved_dh = CL.CELLS_DH
+    CL.CELLS_DH = {}
+    try:
+        _g37_b = _json.dumps(B3.run_trunk(_g31_c17), sort_keys=True, default=str)
+    finally:
+        CL.CELLS_DH = _g37_saved_dh
+    check("EC-G37 **包络隔离（两条真实反事实）**：`CL.CELLS` 恰 3 项且 w≤980/h≤1950；"
+          "`CELLS_DH` 交集为空；强行并入后 row_height 1.95→%.2f（顶起主链）、"
+          "`CELL_W_UM` 仍 %.2f（既有早绑定口径）⇒ 恢复 %.2f；"
+          "置空 `CELLS_DH` 前后 `run_trunk(c17)` 逐字节相同（%d B）"
+          % (_g37_inflated, _g37_early, _g37_restored, len(_g37_a)),
+          len(_g37_env) == 3
+          and set(_g37_env) == {"INV_X1", "NAND2_X1", "NOR2_X1"}
+          and all(w <= 980 and h <= 1950 for w, h in _g37_env.values())
+          and P.CELL_W_UM == 0.98 and P.row_height_um() == 1.95
+          and _g37_disjoint and _g37_inflated > 1.95
+          and _g37_early == 0.98 and _g37_restored == 1.95
+          and _g37_a == _g37_b and CL.CELLS_DH is _g37_saved_dh
+          and set(CL.CELLS) == set(_g37_saved_cells),
+          "env=%r inflated=%.2f restored=%.2f equal=%r"
+          % (_g37_env, _g37_inflated, _g37_restored, _g37_a == _g37_b))
+
+    _g38_cf = {}
+    for _a1key, _a1val in (("poly_s", 400), ("m1_s", 130),
+                           ("cont_enc_m1", 20), ("nwell_enc", 200)):
+        _a1rules = dict(CL.RULES)
+        _a1rules[_a1key] = _a1val
+        _g38_cf[_a1key] = CL.run_drc(_g36_d, _a1rules)["n"]
+    _g38_loose = CL.run_drc(_g36_d, DHD.HD_RULES)["n"]
+
+    def _g38_derive(cols):
+        out = []
+        for kind, a, b, pg, ng in cols:
+            if kind == "inv":
+                out += [("pmos", 750, 50, a, "VDD", b),
+                        ("nmos", 300, 50, a, "VSS", b)]
+            else:
+                out += [("pmos", 750, 50, pg, a, b),
+                        ("nmos", 300, 50, ng, a, b)]
+        return _collections.Counter(out)
+
+    _g38_dev = _collections.Counter(tuple(x) for x in _g36_d.devices_expected)
+    check("EC-G38 **不造第二套判定器 + 规则是参数（可证伪）**：同一份 `run_drc(cell, rules=)`"
+          " 在收紧单条规则后四条反事实 %r 全部 >0；更宽松 `HD_RULES` 仍 %d（登记原"
+          "「换 rules 必变」判据失靶）；拓扑判定器 `%s.run_lvs_pos` 直接引用既有模块；"
+          "`devices_expected` 多重集（%d 器件）与 `DFF_COLS` 派生值逐项一致"
+          % (_g38_cf, _g38_loose, DHD.run_lvs_pos.__module__, len(_g38_dev)),
+          all(n > 0 for n in _g38_cf.values())
+          and all(v > CL.RULES[k] for k, v in
+                  (("poly_s", 400), ("m1_s", 130), ("cont_enc_m1", 20),
+                   ("nwell_enc", 200)))
+          and _g38_loose == 0
+          and DHD.run_lvs_pos.__module__ == "lda_l2.ecore.dhdlib"
+          and "run_lvs_pos" in CL.DH_BASIS_NOTE["lvs_topology"]
+          and CL.DH_DFF_COLS == DHD.DFF_COLS
+          and _g38_derive(CL.DH_DFF_COLS) == _g38_dev
+          and _g38_derive(DHD.DFF_COLS) == _g38_dev,
+          "cf=%r derive_eq=%r" % (_g38_cf, _g38_derive(DHD.DFF_COLS) == _g38_dev))
+
+    _g39_wl = DC.wl_provenance_summary()
+    _g39_note = CL.DH_BASIS_NOTE
+    _g39_h = {n: f().h for n, f in CL.CELLS_DH.items()}
+    check("EC-G39 **数据层不动 + 口径声明**：`dcell.CELLS` 仍 %d / `n_measured==%d`；"
+          "`CELLS_DH` 的 basis 显式为 %r 且不与数据层 LAYOUT 混称、claimable=False、"
+          "两单元不等高 %r 已登记（规则集仍是自建 DEMO45，非 foundry PDK）"
+          % (len(DC.CELLS), _g39_wl["n_measured"], _g39_note["basis"], _g39_h),
+          len(DC.CELLS) == 18 and _g39_wl["n_measured"] == 3
+          and _g39_note["basis"] == "GEOMETRY_DH"
+          and "LAYOUT" not in _g39_note["basis"]
+          and _g39_note["claimable"] is False
+          and _g39_note["ruleset"].find("非 foundry PDK") >= 0
+          and _g39_note["not_equal_height"] is True
+          and len(set(_g39_h.values())) > 1
+          and not (set(DC.CELLS) & set(CL.CELLS_DH)),
+          "note=%r h=%r" % (_g39_note, _g39_h))
+
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)
 

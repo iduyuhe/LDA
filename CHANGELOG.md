@@ -1,5 +1,63 @@
 # Changelog
 
+## v0.9.413（2026-11-13 · **F2 后续 A1：DEMO45 规则下的时序单元可查版图** · 净增 0 锚 · CI core **406**）
+
+### 一句话
+
+给时序单元补上**规则可查的几何版图**，并把「几何 / 抽取 / 拓扑判定」三件事的口径分开：
+新增**独立集合** `CELLS_DH`（22T 时序单元 + 4T 缓冲单元），不并入现有三单元库、
+不改既有判定器，主链 9 个固定口径数字逐位不动。
+
+### 立项前只读测算（三处推翻已批准判断）
+
+立项链按「可追溯论证 → 实施规划 → 对实施规划审计 → 用户拍板 → 才实施」执行（依据为内部留档）。
+用户拍板「三段全做（B → A1 → A2）」；本批为 A1。
+
+| # | 原判断 | 实测 | 处置 |
+|---|---|---|---|
+| 1 | 22T 时序单元「未必能被抽取器认出」，需先证可抽取 | `dcells.extract_devices` 对既有 22T 单元 **22/22 全抽出**、每个器件都带几何 x ⇒ 假设证伪 | 关闭「不可抽取」分支 |
+| 2 | 复用通用 `run_lvs` 且 LVS 0 | 通用 `run_lvs` 报 `n=1`（唯一 `device_set`）：`_canon` 比器件字面网名元组，22 器件大半栅网是无名内部节点，两侧排序口径不一致；既有双射判定器 `run_lvs_pos` 报 `n=0 / nodes=13` ⇒ 规划自相冲突 | 新增口径分叉，用户拍板「口径分层 + 复用既有判定器」：几何走 `run_drc(cell, rules=RULES)`、器件走 `extract_devices`、通用 `run_lvs` 只要求 `short`/`floating_pin` 皆 0、拓扑等价直接引用既有 `run_lvs_pos`；`device_set` 差异显式登记 |
+| 3 | 单元宽 ≤980 nm、单行 6 列、11 列折 2 行 | `gate_cont=40` ⇒ 岛内两孔距 ≥175（不是 `diff_s` 下限 170）；22T 每列需自带 VDD/VSS 引下 ⇒ 独立 DIFF 岛，`cont_enc_diff=15` ⇒ 岛宽 ≥250，`diff_s=100` ⇒ 列节距 ≥350；11 列 ⇒ `80+11×350+80 = 4010`；完整连线需 13 条全宽 M1 总线（节距 215、总线区 2920）⇒ `H=4370` | 规格改为 **4010×4370 nm 独立集合**，后续双库布局的 `pitch_x` 取实际最大宽度，绝不复用 `CELL_W_UM=0.98` |
+
+### 实现
+
+- `dcells` 新增 `CELLS_DH`：`build_dff_dh()`（22T 主从时序单元 · 11 列独立岛 · 4010×4370）、
+  `build_buf_dh()`（4T 两级反相 · 860×1950）。两单元**不等高**，显式登记。
+- **独立集合，绝不并入 `CELLS`**：`CELL_W_UM` 是 import 期早绑定常量、`row_height_um()`
+  动态取 `CELLS` 的 max ⇒ 强行并入会把行高 1.95 → 4.37 µm，主链 c17 的 9 数全废。
+- `DH_DFF_COLS` 自带拓扑表（避免顶层反向 import `dhdlib` 形成循环），由门禁用**多重集**
+  与 `dhdlib.DFF_COLS` 派生值机核逐项一致；`DH_BASIS_NOTE` 登记 basis / ruleset /
+  LVS 分层 / `claimable=False`。
+- `capability_manifest` 登记新符号与适用边界：`PINS_V2_NOTE` 只描述 `CELLS` 三项，
+  `CELLS_DH` 引脚合法性由 `pin_legality(cells=)` 单独判定。
+- `s13` 新增 **4 条判据**（236 → **240**，AST 实测）：版图真值分层口径（含删一条 M2 竖带
+  使 `run_lvs_pos` 0→4 的真实破坏测试）· 包络隔离（强行并入 / 置空独立集合 两条反事实）·
+  不造第二套判定器 + 规则是参数（收紧四条规则的反事实 45/85/57/11 全 >0；更宽松
+  `HD_RULES` 仍 0 ⇒ 登记原判据失靶）· 数据层不动 + 口径声明。
+
+### 🔴 诚实边界
+
+- 规则集仍是自建 LDA-DEMO45（**非 foundry PDK**）、不是 SPICE，`claimable=False`；
+  22T 单元面积 4010×4370 = **17.52 µm²**（约为既有 INV 的 16.7×）只作物理后果披露，
+  **不作效率/性能/制造宣称**。
+- 「DRC 0 / 拓扑等价 0」须写清口径：前者是 `run_drc(cell, RULES)`，后者是既有
+  `run_lvs_pos` 的双射判定；通用 `run_lvs` 的 `device_set` 差异是**已登记的既有口径边界**，
+  不是被消掉，也不是电路错误。
+- 本批只交付**可查版图**，**不宣称时序单元已在主链可布通**；下游消费者由后续双库
+  布局显式启用（本批未改 `place_real`）。
+- 主链 9 数逐位未动；`CL.CELLS` 仍 3 项、`dcell.CELLS` 18/3 一字未动。
+
+### 验收
+
+- 门禁：`run_ecore_s13_smoke` **240 判据**全绿（3.54 s < 180 s）；capability_guard /
+  pyflakes / timeout_budget / helper_dup / reachability / webui_pm_render_path /
+  count_consistency / report_determinism / ecore_case / ci_coverage_gate 共 11 道全绿。
+- core-fast：**351 PASS / 0 SKIP / 0 FAIL · 856.5 s**。
+- 全量 `--tag core`：**406 PASS / 0 SKIP / 0 FAIL · 11761.73 s = 3.27 h · 一次绿**，
+  完整 core 凭证已写 `green`。
+- 全量写脏的 `ecosystem_d98.json` / `verification_report.json` / `verification_report.md`
+  已还原，只保留 `k0_audit.json` 的版本改动。
+
 ## v0.9.412（2026-11-13 · **F2 第二批：时序引脚接线** · 净增 0 锚 · CI core **406**）
 
 ### 一句话

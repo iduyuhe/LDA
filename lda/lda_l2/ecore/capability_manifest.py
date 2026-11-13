@@ -774,13 +774,34 @@ ECORE_CAPABILITY_MANIFEST = [
                       "② 派生 M1 包围不能手写 `round(cy)±k`：孔的 y0 是 `int(round(cy−22.5))`，"
                       "偶数舍入使两组孔的补偿量不等 ⇒ 首跑 4 条 `cont_enc_m1` 差 1–2 nm；"
                       "改用 `_cont_box` 取孔的整数边界。`cell_area_um2_at(kind, w_p_nm)` 走**真几何**"
-                      "重建（`build_*(w_p_nm=)`）算反事实面积，不用高度外推",
+                      "重建（`build_*(w_p_nm=)`）算反事实面积，不用高度外推"
+                      "✅ **v0.9.413 补 A1 时序单元版图 `CELLS_DH`**：`build_dff_dh`（22T 主从 DFF，"
+                      "11 列独立 DIFF 岛 · **4010×4370 nm**）/ `build_buf_dh`（4T 两级 INV · 860×1950 nm）。"
+                      "🔴 **独立集合，绝不并入 `CELLS`**：`CELL_W_UM=0.98` 是早绑定常量、"
+                      "`row_height_um()` 动态取 `CELLS` 的 max ⇒ 一旦并入，行高 1.95→4.37 会顶起主链 "
+                      "c17 的 9 个固定口径（EC-G37 用「强行并入」反事实例证）。两单元**不等高**，"
+                      "双库布局的行高与 `pitch_x` 必须由调用方按实际 max 单独返回，不得复用 `CELL_W_UM`。"
+                      "🔴 **口径分层（D6 已拍板）**：几何判 `run_drc(cell, rules=RULES)`（同一份检查器，"
+                      "不造第二套）；器件抽取 `extract_devices`（DFF 22/22 全抽出且全带几何 x）；"
+                      "拓扑等价**直接引用既有 `dhdlib.run_lvs_pos`**（几何序 + 单值双射，不复制实现）；"
+                      "通用 `run_lvs` 对 22 个器件的无名内部节点必报 1 条 `device_set` ⇒ 该差异"
+                      "**显式登记在 `DH_BASIS_NOTE`** 而非被消掉，只要求 short/floating_pin 皆 0。"
+                      "**报 LVS 必须写清是哪一套**。`DH_DFF_COLS` 自带拓扑表是为避免顶层反向 import "
+                      "`dhdlib` 形成循环，两处声明由 EC-G38 用多重集机核一致。"
+                      "⚠️ `PINS_V2_NOTE` 只描述 `CELLS` 三项的库级列网格；`CELLS_DH` 引脚合法性由 "
+                      "`dpnr.pin_legality(cells=)` 单独判定（EC-G36 机核 ok=True）。"
+                      "⚠️ 诚实边界同 B1：自建 LDA-DEMO45 规则集、非 foundry PDK、非 SPICE、"
+                      "`claimable=False`；DFF 面积 4010×4370=17.52 µm² 只作物理后果披露，"
+                      "**不作效率/性能/制造宣称**；本批仅交付可查版图，"
+                      "**不宣称 DFF 已在主链可布通**，下游消费者由后续双库布局显式启用",
         "module": "lda_l2.ecore.dcells",
         "symbols": ["build_inv", "build_nand2", "build_nor2", "cell_area_um2_at",
                     "CELLS", "RULES", "RSH", "R_CONTACT",
                     "diff_segments", "connectivity", "extract_devices", "run_drc",
                     "run_lvs", "extract_r", "gate_r", "cell_self_check", "B1_DISCLOSURE",
-                    "PINS_V2_NOTE"],
+                    "PINS_V2_NOTE",
+                    "build_dff_dh", "build_buf_dh", "CELLS_DH", "DH_DFF_COLS",
+                    "DH_LEVEL_NET", "DH_NET_LEVELS", "DH_BASIS_NOTE"],
         "introduced_by": "D-233 (B1)", "guard": "run_ecore_e40_smoke.py",
     },
     {

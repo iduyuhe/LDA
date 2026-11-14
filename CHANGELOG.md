@@ -15,7 +15,7 @@
 |---|---|
 | 既有 11 段 payload 按名逐字节不变 | ✅ |
 | 主链 9 数（布通 / DRC / 面积 / 时序 / slack / T_ref / DEF / EM / claimable）逐位不变 | ✅ |
-| 整个 `report` 的 JSON 字节数不变 | ❌ 20126 → **23526**（**+3400 B / +4.2%**） |
+| 整个 `report` 的 JSON 字节数不变 | ❌ 20126 → **23548**（**+3422 B / +17.0%**） |
 | 段数不变 | ❌ 11 → **14** |
 
 ⇒ 定义：**零漂移 = 既有 11 段 payload 逐字节不变 ∧ 主链 9 数逐位不变**；
@@ -63,7 +63,7 @@ PVT 按角缩放 tau，两条完全独立的判据指向同一张网。
 
 - `lda_l2/ecore/db3_trunk.py`：新增 `spef` / `pvt` / `ir` 三段（插在 `u7` 之后、
   `def_write` 之前）+ `import math`；无节点的网跳过并登记 `n_nets_no_metal`
-- `lda_l2/ecore/dsignoff.py`：`CPP_FRINGE` 注释改口（20126 B → 23526 B，写明新口径）
+- `lda_l2/ecore/dsignoff.py`：`CPP_FRINGE` 注释改口（20126 B → 23548 B，写明新口径）
 - `lda_l2/ecore/capability_manifest.py`：`db3_trunk` 能力登记追加 F5 主体（含三条诚实边界）
 - `lda/run_ecore_s13_smoke.py`：新增 **EC-G50~G53**（250 → **254** 判据，AST 实测，`def check(` = 0）·
   EC-G26 段数 11→14 · EC-G49 改口更严

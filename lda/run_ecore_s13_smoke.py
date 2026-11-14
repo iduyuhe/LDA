@@ -4103,6 +4103,55 @@ def main() -> int:
           % (_f3_ext.t_clk_min_ps, _f3_tref, "clock" in _f3_c17_rep,
              "clock" in _f3_b))
 
+    # ── F5 前置 · 线电容模型标定（v0.9.416）────────────────────────────────
+    # 为什么先标定：`dspef` 抽出的总电容比主链集总模型小 8.95×，根因是
+    # `dsignoff.wire_c` 的 `CPP_FRINGE=0.02` 让「侧壁项」贡献不足 1% ⇒ 等于把线电容
+    # 当成对衬底平板电容（60nm 宽 × 0.6µm 介质 ⇒ 3.5e-3 fF/µm，比经验值小 51.7×）。
+    # 标定后 60nm 命中 0.2 fF/µm ⇒ 两模型差从 8.95× 收到 13.3%，**且不动主链一个字节**。
+    from lda_l2.ecore import dextract as _DE                    # noqa: E402
+
+    _cal = DS.WIRE_C_CALIBRATION
+    _cal_c60 = DS.wire_c(1.0, _cal["anchor_width_um"])
+    _cal_curve = [DS.wire_c(1.0, w) for w in (0.06, 0.10, 0.24, 0.48, 1.0)]
+    check("EC-G48 **线电容标定点机核**：`wire_c(1µm, %.2fµm) = %.6f fF/µm`（目标 %.2f，"
+          "相对差 %.4f%%）；60–240nm 落在 %.4f–%.4f（平坦 ⇒ 这正是 `dextract` 敢用常数的"
+          "物理依据）；宽度单调 %r；线性与可加性仍成立；`WIRE_C_CALIBRATION.cpp_fringe` "
+          "与代码常量一致（%.6f）⇒ 防「文档一套、代码另一套」"
+          % (_cal["anchor_width_um"], _cal_c60, _cal["anchor_c_ff_per_um"],
+             100 * abs(_cal_c60 - 0.2) / 0.2, _cal_curve[0], _cal_curve[2],
+             _cal_curve == sorted(_cal_curve), DS.CPP_FRINGE),
+          abs(_cal_c60 - _cal["anchor_c_ff_per_um"]) < 4e-4
+          and all(0.195 <= c <= 0.215 for c in _cal_curve[:3])
+          and _cal_curve == sorted(_cal_curve)
+          and abs(DS.wire_c(10.0, 0.24) - 2.0 * DS.wire_c(5.0, 0.24))
+          < 1e-12 * max(1.0, DS.wire_c(10.0, 0.24))
+          and abs(sum(DS.wire_c(L, 0.24) for L in (2.0, 3.0, 5.0))
+                  - DS.wire_c(10.0, 0.24)) < 1e-12
+          and abs(_cal["cpp_fringe"] - DS.CPP_FRINGE) < 1e-12
+          and _cal["changes_main_chain"] is False,
+          "c60=%.6f curve=%r" % (_cal_c60, [round(c, 6) for c in _cal_curve]))
+
+    # 真实反事实：把 `CPP_FRINGE` 临时退回旧值 0.02 ⇒ 主链报告必须**逐字节不变**
+    _cal_base = _json.dumps(B3.run_trunk(_g31_c17), sort_keys=True, default=str)
+    _cal_oldk = DS.CPP_FRINGE
+    DS.CPP_FRINGE = _cal["prior_value"]
+    try:
+        _cal_back = _json.dumps(B3.run_trunk(_g31_c17), sort_keys=True, default=str)
+    finally:
+        DS.CPP_FRINGE = _cal_oldk
+    _cal_ratio = DS.wire_c(1.0, 0.06) / _cal["plate_only_ff_per_um"]
+    check("EC-G49 **标定不动主链（真实反事实）+ 与集总模型对齐**：临时把 `CPP_FRINGE` "
+          "退回旧值 %.4f，`run_trunk(c17)` 全报告仍**逐字节相同**（%d B）⇒ `timing` 段确实"
+          "不经过 `wire_c`；单根 60nm 线的 `wire_c` 与 `dextract` 的 %.2f fF/µm 相对差 "
+          "%.4f%% ⇒ 两模型同一量级（残差 %r 已显式登记为「dextract 不分层」）"
+          % (_cal["prior_value"], len(_cal_base), _DE.C_WIRE_FF_PER_UM,
+             100 * abs(_cal_c60 - _DE.C_WIRE_FF_PER_UM) / _DE.C_WIRE_FF_PER_UM,
+             _cal["residual_vs_dextract"]),
+          _cal_base == _cal_back and DS.CPP_FRINGE == _cal_oldk
+          and abs(_cal_c60 - _DE.C_WIRE_FF_PER_UM) / _DE.C_WIRE_FF_PER_UM < 0.02
+          and _cal_ratio > 50.0,
+          "equal=%r ratio_vs_plate=%.1f" % (_cal_base == _cal_back, _cal_ratio))
+
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)
 

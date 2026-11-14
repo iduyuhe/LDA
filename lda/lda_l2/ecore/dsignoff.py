@@ -40,7 +40,35 @@ EPS0 = 8.854e-12          # F/m
 EPSR_ILD = 4.0            # SiO₂ 相对介电常数
 H_ILD_UM = 0.6            # M3 到衬底的有效介质厚度
 T_METAL_UM = 0.14         # 金属厚度（M3/M4）
-CPP_FRINGE = 0.02         # 边缘电容系数（每边，按 w 归一）—— 一阶修正
+#: 🔴 **v0.9.416 标定（F5 前置）**：60nm 宽 M1 的线电容应为 **~0.2 fF/µm**（45nm 量级工艺的
+#: 业界经验量级，也正是 `dextract.C_WIRE_FF_PER_UM` 用的那个量级）。而「对衬底平板」在
+#: `H_ILD_UM=0.6` 下只有 **3.542e-3 fF/µm**（60nm 宽）⇒ 差 **56×** 的部分来自
+#: **侧壁/边缘场**（60nm 的线只有 60nm 底板，却有 2×0.14µm 侧壁）。
+#: 原值 `0.02` 是**凭空的**：它让 `wire_c` 比经验值小 **51.7×**（60nm）/ **13.8×**（240nm），
+#: 也使 `dspef` 抽出的总电容比主链集总模型小 **8.95×** —— 两个模型不可互换。
+#: 标定：`wire_c(1µm, 0.06µm) == 0.200000 fF/µm` ⇒ `CPP_FRINGE = 11.8868`。
+#: ⚠️ 标定后 60–240nm 落在 **0.200–0.211（±5%）**，这恰恰是 `dextract` 敢用「与宽度无关
+#: 的常数 0.2」的物理依据（平板 ∝ w 与侧壁 ∝ 1/w 相乘近似抵消）；宽线（>1µm）升到
+#: 0.26–0.49（物理上合理：宽线由平板主导）。
+#: 🔴 **不改主链**：`timing` 段用 `dextract.C_WIRE_FF_PER_UM`，**不经过本函数**
+#: （A/B 实测：改 `CPP_FRINGE` 前后 `run_trunk(c17)` 全报告 **20126 B 逐字节相同**）。
+CPP_FRINGE = 11.8868      # 标定：使 wire_c(1µm, 0.06µm) == 0.2000 fF/µm
+
+#: 标定记录（供判据机核 + 外部复核）。改任何一项都必须同步改本字典。
+WIRE_C_CALIBRATION = {
+    "anchor_width_um": 0.06,
+    "anchor_c_ff_per_um": 0.2,
+    "plate_only_ff_per_um": 0.003542,
+    "cpp_fringe": CPP_FRINGE,
+    "sidewall_share": "0.196458 / 0.200000 = 98.2% 来自侧壁/边缘场",
+    "flatness": "w=0.06..0.24 µm ⇒ 0.200000..0.210625（±5%）",
+    "wide_line_trend": "w=1/2/5 µm ⇒ 0.255/0.315/0.492 fF/µm（平板主导，物理合理）",
+    "residual_vs_dextract": ("SPEF Σc=13.7156 fF vs 主链 15.812 fF = −13.3%"
+                             "（dextract 不分层；宽线 wire_c 更高，故差额不是单调的）"),
+    "changes_main_chain": False,
+    "prior_value": 0.02,
+    "prior_was": "凭空的（无出处），导致 wire_c 比经验值小 51.7×@60nm / 13.8×@240nm",
+}
 
 RSH = {"M3": 0.12, "M4": 0.10}      # Ω/□（演示量级）
 C_LOAD_FF = 1.0                     # 典型扇出负载电容（假设）
@@ -70,9 +98,13 @@ def wire_r(length_um: float, width_um: float, layer: str = "M3") -> float:
 
 
 def wire_c(length_um: float, width_um: float) -> float:
-    """一阶电容（fF）：平板 `ε₀ε_r·A/h` × 边缘因子 `(1+2·t/w·CPP_FRINGE_ratio)`。
+    """一阶线电容（fF）：平板 `ε₀ε_r·A/h` ×（`1 + 2·t/w·CPP_FRINGE`）。
 
-    单位换算：F → fF ×1e15；长度/宽度以 µm 传入。
+    🔴 `CPP_FRINGE` 在本仓是「**侧壁 + 边缘场的总系数**」，不是「每边一个小修正」——
+    v0.9.416 标定后它使 60nm 线命中 0.2 fF/µm（侧壁占 98.2%），见 `WIRE_C_CALIBRATION`。
+    原值 0.02 让侧壁项贡献不足 1%，等于把「线电容」错当成「对衬底平板电容」。
+
+    单位换算：F → fF ×1e15；长度/宽度以 µm 传入。`wire_c(1.0, w)` 就是 fF/µm。
     """
     a_m2 = (length_um * 1e-6) * (width_um * 1e-6)
     h_m = H_ILD_UM * 1e-6

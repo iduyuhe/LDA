@@ -848,11 +848,26 @@ ECORE_CAPABILITY_MANIFEST = [
                       "只有 `dcell.py` 的定义处）⇒ 功耗域只有动态、没有静态。现新增顶层键 `leakage`"
                       "（`by_cell` / `total_nw` / `per_gate_nw` / `basis=SYMBOLIC` / `not_claimed`），"
                       "**不动 `rows`（恒 12）**、`scope=DIAGNOSTIC_ONLY`、`in_blocking=False`。"
-                      "⚠️ 「参数有定义、无消费者」是一种**静默能力缺口** —— 只查定义不查调用的判据发现不了它",
+                      "⚠️ 「参数有定义、无消费者」是一种**静默能力缺口** —— 只查定义不查调用的判据发现不了它"
+                      "🔴 **v0.9.416 线电容标定（F5 前置）**：`wire_c` 的 `CPP_FRINGE` 原值 `0.02` 是**凭空的**，"
+                      "它让「侧壁/边缘场」贡献不足 1%，等于把线电容当成**对衬底平板电容** —— "
+                      "60nm 宽 × 0.6µm 介质只有 **3.542e-3 fF/µm**，比 45nm 量级工艺的经验值 "
+                      "**0.2 fF/µm 小 51.7×**（240nm 线小 13.8×）。后果实测：`dspef` 抽出的总电容"
+                      "比主链集总模型小 **8.95×** ⇒ **两套模型不可互换**。"
+                      "标定到 `CPP_FRINGE = 11.8868` ⇒ `wire_c(1µm, 0.06µm) = 0.200000 fF/µm`（精确命中）；"
+                      "60–240nm 落在 **0.200–0.211（±5%）** —— 这恰恰是 `dextract` 敢用「与宽度无关的"
+                      "常数 0.2」的**物理依据**（平板 ∝w 与侧壁 ∝1/w 相乘近似抵消）；宽线（>1µm）升到"
+                      "0.26–0.49（宽线由平板主导，物理合理）。标定后 SPEF/主链 从 8.95× 收到 **13.3%**"
+                      "（残差登记为「`dextract` 不分层」）。"
+                      "🔴 **不动主链**：`timing` 段走 `dextract.C_WIRE_FF_PER_UM`，不经过 `wire_c` —— "
+                      "EC-G49 用**真实反事实**（临时退回旧值 0.02 再跑 `run_trunk(c17)`）机核"
+                      "「全报告逐字节相同」。⚠️ e42/e43/e47 的判据都是**结构性**（线性/可加/单调/"
+                      "内部一致），标定后仍全绿；`WIRE_C_CALIBRATION` 记录标定点与残差供外部复核",
         "module": "lda_l2.ecore.dsignoff",
         "symbols": ["wire_r", "wire_c", "net_rc", "elmore_closed", "elmore_ladder",
                     "delay_at_corner", "corner_table", "ir_drop_closed", "ir_drop_ladder",
-                    "em_check", "CORNERS", "B3_DISCLOSURE"],
+                    "em_check", "CORNERS", "B3_DISCLOSURE",
+                    "CPP_FRINGE", "WIRE_C_CALIBRATION"],
         "introduced_by": "D-235 (B3)", "guard": "run_ecore_e42_smoke.py",
     },
     {

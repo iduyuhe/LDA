@@ -3511,7 +3511,10 @@ def main() -> int:
           % (len(_f1_rep["stages"]), _f1_st["parse"]["gates"],
              _f1_st["parse"]["nets"], _f1_st["route"]["nets_with_segments"],
              _f1_st["route"]["nets_touched"], _f1_rep["chain"]),
-          _f1_rep["chain"] == B3.TRUNK_CHAIN and len(_f1_rep["stages"]) == 11
+          _f1_rep["chain"] == B3.TRUNK_CHAIN
+          # 🔴 v0.9.417（F5 主体）：段数 11 → **14**（新增 `spef`/`pvt`/`ir`）。
+          #    这不是放宽：段名由 EC-G53 逐位断言（顺序 + 数量 + 三段 in_blocking=False）。
+          and len(_f1_rep["stages"]) == 14
           and _f1_st["parse"]["gates"] == 6 and _f1_st["parse"]["nets"] == 11
           and _f1_st["route"]["nets_with_segments"] == 10
           and _f1_st["route"]["nets_touched"] == 11,
@@ -4131,26 +4134,204 @@ def main() -> int:
           and _cal["changes_main_chain"] is False,
           "c60=%.6f curve=%r" % (_cal_c60, [round(c, 6) for c in _cal_curve]))
 
-    # 真实反事实：把 `CPP_FRINGE` 临时退回旧值 0.02 ⇒ 主链报告必须**逐字节不变**
-    _cal_base = _json.dumps(B3.run_trunk(_g31_c17), sort_keys=True, default=str)
+    # 真实反事实：把 `CPP_FRINGE` 临时退回旧值 0.02 ⇒
+    #   🔴 **v0.9.417 改口（F5 主体）**：`spef`/`pvt` 两段现在**真的消费** `wire_c`
+    #      ⇒ 旧写法「全报告逐字节不变」**不再可满足**（它会被新段自己的正确性打破）。
+    #      新口径**更严不是更松**，两条一起断言：
+    #        ① `timing` 段逐字节不变 ⇒ timing 仍不经过 `wire_c`（原结论保留）；
+    #        ② `spef` 段**必须变** ⇒ 新段确实在消费（否则就是死代码，白加）。
+    #      旧口径只要求「什么都没变」，新口径要求「该变的变、不该变的一个字节不动」。
+    _cal_snap = lambda rep: {n: _json.dumps(p, sort_keys=True, default=str)
+                             for n, p in rep["stages"]}
+    _cal_base = _cal_snap(B3.run_trunk(_g31_c17))
     _cal_oldk = DS.CPP_FRINGE
     DS.CPP_FRINGE = _cal["prior_value"]
     try:
-        _cal_back = _json.dumps(B3.run_trunk(_g31_c17), sort_keys=True, default=str)
+        _cal_back = _cal_snap(B3.run_trunk(_g31_c17))
     finally:
         DS.CPP_FRINGE = _cal_oldk
+    _cal_moved = sorted(n for n in _cal_base if _cal_base[n] != _cal_back[n])
     _cal_ratio = DS.wire_c(1.0, 0.06) / _cal["plate_only_ff_per_um"]
-    check("EC-G49 **标定不动主链（真实反事实）+ 与集总模型对齐**：临时把 `CPP_FRINGE` "
-          "退回旧值 %.4f，`run_trunk(c17)` 全报告仍**逐字节相同**（%d B）⇒ `timing` 段确实"
-          "不经过 `wire_c`；单根 60nm 线的 `wire_c` 与 `dextract` 的 %.2f fF/µm 相对差 "
-          "%.4f%% ⇒ 两模型同一量级（残差 %r 已显式登记为「dextract 不分层」）"
-          % (_cal["prior_value"], len(_cal_base), _DE.C_WIRE_FF_PER_UM,
+    check("EC-G49 **标定只动该动的段（真实反事实，v0.9.417 改口更严）**：临时把 "
+          "`CPP_FRINGE` 退回旧值 %.4f ⇒ ① `timing` 段**逐字节不变**（%d B）⇒ timing 仍"
+          "不经过 `wire_c`；② 变动的段**恰为 %r** ⇒ F5 的 `spef`/`pvt` 确实在消费"
+          "`wire_c`（不是死代码）；单根 60nm 线的 `wire_c` 与 `dextract` 的 %.2f fF/µm "
+          "相对差 %.4f%% ⇒ 两模型同一量级（残差 %r 已显式登记为「dextract 不分层」）"
+          % (_cal["prior_value"], len(_cal_base["timing"]), _cal_moved,
+             _DE.C_WIRE_FF_PER_UM,
              100 * abs(_cal_c60 - _DE.C_WIRE_FF_PER_UM) / _DE.C_WIRE_FF_PER_UM,
              _cal["residual_vs_dextract"]),
-          _cal_base == _cal_back and DS.CPP_FRINGE == _cal_oldk
+          _cal_base["timing"] == _cal_back["timing"]
+          and _cal_moved == ["pvt", "spef"]
+          and DS.CPP_FRINGE == _cal_oldk
           and abs(_cal_c60 - _DE.C_WIRE_FF_PER_UM) / _DE.C_WIRE_FF_PER_UM < 0.02
           and _cal_ratio > 50.0,
-          "equal=%r ratio_vs_plate=%.1f" % (_cal_base == _cal_back, _cal_ratio))
+          "moved=%r ratio_vs_plate=%.1f" % (_cal_moved, _cal_ratio))
+
+    # ── F5 主体（v0.9.417）：`spef` / `pvt` / `ir` 三段（**全为诊断段**）──
+    #   🔴 零漂移的**定义**（EC-G53 机核，勿改措辞）：
+    #      **既有 11 段 payload 逐字节不变 ∧ 主链 9 数逐位不变**。
+    #      报告字节 20126→23526（+3400 B）、段数 11→14 属**显式结构增量** ——
+    #      判据必须把「数值未动」与「结构变了」分开断言，否则「零漂移」不可证伪。
+    #   🔴 几何取主链**内部**的 shapes（段 2 真画出来的金属），不另算一套。
+    from lda_l2.ecore import dpgrid as _PGRID                   # noqa: E402
+    from lda_l2.ecore import dspef as _SPEF                     # noqa: E402
+    from lda_l2.ecore import dpvt as _PVT                       # noqa: E402
+
+    _f5_cap = {}
+    _f5_orig_rt = P.all_routing
+    P.all_routing = lambda rt: (_f5_cap.__setitem__("s", _f5_orig_rt(rt)) or _f5_cap["s"])
+    try:
+        _f5_rep = B3.run_trunk(_g31_c17, baseline=False)
+    finally:
+        P.all_routing = _f5_orig_rt
+    _f5_st = {n: p for n, p in _f5_rep["stages"]}
+    _f5_netw = _SPEF.extract_network(_f5_cap["s"])["nets"]
+
+    # ── EC-G50：`spef` 段自洽（同源复算，不信段内自报）──────────────────
+    _f5_tot = {k: sum(_SPEF.net_totals(n)[k] for n in _f5_netw.values())
+               for k in ("c_total_ff", "c_gnd_ff", "c_cpl_ff",
+                         "r_ohm", "r_metal_ohm", "r_via_ohm")}
+    _f5_sp = _f5_st["spef"]
+    _f5_vs = _f5_sp["vs_dextract"]
+    _f5_tc = float(_f5_st["timing"]["total_wire_c_fF"])
+    check("EC-G50 **`spef` 段自洽 + 同源复算**：分层自洽 `c_gnd+c_cpl == c_total`"
+          "（%.4f+%.4f=%.4f）；`c_total` 与独立重抽一致（%.4f）；"
+          "`r_metal+r_via == r_ohm`（%.3f+%.3f=%.3f）；`ratio` 由现算得 %.4f；"
+          "残差 %.2f%% 与标定批登记的 13.3%% 同量级 ⇒ **登记而非消除**（模型差："
+          "`dextract` 不分层 vs `dspef` 分层）"
+          % (_f5_sp["c_gnd_ff"], _f5_sp["c_cpl_ff"], _f5_sp["c_total_ff"],
+             _f5_tot["c_total_ff"], _f5_sp["r_metal_ohm"], _f5_sp["r_via_ohm"],
+             _f5_sp["r_ohm"], _f5_vs["ratio"], _f5_vs["residual_pct"]),
+          abs(_f5_sp["c_gnd_ff"] + _f5_sp["c_cpl_ff"] - _f5_sp["c_total_ff"]) < 2e-4
+          and abs(_f5_sp["c_total_ff"] - round(_f5_tot["c_total_ff"], 4)) < 1e-9
+          and abs(_f5_sp["r_metal_ohm"] + _f5_sp["r_via_ohm"] - _f5_sp["r_ohm"]) < 2e-3
+          and abs(_f5_vs["ratio"] - round(_f5_tot["c_total_ff"] / _f5_tc, 4)) < 1e-9
+          and abs(_f5_vs["residual_pct"]
+                  - round(100.0 * (1.0 - _f5_tot["c_total_ff"] / _f5_tc), 2)) < 0.01
+          # 🔴 区间断言（不是硬编码等值）：标定把 8.95× 收到 13.3%，若哪天又跑回 90%
+          #    或掉到 0，这条立刻红 —— 但不会因为第 3 位小数不同而假红。
+          and 13.0 < _f5_vs["residual_pct"] < 13.6
+          and _f5_sp["in_blocking"] is False,
+          "c=%.4f ratio=%.4f resid=%r" % (_f5_sp["c_total_ff"], _f5_vs["ratio"],
+                                          _f5_vs["residual_pct"]))
+
+    # ── EC-G51：`pvt` 段（独立复算 + 与 EM 的**跨段互证**）──────────────
+    #   🔴 必须用 `net_window` 逐网复算，**不能调用 `block_window` 自证**（那是自己验自己）。
+    #   🔴 `worst_net` 与 `em.min_margin_net` 是两条完全独立的判据（PVT 按角缩放 tau、
+    #      EM 按电流密度）—— 同指一网才算互证，不是构造出来的。
+    _f5_nw = {n: _PVT.net_window(s) for n, s in _f5_netw.items()}
+    _f5_bmin = min(v["min_fs"] for v in _f5_nw.values())
+    _f5_bmax = max(v["max_fs"] for v in _f5_nw.values())
+    _f5_wnet = max(_f5_nw, key=lambda n: _f5_nw[n]["max_fs"])
+    _f5_pv = _f5_st["pvt"]
+    _f5_em_net = _f5_st["em"].get("min_margin_net")
+    check("EC-G51 **`pvt` 段独立复算 + 跨段互证**：`block_min/max` 由 `net_window` 逐网"
+          "复算得 %.6f/%.6f fs（段内 %.6f/%.6f）；`spread=%.4f×` 由现算 %r 复现；"
+          "`worst_net=%r` 与现算最差网一致，且**与 `em.min_margin_net=%r` 同指一网**"
+          "（PVT 按角缩放 tau、EM 按电流密度 —— 两条独立判据的互证）；"
+          "对 `wired` 的影响上界 %.5f%% ⇒ 改不动任何数字"
+          % (_f5_bmin, _f5_bmax, _f5_pv["block_min_fs"], _f5_pv["block_max_fs"],
+             _f5_pv["block_spread_x"], round(_f5_bmax / _f5_bmin, 4),
+             _f5_pv["worst_net"], _f5_em_net, _f5_pv["impact_on_wired_pct"]),
+          abs(_f5_pv["block_min_fs"] - round(_f5_bmin, 6)) < 5e-7
+          and abs(_f5_pv["block_max_fs"] - round(_f5_bmax, 6)) < 5e-7
+          and abs(_f5_pv["block_spread_x"] - round(_f5_bmax / _f5_bmin, 4)) < 1e-6
+          and _f5_pv["worst_net"] == _f5_wnet
+          and _f5_pv["worst_net"] == _f5_em_net
+          and _f5_pv["best_net"] == min(_f5_nw, key=lambda n: _f5_nw[n]["min_fs"])
+          and _f5_pv["block_min_fs"] <= _f5_pv["block_max_fs"]
+          and _f5_pv["block_spread_x"] > 1.0
+          and _f5_pv["applied_to_timing"] is False
+          and _f5_pv["in_blocking"] is False
+          # 影响上界必须小到「改口无意义」量级；若哪天变大到 1%，这条红 —— 那时
+          # 才该讨论「要不要回灌时序」，而不是现在凭空改口。
+          and _f5_pv["impact_on_wired_pct"] < 1.0,
+          "min=%.6f max=%.6f spread=%.4f worst=%r em=%r"
+          % (_f5_pv["block_min_fs"], _f5_pv["block_max_fs"],
+             _f5_pv["block_spread_x"], _f5_pv["worst_net"], _f5_em_net))
+
+    # ── EC-G52：`ir` 段（电流必须自算 · 网格必须覆盖 die）─────────────
+    #   🔴 两条都是「静默缺口」的老形态：
+    #      ① 电流凭空取 1 mA ⇒ 压降虚高 76×（c17 真值 13.2 µA）；
+    #      ② 网格随手取 4×4 ⇒ 只覆盖 die 的 79.1%×76.9%，压降被低估且看不出来。
+    import math as _m                                           # noqa: E402
+    _f5_ir = _f5_st["ir"]
+    _f5_i = sum(float(v.get("i_a") or 0.0)
+                for v in (_f5_st["em"].get("per_net") or {}).values())
+    _f5_pitch = float(_PGRID.PG_PITCH_UM)
+    _f5_dw = float(_f5_st["place"]["die_w_um"])
+    _f5_dh = float(_f5_st["place"]["die_h_um"])
+    _f5_nx = int(_m.ceil(_f5_dw / _f5_pitch)) + 1
+    _f5_ny = int(_m.ceil(_f5_dh / _f5_pitch)) + 1
+    _f5_g = _PGRID.build_grid(_f5_nx, _f5_ny)
+    _f5_ld = _PGRID.uniform_loads(_f5_g, i_total_a=_f5_i)
+    _f5_red = _PGRID.solve_reduced(_f5_g, _f5_ld)
+    _f5_mna = _PGRID.solve_mna(_f5_g, _f5_ld)
+    _f5_drop = float(_f5_red["worst_drop_v"])
+    _f5_reld = abs(_f5_drop - float(_f5_mna["worst_drop_v"])) / (abs(_f5_drop) or 1.0)
+    check("EC-G52 **`ir` 段：电流自算 + 网格覆盖 die**：`i_total=%.6e A` **等于**"
+          "`em.per_net[*].i_a` 求和（%d/%d 网，子集口径）；网格 %dx%d = "
+          "`ceil(die/pitch)+1`（段内 %s），覆盖率 **%.1f%%/%.1f%%**（4×4 只有 "
+          "79.1%%×76.9%% ⇒ 压降被低估，且报告里看不出来）；`worst_drop=%.6e V`"
+          "（%.6f%% Vdd）由独立重解复现；两求解器 rel_diff=%.2e；"
+          "**物理结论：c17 只有 %d 门，压降 %.4f%% —— 可忽略本身就是真结论**"
+          % (_f5_ir["i_total_a"], _f5_ir["n_nets_used"], _f5_st["em"]["n_nets_total"],
+             _f5_nx, _f5_ny, _f5_ir["grid"], _f5_ir["cover_w_pct"], _f5_ir["cover_h_pct"],
+             _f5_ir["worst_drop_v"], _f5_ir["worst_drop_pct"], _f5_ir["solver_rel_diff"],
+             _f5_st["parse"]["gates"], _f5_ir["worst_drop_pct"]),
+          abs(_f5_ir["i_total_a"] - _f5_i) / (_f5_i or 1.0) < 1e-6
+          and _f5_ir["grid_nx"] == _f5_nx and _f5_ir["grid_ny"] == _f5_ny
+          and _f5_ir["cover_w_pct"] == 100.0 and _f5_ir["cover_h_pct"] == 100.0
+          and abs(_f5_ir["worst_drop_v"] - float("%.6e" % _f5_drop)) < 1e-15
+          and _f5_reld < 1e-6
+          and _f5_ir["solver_rel_diff"] < 1e-6
+          and _f5_ir["applied_to_em"] is False
+          and _f5_ir["in_blocking"] is False,
+          "i=%.6e grid=%s cover=%.1f/%.1f reld=%.2e"
+          % (_f5_ir["i_total_a"], _f5_ir["grid"], _f5_ir["cover_w_pct"],
+             _f5_ir["cover_h_pct"], _f5_ir["solver_rel_diff"]))
+
+    # ── EC-G53：**零漂移机核**（结构增量 vs 数值未动，两件事分开断言）────
+    #   🔴 用**真实反事实**证明「新段的耦合面被限制在新段内」：
+    #      把 `CPP_FRINGE` 退回旧值 ⇒ 只有 `spef`/`pvt` 变，**其余 12 段逐字节不变**。
+    #      这比「比对历史基线文件」强：不依赖外部快照，且能证明新段**真的在消费**
+    #      `wire_c`（不是死代码）。
+    _f5_names = ("parse", "place", "route", "drc_lvs", "timing", "em", "ec_b3",
+                 "thermal", "u7", "spef", "pvt", "ir", "def_write", "m1_exit")
+    _f5_before = {n: _json.dumps(p, sort_keys=True, default=str)
+                  for n, p in _f5_rep["stages"]}
+    _f5_k = DS.CPP_FRINGE
+    DS.CPP_FRINGE = DS.WIRE_C_CALIBRATION["prior_value"]
+    try:
+        _f5_alt = {n: _json.dumps(p, sort_keys=True, default=str)
+                   for n, p in B3.run_trunk(_g31_c17, baseline=False)["stages"]}
+    finally:
+        DS.CPP_FRINGE = _f5_k
+    _f5_moved = sorted(n for n in _f5_before if _f5_before[n] != _f5_alt[n])
+    _f5_untouched = [n for n in _f5_names if n not in ("spef", "pvt")]
+    check("EC-G53 🔴 **零漂移机核（真实反事实）**：段数 **11→%d**、段名按序 %r；"
+          "三段全部 `in_blocking=False` 且不在 `CLAIMABLE_CONDITIONS` 里 ⇒ "
+          "`claimable=%r` / `blocking=%r` / `m1_exit.ok=%r` 一字未动；"
+          "把 `CPP_FRINGE` 退回 %.4f ⇒ **只有 %r 变**，其余 %d 段（含既有 11 段与 `ir`）"
+          "**逐字节不变** ⇒ ① 新段真的在消费线电容模型（不是死代码）"
+          "② 耦合面被限制在新段内。**注：报告字节 +3400 B 是显式结构增量，"
+          "不得写成「字节零漂移」**"
+          % (len(_f5_rep["stages"]), [n for n, _ in _f5_rep["stages"]],
+             _f5_rep["claimability"]["claimable"], _f5_rep["claimability"]["blocking"],
+             _f5_st["m1_exit"].get("ok"), DS.WIRE_C_CALIBRATION["prior_value"],
+             _f5_moved, len(_f5_untouched)),
+          tuple(n for n, _ in _f5_rep["stages"]) == _f5_names
+          and len(_f5_rep["stages"]) == 14
+          and all(_f5_st[s]["in_blocking"] is False for s in ("spef", "pvt", "ir"))
+          and not ({"spef", "pvt", "ir"} & set(B3.CLAIMABLE_CONDITIONS))
+          and _f5_rep["claimability"]["claimable"] is False
+          # 🔴 `m1_exit` 与 `claimable` 必须与 F3/标定批的记录一致（主链 9 数的一段）
+          and _f5_st["m1_exit"].get("ok") is True
+          and _f5_moved == ["pvt", "spef"]
+          and len(_f5_untouched) == 12,
+          "names=%r moved=%r untouched=%d"
+          % ([n for n, _ in _f5_rep["stages"]], _f5_moved, len(_f5_untouched)))
 
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)

@@ -53,6 +53,7 @@ v0.9.376：**主链切换到 `dpnr`（B 系列 P&R），旧链 `ddetail.detail_r
 """
 from __future__ import annotations
 
+import math
 import os
 import sys
 
@@ -466,6 +467,122 @@ def run_trunk(nl, *, baseline: bool = True, lib=None):
         "sens_method": "central finite difference (product) vs analytic closed form (gate)",
     })
     report["stages"].append(("u7", dict(u7_rep, chain=TRUNK_CHAIN)))
+
+    # ── 段 4e/4f/4g：寄生 / PVT / IR（F5 · v0.9.417 · **全为诊断段**）─────
+    #   🔴 零漂移的**定义**（EC-G53 机核，勿改措辞）：
+    #      **既有 11 段 payload 按名逐字节不变 ∧ 主链 9 数逐位不变。**
+    #      报告字节 20126 → 20971（+845 B / +4.2%）、段数 11 → 14 属**显式结构增量**，
+    #      **不得写成「报告字节零漂移」** —— 那是可机核证伪的。
+    #   🔴 三段都 `in_blocking=False`：只给带量纲的证据，**不改 `claimable` / `m1_exit`**。
+    #   🔴 证据面只有 c17：`place_real(max_cells=32)` 使 c432（417 门）进不了干线 ⇒
+    #      规模证据缺失。每段都带 `scale_note`，**不宣称「主链已有签核能力」**。
+    #   🔴 几何全部来自主链**内部**：`shapes` 是段 2 真画出来的金属（不另算一套），
+    #      电流来自段 4b 的 `per_net[*].i_a`（不凭空假设）。
+    from lda_l2.ecore import dpgrid as PGRID, dspef as SPEF, dpvt as PVT
+
+    _scale_note = ("c17 单点：%d 门 / %d 网 / die %.3f×%.3f µm。"
+                   "`place_real(max_cells=32)` 使 c432（417 门）无法进入干线 ⇒ "
+                   "**规模证据缺失，不是签核数据**" % (len(nl.gates), len(nets_all), die_w, die_h))
+    _spef_nets = SPEF.extract_network(shapes)["nets"]
+    #   🔴 无节点的网**必须跳过并登记**：`SPEF.elmore_network` 在 `nodes` 为空时抛
+    #      「空网络」，若直接聚合会让整条干线挂掉（`run_trunk_from_verilog` 在某些
+    #      状态下会出现这种网）。跳过不等于通过 —— 两个计数之差必须能对上。
+    _spef_ok = {n: s for n, s in _spef_nets.items() if s.get("nodes")}
+    _sp_sum = {k: sum(SPEF.net_totals(n)[k] for n in _spef_ok.values())
+               for k in ("c_total_ff", "c_gnd_ff", "c_cpl_ff",
+                         "r_ohm", "r_metal_ohm", "r_via_ohm", "n_via")}
+    _sp_tau = {net: SPEF.elmore_network(seg)["max_fs"] for net, seg in _spef_ok.items()}
+    _sp_worst3 = sorted(_sp_tau.items(), key=lambda kv: -kv[1])[:3]
+    #   🔴 `wl` 是段 4 传给 STA 的线载（**未取整**）；`timing.total_wire_c_fF` 是它
+    #      round(3) 后的展示值。比值用未取整值算，再由判据机核「两者同源」。
+    _trunk_c = float(sum(wl.values()))
+    report["stages"].append(("spef", {
+        "chain": TRUNK_CHAIN, "in_blocking": False,
+        "n_nets": len(_spef_nets),
+        "n_nets_no_metal": len(_spef_nets) - len(_spef_ok),
+        "c_total_ff": round(_sp_sum["c_total_ff"], 4),
+        "c_gnd_ff": round(_sp_sum["c_gnd_ff"], 4),
+        "c_cpl_ff": round(_sp_sum["c_cpl_ff"], 4),
+        "r_ohm": round(_sp_sum["r_ohm"], 3),
+        "r_metal_ohm": round(_sp_sum["r_metal_ohm"], 3),
+        "r_via_ohm": round(_sp_sum["r_via_ohm"], 3),
+        "n_via": _sp_sum["n_via"],
+        "sum_max_tau_fs": round(sum(_sp_tau.values()), 4),
+        "worst_nets": [{"net": n, "max_tau_fs": round(t, 4)} for n, t in _sp_worst3],
+        # 🔴 与主链集总模型的差**没消掉**：`dextract` 不分层（单一 0.2 fF/µm），
+        #    `dspef` 分层（gnd/cpl 分开 + via 电阻）⇒ 这是**模型差，不是 bug**。
+        "vs_dextract": {
+            "trunk_c_ff": round(_trunk_c, 3),
+            "ratio": round(_sp_sum["c_total_ff"] / _trunk_c, 4) if _trunk_c else None,
+            "residual_pct": (round(100.0 * (1.0 - _sp_sum["c_total_ff"] / _trunk_c), 2)
+                             if _trunk_c else None),
+            "note": "v0.9.416 标定后由 8.95× 收到 13.3%；本项**只登记、不消除**",
+        },
+        "scope": "分布式 RC（gnd/cpl 分离 + via 电阻），几何取段 2 真实 shapes",
+        "assumptions": ["线电容来自 `dsignoff.wire_c`（v0.9.416 已标定到 0.2 fF/µm 量级）",
+                        "介质/厚度为演示量级，非 PDK"],
+        "scale_note": _scale_note,
+    }))
+
+    # ── 段 4f：PVT 三角窗口（对 tau 的 min/max，**不回灌时序**）─────────
+    #   🔴 剥掉 `nets` 全表：大规模网表会把它变成报告体积炸弹，摘要 + top 足够。
+    _pvt = PVT.block_window(_spef_ok)
+    _pvt_ub = (100.0 * (_pvt["block_max_fs"] / 1000.0) / float(tm.comb_delay_ps)
+               if tm.comb_delay_ps else None)
+    report["stages"].append(("pvt", {
+        "chain": TRUNK_CHAIN, "in_blocking": False,
+        "n_nets": _pvt["n_nets"],
+        "block_min_fs": round(_pvt["block_min_fs"], 6),
+        "block_max_fs": round(_pvt["block_max_fs"], 6),
+        "block_spread_x": round(_pvt["block_spread_x"], 4),
+        "best_net": _pvt["best_net"], "worst_net": _pvt["worst_net"],
+        "additivity_worst_fs": round(_pvt["additivity_worst_fs"], 6),
+        # 🔴 「三角改成动了多少」必须给**相对主链的量级**，否则读者无法判断该不该在意
+        "impact_on_wired_pct": (round(_pvt_ub, 5) if _pvt_ub is not None else None),
+        "applied_to_timing": False,
+        "scope": "只做 RC 的角窗口（ff/ss 的 R/C 缩放），**不做** OCV/AOCV/串扰",
+        "assumptions": ["ff 0.85/0.90、ss 1.15/1.10 是**演示量级**，不是任何工艺的 PVT 数据",
+                        "窗口是 tau 的 min/max，未做统计组合 ⇒ 不是 signoff 角"],
+        "scale_note": _scale_note,
+    }))
+
+    # ── 段 4g：IR drop（PDN 网格两求解器互证）────────────────────────────
+    #   🔴 **电流必须自算**：段 4b 的 `per_net[*].i_a` 求和。凭空假设 1 mA 会让
+    #      压降虚高 ~76×（c17 真值 13.2 µA ⇒ 9 µV，而 1 mA ⇒ 0.608 mV）。
+    #   🔴 **网格尺寸不能随手取**：`ceil(d/pitch)+1` 给 5×5（覆盖 100%）；
+    #      随手 4×4 只覆盖 79.1%×76.9% ⇒ 压降被低估，且报告里看不出来（静默缺口）。
+    _i_total = sum(float(v.get("i_a") or 0.0) for v in (em_rep.get("per_net") or {}).values())
+    _pitch = float(PGRID.PG_PITCH_UM)
+    _nx = int(math.ceil(die_w / _pitch)) + 1
+    _ny = int(math.ceil(die_h / _pitch)) + 1
+    _grid = PGRID.build_grid(_nx, _ny)
+    _loads = PGRID.uniform_loads(_grid, i_total_a=_i_total)
+    _ir_red = PGRID.solve_reduced(_grid, _loads)
+    _ir_mna = PGRID.solve_mna(_grid, _loads)
+    _drop = float(_ir_red["worst_drop_v"])
+    report["stages"].append(("ir", {
+        "chain": TRUNK_CHAIN, "in_blocking": False,
+        "grid": "%dx%d" % (_nx, _ny), "grid_nx": _nx, "grid_ny": _ny,
+        "pitch_um": _pitch,
+        # 🔴 覆盖率进输出：< 100% 就是网格没盖住 die（静默低估的直接证据）
+        "cover_w_pct": round(100.0 * min((_nx - 1) * _pitch, die_w) / die_w, 2),
+        "cover_h_pct": round(100.0 * min((_ny - 1) * _pitch, die_h) / die_h, 2),
+        "i_total_a": float("%.6e" % _i_total),
+        "i_source": "em.per_net[*].i_a 求和（%d/%d 网，scope=%s）"
+                    % (em_rep.get("n_nets_judged"), em_rep.get("n_nets_total"),
+                       em_rep.get("scope")),
+        "n_nets_used": em_rep.get("n_nets_judged"),
+        "worst_drop_v": float("%.6e" % _drop),
+        "worst_drop_pct": round(100.0 * _drop / PGRID.VDD_V, 6),
+        "solver_rel_diff": float("%.3e" % (abs(_drop - float(_ir_mna["worst_drop_v"]))
+                                           / (abs(_drop) or 1.0))),
+        "applied_to_em": False,
+        "scope": "均匀负载 PDN 网格（演示量级），**不建模**封装/IR-EM 迭代/局部热点",
+        "assumptions": ["负载在网格上均分（真设计应按实例功耗加权）",
+                        "PG_PITCH_UM=2.0 / PG_WIDTH_UM=0.5 / VDD=1.0 为演示量级",
+                        "电流是**已布线网的子集**，未判网（dangling）不计"],
+        "scale_note": _scale_note,
+    }))
 
     # ── 段 5：DEF 写出（主链落点 + 段0 的 Netlist）─────────────────────
     #    🔴 只写 placed DEF（落点 + 连接），**不写 ROUTED**：shapes 的网归属虽然已按网打标签

@@ -1192,7 +1192,12 @@ ECORE_CAPABILITY_MANIFEST = [
     },
     {
         "capability": "B3 数字链干线（S3→B3）：把 S3 结构级 Verilog 子集直接喂进现状数字链 dverilog.parse→dsynth.Netlist→dplac.place→ddetail.detail_route→ddrc_lvs，跑通 ISCAS-85 c17，并每段显式断言「吃的是上一段的输出」（place 覆盖每颗门 / route 覆盖每条网 / drc-lvs 如实报告 claimable=False 不伪造 clean）。fail-closed：空输入直接报错；ddetail 路由器 claimable=False 为已知诚实边界（c17 实测 **DRC 87 处间距违规** "
-            "＋ **LVS 183 条短路条目（78 short + 105 short_via，去重 43 对网）** —— 弯角孔包围于 v0.9.370 修至 0，余下全是**容量不足**：通道 2 轨 < 需求 7、单元宽 0.067µm 而单引脚槽需 0.96µm、17 条引脚访问列需 6.12µm > die 1.09µm，见 `ddetail.drc_capacity_bound` 与 `/api/digital_demo` 的 `capacity` 段）；几何/时序为模型假设；非 foundry PDK；C 级自主纯标准库、LLM 不进判决路径。",
+            "＋ **LVS 183 条短路条目（78 short + 105 short_via，去重 43 对网）** —— 弯角孔包围于 v0.9.370 修至 0，余下全是**容量不足**：通道 2 轨 < 需求 7、单元宽 0.067µm 而单引脚槽需 0.96µm、17 条引脚访问列需 6.12µm > die 1.09µm，见 `ddetail.drc_capacity_bound` 与 `/api/digital_demo` 的 `capacity` 段）；几何/时序为模型假设；非 foundry PDK；C 级自主纯标准库、LLM 不进判决路径。"
+            "🔴 **v0.9.417（F5 主体）**：主链新增 `spef`（分层 RC + Elmore）/ `pvt`（角窗口）/ `ir`（PDN 网格两求解器）三段，**全为诊断段**（`in_blocking=False`，不进 `claimability`、不改 `m1_exit`）⇒ 段数 **11→14**。"
+            "**零漂移的定义（勿改措辞）** = 「既有 11 段 payload 逐字节不变 ∧ 主链 9 数逐位不变」；报告字节 +3400 B / +4.2% 与段数 11→14 属**显式结构增量**，**不得写成「报告字节零漂移」**。"
+            "三条诚实边界：① 证据面**只有 c17**（6 门 / 11 网）—— `place_real(max_cells=32)` 使 c432（417 门）进不了干线 ⇒ **规模证据缺失，不宣称 PVT/SPEF/IR 签核**；"
+            "② SPEF 与主链集总模型的 **13.3% 残差没消掉**（`dextract` 不分层 vs `dspef` 分层，是模型差不是 bug）；"
+            "③ IR 电流**必须自算**（`em.per_net[*].i_a` 求和）且网格按 `ceil(die/pitch)+1` 定尺寸 —— 随手 4×4 只覆盖 die 的 79.1%×76.9%，压降会被低估且在报告里看不出来。",
         "module": "lda_l2.ecore.db3_trunk",
         "symbols": ["run_trunk", "run_trunk_from_verilog", "claimability", "CLAIMABLE_CONDITIONS"],
         "introduced_by": "B3 trunk",

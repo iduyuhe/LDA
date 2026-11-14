@@ -4333,6 +4333,49 @@ def main() -> int:
           "names=%r moved=%r untouched=%d"
           % ([n for n, _ in _f5_rep["stages"]], _f5_moved, len(_f5_untouched)))
 
+    # ── 时钟感知布局：**已评估否掉**（v0.9.418）· 用「现状锁」防重开 ──────────
+    #   只「不写代码」是守不住的：下一个人（或 agent）看到「面积 5.8× / 散布 254 µm」
+    #   还会再推一遍，而且**纯几何测算会给出方向相反的乐观结论**（本批第一版探针就是）。
+    #   所以把**现状本身**变成判据：谁动布局，谁就得先解释这里为什么红。
+    import inspect as _ins                                      # noqa: E402
+    _cli_nl = CT.build()["netlist"]
+    _cli_pl = P.place_real(_cli_nl, max_cells=len(_cli_nl.gates), dh_lib=CL.CELLS_DH)
+    _cli_pos = [(i["x0"], i["y0"]) for i in _cli_pl["insts"] if i["cell"] == "DFF"]
+    _cli_diag = _m.hypot(max(p[0] for p in _cli_pos) - min(p[0] for p in _cli_pos),
+                         max(p[1] for p in _cli_pos) - min(p[1] for p in _cli_pos))
+    _cli_rows = len(set(round(p[1], 3) for p in _cli_pos))
+    _cli_area = _cli_pl["die_w_um"] * _cli_pl["die_h_um"]
+    # 独立复算：面积必须能由 rows/cols/pitch/row_pitch 复现（防「抄常量对答案」）
+    _cli_recalc = (_cli_pl["cols"] * _cli_pl["pitch_x_um"]
+                   * _cli_pl["rows"] * _cli_pl["row_pitch_um"])
+    _cli_doc = P.place_real.__doc__ or ""
+    check("EC-G54 🔴 **时钟感知布局「已判死」现状锁**：A2 统一网格现状 = 面积 "
+          "**%.2f µm²**、%d 个 DFF 跨 **%.2f µm** / **%d 行**、pitch %.3f / 行高 %.3f；"
+          "面积可由 `cols×pitch × rows×row_pitch` **独立复现**（%.1f，差 %.1f%%）⇒ "
+          "不是抄的常量；`place_real` 签名里**没有** `zone_split`（防偷偷加回）；"
+          "docstring 保留了否掉的**全部数据**（%r）⇒ 谁改布局/删披露，这条先红。"
+          "**这不是能力断言**：分行/聚簇实测布通率 16/16→6/16、16/16→8/16，"
+          "面积放大 ×2.0 归零 ⇒ E38 口袋（布通按当前顺序缝出，重排即散）"
+          % (_cli_area, len(_cli_pos), _cli_diag, _cli_rows,
+             _cli_pl["pitch_x_um"], _cli_pl["h_row_um"], _cli_recalc,
+             100 * abs(_cli_recalc / _cli_area - 1.0),
+             "已评估并否掉" in _cli_doc and "−77.0%" in _cli_doc
+             and "16/16 → 6/16" in _cli_doc),
+          len(_cli_pos) == 56
+          and abs(_cli_area - 34599.76) < 0.02
+          and abs(_cli_diag - 254.59) < 0.02
+          and _cli_rows == 35
+          and abs(_cli_recalc / _cli_area - 1.0) < 0.05
+          and "zone_split" not in _ins.signature(P.place_real).parameters
+          and "已评估并否掉" in _cli_doc
+          and "−77.0%" in _cli_doc
+          and "16/16 → 6/16" in _cli_doc
+          and "口袋" in _cli_doc,
+          "area=%.2f diag=%.2f rows=%d recalc_err=%.2f%% zone_split=%r doc=%r"
+          % (_cli_area, _cli_diag, _cli_rows, 100 * abs(_cli_recalc / _cli_area - 1.0),
+             "zone_split" in _ins.signature(P.place_real).parameters,
+             "已评估并否掉" in _cli_doc))
+
     _dt = time.time() - T0
     check("S17c 门禁耗时 %.2f s < %.0f s" % (_dt, AN_ELAPSED_MAX_S), _dt < AN_ELAPSED_MAX_S)
 

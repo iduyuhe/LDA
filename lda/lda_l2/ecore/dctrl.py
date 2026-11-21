@@ -191,7 +191,125 @@ def build(src: str = None) -> dict:
         except ValueError as exc:
             # `dcts` 自己 fail-closed（抛错）；调用方**显式登记不可用**，不静默吞掉
             out["clock"] = {"available": False, "reason": str(exc)}
+    # 🔴 v0.9.419（E38 接线）：E38a–g 七个「仅门禁研究资产」的**非门禁下游**。
+    #   设计纪律（P0 预注册 PR-1…PR-7，见 .workbuddy/LDA_E38接线_预注册判据_2026-11-21.md）：
+    #   · 只做**证据登记**，不做判决 ⇒ 不进 `CLAIMABLE_CONDITIONS`、不改 `run_trunk` 9 数；
+    #   · `published` = 各模块真发布常量（带出处）；`probe` = 本轮受限轻量探针（带截断标签），
+    #     **两者绝不互代**：probe 的 2.06% 是 max_expand 截断值，不是 E38 的 38.7% 负结果；
+    #   · 禁调任何 `*_self_check`（它们内部 `from . import dctrl` 会与 build 成环，且分钟级）；
+    #   · 只调核心函数 / 读公开常量，`module` 名逐字来自被消费模块（反向探针可定位）。
+    out["e38_evidence"] = _e38_evidence(nl)
     return out
+
+
+#: E38 证据段：受限探针预算（PR-6 成本 <5s）。
+#: 🔴 `real_place` 单次 ≈2.1s 且结果确定 ⇒ **只算一次、七个模块共享**
+#:    （初版重复调 6 次 ⇒ 16s 红；这是实现缺陷，不是放宽判据）。
+_E38_PROBE_EXPAND = 300
+_E38_PROBE_SAMPLE = 3
+
+
+def _e38_evidence(nl) -> dict:
+    """把 E38a–g 七个链外模块接成 `dctrl.build()` 的真实下游（只登记、不判决）。
+
+    🔴 **口径铁律**：`published`（离线发布值，带 commit/出处）与 `probe`（本轮轻量探针，
+    带 `truncated`/`budget` 标签）是**两个不同的量**，任何消费者不得混用。
+    probe 只回答「这条路径通不通、记账有没有丢网」，**不回答布通率高不高**。
+    """
+    from . import ddroute_grid as DG         # E38a
+    from . import ddroute_rr as RR           # E38b
+    from . import drealcell as RC            # E38c
+    from . import dpinaccess as PA           # E38d
+    from . import dspread as SP              # E38e
+    from . import dwallrr as WR              # E38f
+    from . import dpathfinder as PF          # E38g
+
+    _probe_note = ("受限轻量探针 max_expand=%d / sample=%d：只证机制非空转，"
+                   "**布通率是截断值、不得与 E38 发布值 0.387 混用**"
+                   % (_E38_PROBE_EXPAND, _E38_PROBE_SAMPLE))
+
+    # 每个模块一份：published = 模块公开常量（真出处），probe = 核心函数真实返回值。
+    # 7 个模块逐一点名（反向探针可定位：屏蔽任一 import ⇒ 对应条目消失）。
+    # 🔴 共享一次 place（≈2.1s），不重复算 —— 否则 6×2.1=16s 撞 PR-6 预算。
+    _p = SP.real_place(nl)
+    _g = DG.route_grid(nl, _p, sample=_E38_PROBE_SAMPLE)
+    _rr = RR.density_curve(nl, _p, factors=(1,), sample=_E38_PROBE_SAMPLE)
+    _pf = PF.pathfinder_real(nl, _p, sample=_E38_PROBE_SAMPLE, pf_iters=1)
+    _wr = WR.wall_break(nl, _p, wall_rr=0, max_expand=_E38_PROBE_EXPAND)
+    # 🔴 E38d 不跑 `pin_access_routability`：它内部自带一次 place（固定 ≈2.3s，
+    #    `max_expand` 再小也省不掉）⇒ 会把证据段推过 PR-6 的 5s 预算。
+    #    改为消费它自己的**公开线距常量**并做物理健全判断（0.24 < 0.36 是 E38d
+    #    的核心机制事实，零成本、可复算）；重的三要素联调仍归 e38d 专属门禁。
+
+    return {
+        "scope": "登记 E38a–g 七个链外研究资产的**证据面**，不进判决、不改主链 9 数",
+        "in_blocking": False,
+        "claimable": False,
+        "probe_note": _probe_note,
+        "modules": {
+            "E38a_grid": {
+                "module": "ddroute_grid",
+                "published": {"track_pitch_um": DG.PITCH, "w_um": DG.W, "via_um": DG.VIA},
+                "probe": {"n_nets": _g["n_nets"], "n_routed": _g["n_routed"],
+                          "accounting_ok": bool(_g.get("n_routed", 0) <= _g["n_nets"])},
+                "source": "D-225 / run_ecore_e38_smoke.py",
+            },
+            "E38b_rr": {
+                "module": "ddroute_rr",
+                "published": {"track_pitch_um": RR.PITCH},
+                "probe": {"points": len(_rr),
+                          "first": {k: _rr[0][k] for k in ("spread", "n_routed", "n_nets")
+                                    if k in _rr[0]} if _rr else {}},
+                "source": "D-226 / run_ecore_e38b_smoke.py",
+            },
+            "E38c_realcell": {
+                "module": "drealcell",
+                "published": {"area_per_tr_um2": RC.REAL_AREA_PER_TR_45,
+                              "ref": RC.REF_NANGATE45[0]},
+                "probe": {"area_um2": RC.placed_area_um2(_p),
+                          "cells_per_row": RC.cells_per_row(_p)},
+                "source": "D-227 / run_ecore_e38c_smoke.py",
+            },
+            "E38d_pinaccess": {
+                "module": "dpinaccess",
+                "published": {"area_per_tr_um2": PA.REAL_AREA_PER_TR,
+                              "pitch_real_um": PA.PITCH_REAL},
+                "probe": {"pitch_symbolic_um": PA.PITCH_SYMBOLIC,
+                          "pitch_real_um": PA.PITCH_REAL,
+                          "finer_pitch_ok": PA.PITCH_REAL < PA.PITCH_SYMBOLIC,
+                          "mode": "published_constant_check（非布通率探针）"},
+                "source": "D-228 / run_ecore_e38d_smoke.py",
+            },
+            "E38e_spread": {
+                "module": "dspread",
+                "published": {"E38D_published_combined": SP.E38D_PUBLISHED_COMBINED,
+                              "E37_symbolic_area_factor": SP.E37_SYMBOLIC_AREA_FACTOR},
+                "probe": {"n_placed": len(_p.cell_xywh),
+                          "area_per_tr_um2": SP.REAL_AREA_PER_TR},
+                "source": "D-229 / run_ecore_e38e_smoke.py",
+            },
+            "E38f_wall": {
+                "module": "dwallrr",
+                "published": {"E38E_K1_routability": WR.E38E_K1_ROUTABILITY,
+                              "frontier_hit_max": WR.FRONTIER_HIT_MAX},
+                "probe": {"n_nets": _wr["n_nets"], "n_routed": _wr["n_routed"],
+                          "routability_truncated": round(_wr["routability"], 6),
+                          "truncated": True, "budget": _E38_PROBE_EXPAND,
+                          "n_truncated": _wr["n_truncated"]},
+                "source": "D-230 / run_ecore_e38f_smoke.py",
+            },
+            "E38g_pathfinder": {
+                "module": "dpathfinder",
+                "published": {"E38D_published_combined": PF.E38D_PUBLISHED_COMBINED,
+                              "E38E_K3_routability": PF.E38E_K3_ROUTABILITY},
+                "probe": {"n_nets": _pf["n_nets"],
+                          "accounting_ok": bool(_pf["accounting_ok"])},
+                "source": "D-231 / run_ecore_e38g_smoke.py",
+            },
+        },
+        "honest_boundary": ("E38 链结论仍是负结果（布不通=贪心缝出的口袋，唯一杠杆=加面积/加层）；"
+                            "本段不推翻它，只把七个研究模块从「仅门禁」接成可查证据。"),
+    }
 
 
 def stimulus(n_row: int = ROW_N, adc_latency: int = 2):

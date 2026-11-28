@@ -127,7 +127,11 @@ NEW_MODULES = ("dliberty", "dlef", "dverilog", "ddef", "db3_trunk", "dxcheck",
                #: v0.9.415（F3）：非门禁下游 = `dctrl.build()` 的 `clock` 段（控壳网表 56 DFF）。
                #: 🔴 用 `run_trunk` 不行：1340 门控壳网表在 `place_real` 按纪律拒绝截断，
                #: 那条路径根本跑不到 ⇒ 若接在 `run_trunk` 里就是**假下游**（永不执行）。
-               "dcts")
+               "dcts",
+               #: v0.9.420（MEM1）：非门禁下游 = `scripts/build_mem1_material.py`
+               #: （对外物料生成器，全文严格门禁）。历史物料脚本因原文案含
+               #: 「对标/非流片实测/可复现」不做全文门禁（不改禁语换绿）。
+               "memif", "dclaim")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

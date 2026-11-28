@@ -226,6 +226,9 @@ _W10_EXTRA = (
               # 本版改到 ddrc_lvs/dsignoff 的**读取面**与 dpnr 的面积账，但**未改任何几何**，
               # s11/s12 的数字逐位未变 ⇒ 只纳 s13。
               "run_ecore_s13_smoke.py",
+              # v0.9.420（MEM1）：本版真改动的便宜门禁 —— 30 check（14 判据 +
+              # 14 突变探针 + 2 还原）· 实测 <1s，纳入 W10 对照面令顶行数机器守。
+              "run_ecore_m1_smoke.py",
               )
 
 

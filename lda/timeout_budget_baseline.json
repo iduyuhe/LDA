@@ -7,8 +7,8 @@
   "target_x": 3.0,
   "ratchet_below_target": 0,
   "anchors_at_measurement": 546,
-  "core_smokes_at_measurement": 406,
-  "updated_at": "2026-11-06",
+  "core_smokes_at_measurement": 407,
+  "updated_at": "2026-11-28",
   "source_reports": [
     "lda_p1fix_ci_20261004.json",
     "_ci_core_v09195.json",
@@ -163,9 +163,9 @@
     },
     {
       "script": "run_benchmark_falsifiability_smoke.py",
-      "budget_s": 4200.0,
+      "budget_s": 5400.0,
       "elapsed_max_s": 1383.58,
-      "margin_x": 3.036,
+      "margin_x": 3.903,
       "samples_s": [
         1087.69,
         1092.24,
@@ -261,9 +261,9 @@
     },
     {
       "script": "run_soc_s4_smoke.py",
-      "budget_s": 4500.0,
+      "budget_s": 5200.0,
       "elapsed_max_s": 1472.58,
-      "margin_x": 3.056,
+      "margin_x": 3.531,
       "samples_s": [
         1082.53,
         1088.46,
@@ -1500,9 +1500,9 @@
     },
     {
       "script": "run_empirical_anchor_smoke.py",
-      "budget_s": 1200.0,
+      "budget_s": 1450.0,
       "elapsed_max_s": 334.15,
-      "margin_x": 3.591,
+      "margin_x": 4.339,
       "samples_s": [
         230.23,
         232.74,
@@ -14793,9 +14793,9 @@
     },
     {
       "script": "run_ecore_e35_smoke.py",
-      "budget_s": 120.0,
+      "budget_s": 360.0,
       "elapsed_max_s": 35.44,
-      "margin_x": 3.386,
+      "margin_x": 10.158,
       "samples_s": [
         35.44
       ],
@@ -14804,9 +14804,9 @@
     },
     {
       "script": "run_ecore_e36_smoke.py",
-      "budget_s": 200.0,
+      "budget_s": 480.0,
       "elapsed_max_s": 64.3,
-      "margin_x": 3.11,
+      "margin_x": 7.465,
       "samples_s": [
         64.3
       ],
@@ -14815,9 +14815,9 @@
     },
     {
       "script": "run_ecore_e37_smoke.py",
-      "budget_s": 500.0,
+      "budget_s": 630.0,
       "elapsed_max_s": 154.7,
-      "margin_x": 3.23,
+      "margin_x": 4.072,
       "samples_s": [
         154.7
       ],
@@ -14826,9 +14826,9 @@
     },
     {
       "script": "run_ecore_e38_smoke.py",
-      "budget_s": 120.0,
+      "budget_s": 150.0,
       "elapsed_max_s": 33.7,
-      "margin_x": 3.56,
+      "margin_x": 4.451,
       "samples_s": [
         33.7
       ],
@@ -14837,9 +14837,9 @@
     },
     {
       "script": "run_ecore_e38b_smoke.py",
-      "budget_s": 220.0,
+      "budget_s": 270.0,
       "elapsed_max_s": 68.7,
-      "margin_x": 3.2,
+      "margin_x": 3.93,
       "samples_s": [
         68.7
       ],
@@ -14848,9 +14848,9 @@
     },
     {
       "script": "run_ecore_e38c_smoke.py",
-      "budget_s": 200.0,
+      "budget_s": 240.0,
       "elapsed_max_s": 62.6,
-      "margin_x": 3.19,
+      "margin_x": 3.834,
       "samples_s": [
         62.6
       ],
@@ -14859,9 +14859,9 @@
     },
     {
       "script": "run_ecore_e38d_smoke.py",
-      "budget_s": 350.0,
+      "budget_s": 410.0,
       "elapsed_max_s": 111.8,
-      "margin_x": 3.13,
+      "margin_x": 3.667,
       "samples_s": [
         111.8
       ],
@@ -15286,6 +15286,17 @@
         0.31
       ],
       "n_rounds": 3,
+      "censored_events": 0
+    },
+    {
+      "script": "run_ecore_m1_smoke.py",
+      "budget_s": 120.0,
+      "elapsed_max_s": 0.13,
+      "margin_x": 923.077,
+      "samples_s": [
+        0.13
+      ],
+      "n_rounds": 1,
       "censored_events": 0
     }
   ]

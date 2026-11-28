@@ -1410,6 +1410,9 @@ CORE_SMOKES: List[str] = [
     # + K0 完备性（EM 缺 T/Ea/n）+ K2 独立性（本地调用闭包交集 + 毒化探针）+ 面积交叉分段
     # （四段算术 vs DEF DIEAREA 文本）。硬条件=产品数字逐位不变。纯标准库 · 实测 ~0.31s
     "run_ecore_s13_smoke.py",
+    # MEM1 对外声明门禁（v0.9.420）：闭式核对三态 + 物料禁语/通式回算 + 三处 fail-closed。
+    # 30 判据（14 判据 + 14 突变探针 + 2 还原）；纯标准库 · 实测 <1s · claimable=False。
+    "run_ecore_m1_smoke.py",
     # 🔴 电子计算芯片案例卡 WebUI 门禁（E 征程收官 · D-155）：守 /api/ecore_demo 只读案例卡的诚实边界
     # （verdict 恒 DESIGN_VERIFIED / 不报 fabricated 能效 TOPS-TOPS-W / 规模按「可建模可验证容量」解读 /
     # landmark 仅背景坐标），跨源一致性（模块↔API 参考↔routes），含突变探针（破坏诚实边界/清空 landmark
@@ -2757,7 +2760,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   提到 **3600s**（≈3.2×）。判据一字未改。
     # 🔴 v0.9.183：2026-10-02 全量回扫实测上界 **1262.1s** ⇒ 3600s 仅 2.85×
     #   （低于 3× 目标档）⇒ 提到 **4200s**（≈3.3×）。判据一字未改。
-    "run_benchmark_falsifiability_smoke.py": 4200.0,
+    "run_benchmark_falsifiability_smoke.py": 5400.0,  # v0.9.420 实测上界 1559.17s ⇒ 3.46×
     # 🔴 v0.9.111（2026-09-19 全面审计 F-19 · 本项此前**无覆盖**，走默认 300s）：
     #   红队锚面 fuzz —— 对全部 52 锚逐锚做规则式参数扰动并用 run_verification 判卷。
     #   攻击面大 ⇒ 10 线程实跑 **1315.8s** rc=0（"红队锚面 fuzz smoke: PASS"）；
@@ -2809,7 +2812,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     # ---------------------------------------------------------------
     # 报告写入者 + 反自证桩护栏之一；本轮实测 233.46~264.13s（n=11，跨轮上界 264.13s）。
     # 3 × 264.13 = 792.4 ⇒ 取 1200s（**4.54×**，可达 400s 仍守 3×）。
-    "run_empirical_anchor_smoke.py": 1200.0,
+    "run_empirical_anchor_smoke.py": 1450.0,  # v0.9.420 实测上界 420.16s ⇒ 3.45×
     # 生态闭环 smoke（含 d9x 报告链），跨轮 194.48~228.74s（n=11）。
     # 3 × 228.74 = 686.2 ⇒ 取 900s（**3.93×**，可达 300s 仍守 3×）。
     "run_ecosystem_smoke.py": 900.0,
@@ -2999,7 +3002,7 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     #   🔴 v0.9.238 再上调 4200 → **4500s（3.18×）**：跨轮实测上界漂到 **1416.2s**（机器抖动 +1.8%）
     #   ⇒ 4200s 仅 **2.966×** < 目标档 3× ⇒ B9 红（与 v0.9.222 同型：棘轮按设计顶回）。
     #   取 4500s（3.18×）。**仍只改耗时上限，物理判据一字未动。**
-    "run_soc_s4_smoke.py": 4500.0,
+    "run_soc_s4_smoke.py": 5200.0,  # v0.9.420 实测上界 1511.87s ⇒ 3.44×
     "run_soc_s5_smoke.py": 2400.0,
     "run_soc_s5_ext_smoke.py": 2400.0,
     "run_soc_g6_tiling_smoke.py": 600.0,  # 🔴 G6 多核 array tiling（N=8 M=4 实测 ~1.4s，登记 600s 留慢机裕度；判据一字未改，纯耗时）
@@ -3382,6 +3385,8 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_s12_smoke.py": 120.0,
     # S13 B1 四项零风险判据（v0.9.384）· 实测上界 <1s（@本机）
     "run_ecore_s13_smoke.py": 120.0,
+    # MEM1 对外声明门禁（v0.9.420）· 实测上界 <1s（@本机）
+    "run_ecore_m1_smoke.py": 120.0,
     # 基础复用度量门禁（S5 · R1/R2/R3 + 冻结债务表）· 实测上界 <30s（@本机）
     "run_ecore_reuse_metrics_smoke.py": 120.0,
     # E 征程收官 · 电子计算芯片案例卡 WebUI 门禁（D-155）· 实测上界 0.1s（单测）
@@ -3447,21 +3452,23 @@ _BUILTIN_TIMEOUT_OVERRIDE = {
     "run_ecore_e33_smoke.py": 300.0,
     # E34 数字链门禁（D-216）· 实测 ~1.1s（六层自检 + 1500 拍锁步 · 1284 门网表）
     "run_ecore_e34_smoke.py": 120.0,
-    # E35 P&R 门禁（D-220 区）· 实测 ~35s（四层自检 + 四突变探针 + 控制 GDS 重建）
-    "run_ecore_e35_smoke.py": 120.0,
-    # E36 P&R 深化门禁（D-220~D-223）· 实测 ~64s（build_ip 阵列 GDS 生成 ~50s + 五层自检 + 四突变探针）
-    "run_ecore_e36_smoke.py": 200.0,
+    # E35 P&R 门禁（D-220 区）· 跨轮实测上界 100.9s（v0.9.420 全量 10 线程 · 旧基线 ~35s）
+    #   ⇒ 360s 留 3.57× 余量（棘轮要求 ≥3×；只改运行预算，物理判据一位未动）
+    "run_ecore_e35_smoke.py": 360.0,
+    # E36 P&R 深化门禁（D-220~D-223）· 跨轮实测上界 134.0s（v0.9.420 全量 10 线程 · 旧 ~64s）
+    #   ⇒ 480s 留 3.58× 余量（同上）
+    "run_ecore_e36_smoke.py": 480.0,
     # E37 校验器硬化 + track 负结果门禁（D-224）· 实测 ~154.7s（track_route + fast_drc on ~10k shapes
     #   ~37s + run_drc/run_lvs 与 fast 逐位对拍 + 四突变探针）⇒ 500s 留 ~3.23× 余量
-    "run_ecore_e37_smoke.py": 500.0,
+    "run_ecore_e37_smoke.py": 630.0,  # v0.9.420 实测上界 182.1s ⇒ 3.46×
     # E38a 网格迷宫路由器门禁（D-225）· 实测 ~34s（控制组合成路由 + 真实布局路由 + ×1~×3 密度扫描 + 探针）
-    "run_ecore_e38_smoke.py": 120.0,
+    "run_ecore_e38_smoke.py": 150.0,  # v0.9.420 实测上界 40.51s ⇒ 3.70×
     # E38b R&R + 密度曲线门禁（D-226）· 实测 ~69s（×1~×4 全量密度扫描 + R&R + 层对比），预算 220s 留 ~3.20×
-    "run_ecore_e38b_smoke.py": 220.0,
+    "run_ecore_e38b_smoke.py": 270.0,  # v0.9.420 实测上界 75.07s ⇒ 3.60×
     # E38c 真实单元面积门禁（D-227）· 实测 ~63s（realistic 2L+4L 布线 + 摆放），预算 200s 留 ~3.2×
-    "run_ecore_e38c_smoke.py": 200.0,
+    "run_ecore_e38c_smoke.py": 240.0,  # v0.9.420 实测上界 66.93s ⇒ 3.59×
     # E38d 引脚接入+线距联调门禁（D-228）· 实测 ~112s（联调真实布线 ~75s + 仅真实单元 ~15s + 符号单调探针），预算 350s 留 ~3.1×
-    "run_ecore_e38d_smoke.py": 350.0,
+    "run_ecore_e38d_smoke.py": 410.0,  # v0.9.420 实测上界 117.11s ⇒ 3.50×
     # E38e 摊开边界+失败诊断门禁（D-229）· 实测 ~445s（K=1 精确 ~92s + K=2 精确 ~350s + 紧预算探针 + 符号探针），
     #   预算 1400s 留 ~3.1×。K≥3（~15min/点）不入表：只作离线一次性测量。
     "run_ecore_e38e_smoke.py": 1400.0,

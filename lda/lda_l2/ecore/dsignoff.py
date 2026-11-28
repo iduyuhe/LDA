@@ -481,6 +481,27 @@ def signoff_ledger(report, netlist=None):
     except Exception as exc:                       # noqa: BLE001
         out["drive_geometry"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
 
+    # 🔴 v0.9.420（MEM1）：对外声明边界 —— **只加顶层键，不动 `rows`、主链九数**。
+    #   `memif`/`dclaim` 在 ecore 包内的真消费者（复用度量 M2 的零入度约束）；
+    #   输出仅作诊断披露，`claimable=False`，不产生任何对外断言。
+    #   变量名用 DCL/MF：**不能用 DC** —— 下方 F0-1 漏电块里 `DC` 是 `dcell`。
+    try:
+        from . import dclaim as DCL
+        from . import memif as MF
+        _cp = DCL.check_claim(
+            "设计期闭式核对·非流片实测：量级自洽，不构成设计能力或性能结论。")
+        out["external_claim_boundary"] = {
+            "statement": DCL.WHITE_STATEMENTS[0],
+            "prereg_checks": len(MF.PREREG_MEM1),
+            "claim_verdict": _cp["verdict"],
+            "scope": "DIAGNOSTIC_ONLY",
+            "claimable": False,
+            "not_claimed": ("闭式核对只验证公开参数的量级自洽；"
+                            "NOT_APPLICABLE 不记 PASS；不构成设计能力或性能结论"),
+        }
+    except Exception as exc:                       # noqa: BLE001
+        out["external_claim_boundary"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
+
     # 🔴 v0.9.409（F0-1）：**漏电入报表** —— `ileak_na_per_tr` 此前**零消费**
     #   （审计脚本 E08 实测：产品链里只有 `dcell.py` 的定义处，没有任何消费者）。
     #   功耗域因此只有动态功耗、没有静态功耗，而「1340 门控制壳的漏电」是必答项。

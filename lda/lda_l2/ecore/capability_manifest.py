@@ -1264,6 +1264,36 @@ ECORE_CAPABILITY_MANIFEST = [
         "introduced_by": "F3 (v0.9.415)",
         "guard": "run_ecore_s13_smoke.py",
     },
+    {
+        "capability": "超宽并行内存接口的**闭式核对**：结构守恒（DQ=ch×DQ/ch）、带宽量纲桥"
+                      "（TB/s=DQ×GT/s÷8）、HBM4 通式退化、**三态判决**"
+                      "（PASS / FAIL / NOT_APPLICABLE，口径不适用不记 PASS）、全片读时间与"
+                      "堆叠高度量级；MEM1.1 扩出单位间隔 UI、每通道带宽、代际比值守恒"
+                      "（位宽 2× 但带宽仅 1.953125×）与带宽↔UI 跨项同源；"
+                      "只核对公开参数的量级自洽，**不设计 DRAM/控制器/混合键合**，"
+                      "`claimable=False`；非门禁下游 = `scripts/build_mem1_material.py`",
+        "module": "lda_l2.ecore.memif",
+        "symbols": ["PREREG_MEM1", "DQ_CANONICAL", "R_WINDOW_GT", "HBM4_STD", "VERDICTS",
+                    "PUBLIC_CASES", "PUBLIC_READS", "dq_struct", "bw_closed", "r_implied",
+                    "read_time_s", "stack_height_um", "ui_ps", "bw_per_ch_gbs", "read_ms",
+                    "ratio_chain", "ui_from_bw", "ui_consistent", "public_derived",
+                    "bw_is_derivable", "verdict_for", "self_check"],
+        "introduced_by": "MEM1.1 (v0.9.421)",
+        "guard": "run_ecore_m1_smoke.py",
+    },
+    {
+        "capability": "对外物料**声明门禁**：必需声明白名单 + 剥离白名单/否定语境后的禁语扫描"
+                      " + 数字**通式回算**（不列白名单，合法值不误伤；含整数写法 `4TB/s`）"
+                      " + 语境敏感比值 claim（位宽两倍放行 / 带宽两倍判红）"
+                      " + 带宽↔UI 跨项同源 + 物料文件 fail-closed；"
+                      "把「设计期闭式核对·非流片实测」从文案变成机器判决，不产新断言；"
+                      "`claimable=False`；非门禁下游 = `scripts/build_mem1_material.py`",
+        "module": "lda_l2.ecore.dclaim",
+        "symbols": ["WHITE_STATEMENTS", "NEGATION_EXEMPT", "BANNED_TOKENS", "TBPS_RE",
+                    "UNIT_RE", "RATIO_RE", "check_claim", "check_material_file", "self_check"],
+        "introduced_by": "MEM1.1 (v0.9.421)",
+        "guard": "run_ecore_m1_smoke.py",
+    },
 ]
 
 
